@@ -37083,7 +37083,6 @@
             ".dsh-fe-bar-head { color:var(--dsw-alias-label-primary); }",
             ".dsh-fe-bar-title { display:inline-flex; align-items:center; gap:6px; }",
             ".dsh-fe-bar-count { color:var(--dsw-alias-label-secondary); font-weight:500; font-size:11.5px; font-family:ui-monospace,Consolas,monospace; }",
-            ".dsh-fe-gap { padding:2px 10px 6px; color:var(--dsw-alias-label-tertiary); font-size:11.5px; }",
             // Tabs: file glyph slot; active tab gets a firmer border.
             ".dsh-fe-filetab { transition:color .12s ease; }",
             ".dsh-fe-filetab-on { border-color:color-mix(in srgb, var(--dsw-alias-label-secondary) 30%, transparent); }",
@@ -37943,15 +37942,6 @@
             );
           }
           function ModifiedBar(props) {
-            const AUDIT_GAP_TITLE = "\u540E\u53F0 Shell \u4E0E\u672A\u6258\u7BA1\u7684\u517C\u5BB9 Shell \u4E0D\u88AB\u5BA1\u6838\u8D26\u672C\u6355\u83B7\uFF1A\u8FD9\u4E9B\u8C03\u7528\u53EF\u80FD\u5DF2\u7ECF\u4FEE\u6539\u6587\u4EF6\uFF0C\u5374\u4E0D\u4F1A\u51FA\u73B0\u5728\u8FD9\u4E2A\u5217\u8868\u91CC";
-            const auditGapLabel = (gaps) => {
-              const parts = [];
-              const background = gaps && Number(gaps.backgroundShell) > 0 ? Number(gaps.backgroundShell) : 0;
-              if (background > 0) parts.push("\u540E\u53F0 Shell " + background + " \u6B21");
-              const tools = gaps && Array.isArray(gaps.untrackedShell) ? gaps.untrackedShell : [];
-              for (const name2 of tools) parts.push(String(name2));
-              return parts.join("\u3001");
-            };
             const sid = props && props.sessionId;
             React.useEffect(() => {
               if (sid) store.setSessionId(sid);
@@ -37960,7 +37950,6 @@
             const [error, setError] = React.useState(null);
             const [undo2, setUndo] = React.useState(null);
             const [dismissed, setDismissed] = React.useState(null);
-            const [auditGaps, setAuditGaps] = React.useState(null);
             const [collapsed, setCollapsed] = React.useState(false);
             const [rowSet, setRowSet] = React.useState([]);
             const animRef = React.useState({ t: null })[0];
@@ -37983,7 +37972,6 @@
                 for (const item of next) if (item.status === "deleted") store.markDeleted(item.id || item.path);
                 store.setTreeStamp(r2.treeStamp ?? 0);
                 setUndo(r2.undo ?? null);
-                setAuditGaps(r2.auditGaps ?? null);
                 setRowSet((prev) => {
                   const prevMap = new Map((prev || []).map((p) => [p.path, p]));
                   const merged = rows.map((item) => ({ path: item.id || item.path, item, leaving: false, enter: !prevMap.has(item.id || item.path) }));
@@ -38129,7 +38117,6 @@
                 React.createElement(IconBtn, { small: true, title: "\u5173\u95ED\u63D0\u793A", onClick: () => setDismissed(undo2.opId), icon: IconClose })
               ) : null,
               error ? React.createElement("div", { key: "err", className: "dsh-fe-err" }, String(error)) : null,
-              auditGaps && auditGapLabel(auditGaps) ? React.createElement("div", { key: "gap", className: "dsh-fe-gap", title: AUDIT_GAP_TITLE }, "\u672A\u6355\u83B7\uFF1A" + auditGapLabel(auditGaps)) : null,
               React.createElement(
                 "div",
                 { key: "rows" },

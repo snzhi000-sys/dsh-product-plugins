@@ -1815,7 +1815,6 @@ window.__ModuleLoader__.load({
           '.dsh-fe-bar-head { color:var(--dsw-alias-label-primary); }',
           '.dsh-fe-bar-title { display:inline-flex; align-items:center; gap:6px; }',
           '.dsh-fe-bar-count { color:var(--dsw-alias-label-secondary); font-weight:500; font-size:11.5px; font-family:ui-monospace,Consolas,monospace; }',
-          '.dsh-fe-gap { padding:2px 10px 6px; color:var(--dsw-alias-label-tertiary); font-size:11.5px; }',
           // Tabs: file glyph slot; active tab gets a firmer border.
           '.dsh-fe-filetab { transition:color .12s ease; }',
           '.dsh-fe-filetab-on { border-color:color-mix(in srgb, var(--dsw-alias-label-secondary) 30%, transparent); }',
@@ -2594,24 +2593,12 @@ window.__ModuleLoader__.load({
         }
 
         function ModifiedBar(props) {
-          // 后台 Shell 与未托管的兼容 Shell 不被账本捕获，host 会把这些缺口
-          // 随每次 getModified 一起发布；审核栏据此如实说明列表并非完整证据。
-          const AUDIT_GAP_TITLE = '后台 Shell 与未托管的兼容 Shell 不被审核账本捕获：这些调用可能已经修改文件，却不会出现在这个列表里'
-          const auditGapLabel = (gaps) => {
-            const parts = []
-            const background = gaps && Number(gaps.backgroundShell) > 0 ? Number(gaps.backgroundShell) : 0
-            if (background > 0) parts.push('后台 Shell ' + background + ' 次')
-            const tools = gaps && Array.isArray(gaps.untrackedShell) ? gaps.untrackedShell : []
-            for (const name of tools) parts.push(String(name))
-            return parts.join('、')
-          }
           const sid = props && props.sessionId
           React.useEffect(() => { if (sid) store.setSessionId(sid) }, [sid])
           const [files, setFiles] = React.useState(null)
           const [error, setError] = React.useState(null)
           const [undo, setUndo] = React.useState(null)
           const [dismissed, setDismissed] = React.useState(null)
-          const [auditGaps, setAuditGaps] = React.useState(null)
           // v1.7: the bar collapses to its one-line header; the chevron
           // handle sits centered above the bar and toggles it back.
           const [collapsed, setCollapsed] = React.useState(false)
@@ -2646,7 +2633,6 @@ window.__ModuleLoader__.load({
               for (const item of next) if (item.status === 'deleted') store.markDeleted(item.id || item.path)
               store.setTreeStamp(r.treeStamp ?? 0)
               setUndo(r.undo ?? null)
-              setAuditGaps(r.auditGaps ?? null)
               setRowSet((prev) => {
                 const prevMap = new Map((prev || []).map((p) => [p.path, p]))
                 const merged = rows.map((item) => ({ path: item.id || item.path, item: item, leaving: false, enter: !prevMap.has(item.id || item.path) }))
@@ -2803,9 +2789,6 @@ window.__ModuleLoader__.load({
               React.createElement(IconBtn, { small: true, title: '关闭提示', onClick: () => setDismissed(undo.opId), icon: IconClose }),
             ) : null,
             error ? React.createElement('div', { key: 'err', className: 'dsh-fe-err' }, String(error)) : null,
-            auditGaps && auditGapLabel(auditGaps)
-              ? React.createElement('div', { key: 'gap', className: 'dsh-fe-gap', title: AUDIT_GAP_TITLE }, '未捕获：' + auditGapLabel(auditGaps))
-              : null,
             React.createElement('div', { key: 'rows' },
               rowSet.map((r) => React.createElement('div', {
                 key: r.path,

@@ -10,6 +10,15 @@ test('partial coverage does not render a warning or hold an empty review dock op
   assert.doesNotMatch(source, /auditNotice|dismissedCoverage|data-audit-coverage|审核不完整/)
 })
 
+test('the review dock does not print the uncaptured background shell notice', async () => {
+  const source = await readFile(sourceUrl, 'utf8')
+  // The host ledger still reports its gaps; only the dock's gray line and its plumbing are gone (2026-09-18).
+  assert.doesNotMatch(source, /未捕获/)
+  assert.doesNotMatch(source, /dsh-fe-gap/)
+  assert.doesNotMatch(source, /auditGapLabel|AUDIT_GAP_TITLE|setAuditGaps/)
+  assert.match(source, /setRowSet\(\(prev\) => \{/)
+})
+
 test('file content toolbar does not repeat the active tab filename', async () => {
   const source = await readFile(sourceUrl, 'utf8')
   assert.doesNotMatch(source, /className:\s*['"]dsh-fe-tb-name['"]/)
