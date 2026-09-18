@@ -107,6 +107,10 @@ Each component above is licensed under the MIT License with its own copyright li
 ${mit}
 \`\`\`
 
+## Derived work
+
+\`dsh-file-edit\` is a derivative of [justarook1e/dsh-file-edit](https://github.com/justarook1e/dsh-file-edit), MIT-licensed with copyright held by \`justarook1e\`; that project is no longer maintained and has moved to [justarook1e/dsh-ide-lite](https://github.com/justarook1e/dsh-ide-lite). The original copyright notice is retained in [LICENSE](LICENSE).
+
 ## Not redistributed here
 
 The plugin runs against the DeepSeek Harness plugin APIs. Harness itself is MIT-licensed (Copyright (c) 2026 DeepSeek), but no Harness code is redistributed in this repository: the client requires the host's platform modules at runtime instead of bundling them.
