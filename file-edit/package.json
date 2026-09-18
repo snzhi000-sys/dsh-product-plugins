@@ -50,5 +50,11 @@
     "@lezer/highlight": "^1.2.3",
     "codemirror": "^6.0.2",
     "esbuild": "^0.25.9"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/snzhi000-sys/dsh-product-plugins.git",
+    "directory": "file-edit"
+  },
+  "license": "MIT"
 }

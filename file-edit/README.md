@@ -83,6 +83,6 @@ dsh-file-edit/
 
 ## License
 
-This project is released under the **MIT License** (see [LICENSE](../../LICENSE)).
+This project is released under the **MIT License** (see [../LICENSE](../LICENSE)).
 
-The client bundle (`client/dist/client.js`) embeds the browser UMD build of [markdown-it](https://github.com/markdown-it/markdown-it) v15.0.0, which includes linkify-it, mdurl, and uc.micro; those dependencies are likewise released under MIT, and their license texts ship with their npm packages.
+The client bundle (`client/dist/client.js`) embeds third-party MIT-licensed code: the browser UMD build of [markdown-it](https://github.com/markdown-it/markdown-it) v15.0.0 (which carries linkify-it, mdurl and uc.micro), plus the CodeMirror 6 and Lezer packages the build inlines. Every embedded component, with its version and copyright line, is listed in [THIRD-PARTY-NOTICES.md](../THIRD-PARTY-NOTICES.md); regenerate that file with `node scripts/collect-third-party-notices.mjs` and verify it with `--check`.

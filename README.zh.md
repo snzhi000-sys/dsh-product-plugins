@@ -85,6 +85,8 @@ npm run sync:plugins -- --check   # 只校验不写入；有漂移则非零退�
 - client bundle 只允许 `require()` App 暴露的平台模块，例如 `@deepseek-ai/dsh-client-ui-primitives`。
 - 插件的 `README.md` / `README.zh.md` 配对要随行为同步更新。
 
-## 许可证状态
+## 许可证
 
-本仓库已公开，但**不授予任何许可证**：这些插件的第三方来源与许可证确认仍未关闭。公开可见不等于授权——在确认记录完成并添加许可证之前，保留所有权利，不得再分发这些插件，也不得把它们打包进其它产品。
+以 **MIT License** 发布，见 [LICENSE](LICENSE)。在保留版权声明与许可声明的前提下，你可以使用、修改、再分发这些插件，包括打包进其它产品。
+
+此前阻塞这项授权的来源确认已经关闭：`file-edit` 来自我们自己的本地 fork（`dsh-file-edit-fork` 1.13.32-local），客户端 bundle 内嵌的第三方组件全部为 MIT。内嵌组件、版本与版权行见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。

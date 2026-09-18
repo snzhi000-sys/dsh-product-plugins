@@ -83,6 +83,6 @@ dsh-file-edit/
 
 ## 许可证
 
-本项目以 **MIT License** 发布（见 [LICENSE](../../LICENSE)）。
+本项目以 **MIT License** 发布（见 [../LICENSE](../LICENSE)）。
 
-客户端 bundle（`client/dist/client.js`）内嵌了 [markdown-it](https://github.com/markdown-it/markdown-it) v15.0.0 的浏览器 UMD 构建，其中包含 linkify-it、mdurl、uc.micro；这些依赖同样以 MIT 发布，许可证文本随各自的 npm 包提供。
+客户端 bundle（`client/dist/client.js`）内嵌了第三方 MIT 代码：[markdown-it](https://github.com/markdown-it/markdown-it) v15.0.0 的浏览器 UMD 构建（包含 linkify-it、mdurl、uc.micro），以及构建时打包进去的 CodeMirror 6 与 Lezer 各包。每个内嵌组件的版本与版权行列在 [THIRD-PARTY-NOTICES.md](../THIRD-PARTY-NOTICES.md)；用 `node scripts/collect-third-party-notices.mjs` 重新生成、`--check` 校验。

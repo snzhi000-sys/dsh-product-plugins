@@ -85,6 +85,8 @@ A feature that spans both sides (for example a plugin plus an Explorer change) i
 - Client bundles may `require()` only platform modules the app exposes, such as `@deepseek-ai/dsh-client-ui-primitives`.
 - Keep the plugin's `README.md` / `README.zh.md` pair in step with its behavior.
 
-## Licensing status
+## License
 
-This repository is public, but **no license is granted**: the plugins' third-party provenance and license clearance review is still open. Public visibility is not a license — until that review is recorded and a license is added, all rights are reserved, and redistributing these plugins or shipping them inside another product is not permitted.
+Released under the **MIT License** — see [LICENSE](LICENSE). You may use, modify and redistribute these plugins, including inside another product, as long as the copyright notice and the permission notice stay with the code.
+
+The provenance review that gated this grant is closed: `file-edit`'s lineage is our own local fork (`dsh-file-edit-fork` 1.13.32-local), and every third-party component the client bundle embeds is MIT-licensed. Embedded components, versions and copyright lines: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
