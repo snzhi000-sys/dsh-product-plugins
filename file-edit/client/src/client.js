@@ -31,6 +31,9 @@ import {
 import { closeProcessedTabState } from './file-tab-state.js'
 import { resolveFileTarget } from './file-target.js'
 import { clearDeletedTabState, markDeletedTabState } from './deleted-tab-state.js'
+// 右侧栏标签图标（data URL，见 scripts/embed-tab-icon.mjs）：顶层 import 会被内联进
+// bundle，而 factory 里的 require 走 shell 静态模块表、够不到二进制资源。
+import { SIDEBAR_TAB_ICON } from './tab-icon.js'
 
 // dsh-file-edit — static client bundle (web plugin).
 // Loaded by the client module system as a classic script; registers a factory
@@ -86,6 +89,8 @@ window.__ModuleLoader__.load({
         }
         // 文件浏览器在官方右侧栏里的标签类型：类型注册与标签体注册共用这个 id。
         const FILE_BROWSER_KIND = 'dsh-file-edit'
+        // 右侧栏标签名：类型注册的 title 与 title 席位共用，避免两处文案漂移。
+        const FILE_BROWSER_TITLE = 'Edit 文件浏览器'
         // 把文件浏览器带到屏幕上。新宿主是官方右侧栏的一个页面型标签：一个标签承载
         // 整个浏览器，内部的文档子标签（store.tabs/store.active）都在里面切换。
         // 没有这套侧栏服务的旧产品退回会话视图宿主，由下面的注册分支保留。
@@ -1860,11 +1865,10 @@ window.__ModuleLoader__.load({
           // tertiary，只让标题与文件名留在 primary：TodoPanel 的 .lead 与 .chevron 是
           // tertiary，GoalBar 的 .iconBtn 是 tertiary（hover 升一档到 secondary），
           // ui-sidebar-files 的 .icon 是 tertiary、.pathName 是 primary、.pathDirectory 是
-          // tertiary。插件原先把领起铅笔留在 primary（跟着 .dsh-fe-bar-head 继承），把折叠
-          // 箭头和文件图标放在 secondary，这三处各比官方重一档，整行读起来比官方沉。
+          // tertiary。插件原先把折叠箭头和文件图标放在 secondary，比官方重一档，
+          // 整行读起来比官方沉。
           // 作用域一律限定在 .dsh-fe-bar：.dsh-fe-ic 与 .dsh-fe-iconbtn 在文件浏览器里也在
           // 用，那边的图标不受本次调整影响。
-          '.dsh-fe-bar-lead { display:inline-flex; color:var(--dsw-alias-label-tertiary); }',
           '.dsh-fe-bar .dsh-fe-ic { color:var(--dsw-alias-label-tertiary); }',
           // 折叠箭头与刷新钮共用 .dsh-fe-iconbtn，而接受/拒绝是语义色（success/error）。
           // 这两条选择器优先级高于下面的调色规则，所以必须用 :not() 把语义色按钮排除掉，
@@ -2229,7 +2233,6 @@ window.__ModuleLoader__.load({
             x: c[0], y: c[1], width: 2, height: 2,
             style: { animationDelay: ((index - 8) * 125) + 'ms' },
           })))
-        const IconPencil = () => I(14, '0 0 14 14', [P('M12 3.6 L10.4 2 a1.1 1.1 0 0 0 -1.6 0 L3.4 7.4 V10.6 H6.6 L12 5.2 a1.1 1.1 0 0 0 0 -1.6 Z'), P('M8.6 2.8 L11.2 5.4')])
         const IconPlus = () => I(12, '0 0 14 14', [P('M7 2.5 V11.5'), P('M2.5 7 H11.5')])
         const IconClose = () => I(11, '0 0 14 14', [P('M4 4 L10 10'), P('M10 4 L4 10')])
         const IconMore = () => React.createElement('svg', { ...svgBase, width: 14, height: 14, viewBox: '0 0 14 14', fill: 'currentColor', stroke: 'none' }, [
@@ -2778,8 +2781,7 @@ window.__ModuleLoader__.load({
           }, [overlay, visible])
           if (!visible) return null
           const head = React.createElement('div', { className: 'dsh-fe-bar-head' },
-            React.createElement('span', { className: 'dsh-fe-bar-title' },
-              React.createElement('span', { className: 'dsh-fe-bar-lead' }, IconPencil()), '修改的文件'),
+            React.createElement('span', { className: 'dsh-fe-bar-title' }, '修改的文件'),
             React.createElement('span', { className: 'dsh-fe-bar-count' }, String(list.length)),
             React.createElement('span', { className: 'dsh-fe-spacer' }, null),
             // v1.8.1: centered between the left group and the action buttons;
@@ -4905,6 +4907,26 @@ window.__ModuleLoader__.load({
         // 侧栏宿主：官方右侧栏那个标签的标签体。浏览器本体只认 sessionId，内部的文档
         // 子标签全在 store 里，所以这里只接三件事——可见性、没有文档时不留下空标签、
         // 以及给内部按高度布局的 CSS 链一个确定高度。
+        // 右侧栏标签的图标与名称：官方标签定义只带文字（title(address)），图标与自定义
+        // chip 内容走 title 席位（sidebar.right.pane.tab.title），与官方引导页 GuideTitle
+        // 走同一条公开路径。样式内联，不依赖插件样式表的挂载时机。
+        function SidebarTabTitle(props) {
+          const tabInfo = props && typeof props.useTabInfo === 'function' ? props.useTabInfo() : null
+          const title = tabInfo && tabInfo.tab && tabInfo.tab.title ? tabInfo.tab.title : FILE_BROWSER_TITLE
+          return React.createElement('span', {
+            className: 'dsh-fe-tabchip',
+            style: { display: 'inline-flex', alignItems: 'center', gap: '5px', minWidth: 0 },
+          },
+            React.createElement('img', {
+              className: 'dsh-fe-tabchip-ic',
+              src: SIDEBAR_TAB_ICON,
+              alt: '',
+              'aria-hidden': true,
+              style: { width: '15px', height: '15px', flex: 'none', objectFit: 'contain', borderRadius: '3px' },
+            }),
+            title)
+        }
+
         function SidebarFileView(props) {
           const tabInfo = props && typeof props.useTabInfo === 'function' ? props.useTabInfo() : null
           useStore()
@@ -4934,7 +4956,7 @@ window.__ModuleLoader__.load({
         const registerConversationHost = () => {
           if (disposeConversationHost) return
           disposeConversationHost = ctx.slots.inject('conversation.view', () => ctx.slots.register(
-            { name: 'conversation.view', id: 'dsh-file-edit', order: 20, label: '文件' },
+            { name: 'conversation.view', id: 'dsh-file-edit', order: 20, label: FILE_BROWSER_TITLE },
             FileView,
           ))
         }
@@ -4944,11 +4966,15 @@ window.__ModuleLoader__.load({
             id: FILE_BROWSER_KIND,
             kind: FILE_BROWSER_KIND,
             priority: 'extension',
-            title: () => '文件',
+            title: () => FILE_BROWSER_TITLE,
           }), 'dsh-file-edit: sidebar tab type')
           ctx.slots.inject('sidebar.right.pane.tab', () => ctx.slots.register(
             { name: 'sidebar.right.pane.tab', key: FILE_BROWSER_KIND },
             SidebarFileView,
+          ))
+          ctx.slots.inject('sidebar.right.pane.tab.title', () => ctx.slots.register(
+            { name: 'sidebar.right.pane.tab.title', key: FILE_BROWSER_KIND },
+            SidebarTabTitle,
           ))
         })
         if (!ctx.get('sidebarRightTabs')) registerConversationHost()

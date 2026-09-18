@@ -25,6 +25,7 @@
     "README.md"
   ],
   "scripts": {
+    "build:icon": "node scripts/embed-tab-icon.mjs",
     "build:client": "esbuild client/src/client.js --bundle --format=iife --platform=browser --target=chrome120 --outfile=client/dist/client.js",
     "test": "node --test --test-concurrency=1 tests/*.test.mjs"
   },

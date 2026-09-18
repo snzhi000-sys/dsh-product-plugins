@@ -89,9 +89,8 @@ test('the review bar ink follows the official dock card and file tree hierarchy'
   const source = await readFile(sourceUrl, 'utf8')
   // Official decorative glyphs sit on the weakest ink: TodoPanel's .lead and .chevron, GoalBar's
   // .iconBtn, and ui-sidebar-files' .icon are all label-tertiary, with the icon button's hover one
-  // rung up at secondary. The plugin had the lead pencil on primary (inherited from the head row)
-  // and both the chevron and the file glyph on secondary.
-  assert.match(source, /'\.dsh-fe-bar-lead \{ display:inline-flex; color:var\(--dsw-alias-label-tertiary\); \}'/)
+  // rung up at secondary. The plugin had the chevron and the file glyph on secondary.
+  assert.doesNotMatch(source, /dsh-fe-bar-lead/)
   assert.match(source, /'\.dsh-fe-bar \.dsh-fe-ic \{ color:var\(--dsw-alias-label-tertiary\); \}'/)
   assert.match(source, /'\.dsh-fe-bar \.dsh-fe-iconbtn:not\(\.dsh-fe-iconbtn-ok\):not\(\.dsh-fe-iconbtn-no\) \{ color:var\(--dsw-alias-label-tertiary\); \}'/)
   assert.match(source, /'\.dsh-fe-bar \.dsh-fe-iconbtn:not\(\.dsh-fe-iconbtn-ok\):not\(\.dsh-fe-iconbtn-no\):hover \{ color:var\(--dsw-alias-label-secondary\); \}'/)
@@ -100,8 +99,9 @@ test('the review bar ink follows the official dock card and file tree hierarchy'
   assert.match(source, /'\.dsh-fe-bar-head \{ color:var\(--dsw-alias-label-primary\); \}'/)
   assert.match(source, /'\.dsh-fe-path-split > \.dsh-fe-file-name \{ flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var\(--dsw-alias-label-primary\); \}'/)
   assert.match(source, /'\.dsh-fe-path-split > \.dsh-fe-file-dir \{ flex:1 1 0; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var\(--dsw-alias-label-tertiary\); font-size:10px; \}'/)
-  // The pencil gets its own slot, so demoting the glyph cannot lighten the title text beside it.
-  assert.match(source, /className: 'dsh-fe-bar-lead' \}, IconPencil\(\)\), '修改的文件'\)/)
+  // The review header is text only: the leading pencil glyph and its slot were removed (2026-09-18).
+  assert.doesNotMatch(source, /IconPencil/)
+  assert.match(source, /className: 'dsh-fe-bar-title' \}, '修改的文件'\)/)
   // The :not() guards keep the semantic accept/reject tones winning over the bar rule.
   assert.match(source, /'\.dsh-fe-bar \.dsh-fe-iconbtn-ok:hover \{ color:var\(--dsh-fe-review-add, var\(--dsw-alias-state-success-primary\)\); \}'/)
   assert.match(source, /'\.dsh-fe-bar \.dsh-fe-iconbtn-no:hover \{ color:var\(--dsw-alias-state-error-primary\); \}'/)
