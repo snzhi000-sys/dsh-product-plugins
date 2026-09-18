@@ -87,4 +87,4 @@ A feature that spans both sides (for example a plugin plus an Explorer change) i
 
 ## Licensing status
 
-The plugins' third-party provenance and license clearance is **not closed** yet, so no license file is granted here and nothing may be published until that review is recorded. Until then this repository is local-only.
+This repository is public, but **no license is granted**: the plugins' third-party provenance and license clearance review is still open. Public visibility is not a license — until that review is recorded and a license is added, all rights are reserved, and redistributing these plugins or shipping them inside another product is not permitted.
