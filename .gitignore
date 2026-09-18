@@ -1,0 +1,4 @@
+node_modules/
+.DS_Store
+*.log
+# client/dist/ is tracked on purpose: the app packaging chain ships it through `npm pack`.
