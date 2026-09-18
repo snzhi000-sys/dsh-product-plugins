@@ -77,6 +77,16 @@ A feature that spans both sides (for example a plugin plus an Explorer change) i
 2. Add the mapping `"dsh-<plugin>": "plugins/<plugin>"` to the app tree's `distribution/profile-manifest.json`.
 3. Build the client bundle, commit, run `npm run sync:plugins` in the app tree, then package.
 
+## Naming and identity
+
+The package is `dsh-file-edit` and stays that way. Three strings beside it are **persisted contracts** and must not be renamed with it:
+
+- `dsh-file-edit-ref` — the reference source name; it is stored in sent messages and reference snapshots, so renaming it stops existing sessions from recognizing their own references.
+- `application/x-dsh-file-edit-references+json` — the clipboard MIME for pasting references back.
+- `dsh-file-edit` as the sidebar **tab kind** — it is also the `sidebarRightTabs` type id, and the official sidebar stores each session's tab layout in the browser; a rename costs a reopened tab, nothing more.
+
+The package name, the `productPlugins` key in the app tree's `distribution/profile-manifest.json`, and the `id`/`name` in `distribution/cordis.patch.yml` form one group: change them together, and `desktop/scripts/sync-product-plugins.mjs` (which requires the package name to equal the manifest key) will refuse a half-rename. The cross-package service `dshFileEditOpen`, which the runtime Explorer reads, is independent of the package name.
+
 ## Rules
 
 - Binary assets cannot be `require`d: inside the plugin factory `require` resolves through the shell's static module table at runtime. Import them at module scope so the bundler inlines them (the tab glyph ships as a generated data-URL module, see `scripts/embed-tab-icon.mjs`).

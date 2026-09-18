@@ -77,6 +77,16 @@ npm run sync:plugins -- --check   # 只校验不写入；有漂移则非零退�
 2. 在 App 树的 `distribution/profile-manifest.json` 加映射 `"dsh-<plugin>": "plugins/<plugin>"`。
 3. 构建 client bundle、提交，再在 App 树跑 `npm run sync:plugins`，然后打包。
 
+## 命名与身份
+
+包名是 `dsh-file-edit`，保持不变。它旁边有三个字符串是**持久化契约**，绝不能跟着一起改名：
+
+- `dsh-file-edit-ref` —— 引用源名；它存在已发送消息与引用快照里，改名后历史会话不再认出自己的引用。
+- `application/x-dsh-file-edit-references+json` —— 把引用粘回来的剪贴板 MIME。
+- 作为侧栏**标签 kind** 的 `dsh-file-edit` —— 它同时是 `sidebarRightTabs` 的类型 id，官方侧栏把每个会话的标签布局存在浏览器里；改名只会让标签重开一次。
+
+包名、App 树 `distribution/profile-manifest.json` 里的 `productPlugins` 键、`distribution/cordis.patch.yml` 里的 `id`/`name` 是一组：要改一起改，`desktop/scripts/sync-product-plugins.mjs`（要求包名等于映射键）会拒绝改一半。运行时 Explorer 读取的跨包服务 `dshFileEditOpen` 与包名无关。
+
 ## 规则
 
 - 二进制资源**不能**用 `require`：factory 里的 `require` 在运行时走 shell 的静态模块表。必须在模块顶层 `import`，让打包器把它内联（标签图标就是以生成的 data URL 模块发的，见 `scripts/embed-tab-icon.mjs`）。

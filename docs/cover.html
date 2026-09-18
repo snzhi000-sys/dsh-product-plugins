@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>dsh-file-edit cover</title>
+<style>
+  :root {
+    --ink: #101828;
+    --muted: #667085;
+    --line: #e4e7ec;
+    --accent: #4d6bfe;
+    --add: #19bb4d;
+    --paper: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    width: 1280px; height: 640px; overflow: hidden;
+    font-family: -apple-system, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(1200px 420px at 12% -10%, #eaf0ff 0%, rgba(234,240,255,0) 62%),
+      radial-gradient(900px 380px at 96% 8%, #e9fbf0 0%, rgba(233,251,240,0) 60%),
+      #f7f8fb;
+  }
+  .wrap { display: flex; gap: 34px; padding: 44px 52px; height: 100%; }
+  .left { width: 486px; display: flex; flex-direction: column; }
+  .brand { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); letter-spacing: .04em; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px rgba(77,107,254,.14); }
+  h1 { font-size: 60px; line-height: 1.02; margin: 22px 0 0; letter-spacing: -.02em; font-weight: 700; }
+  h1 code { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 54px; letter-spacing: -.01em; }
+  .tagline { margin-top: 16px; font-size: 19px; line-height: 1.55; color: #344054; }
+  .tagline b { color: var(--ink); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+  .chip {
+    font-size: 14px; padding: 7px 13px; border-radius: 999px; background: var(--paper);
+    border: 1px solid var(--line); box-shadow: 0 1px 2px rgba(16,24,40,.04);
+  }
+  .chip.on { color: #fff; background: var(--accent); border-color: var(--accent); }
+  .points { margin: 20px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 9px; }
+  .points li { font-size: 14.5px; line-height: 1.5; color: #475467; position: relative; padding-left: 18px; }
+  .points li::before { content: ""; position: absolute; left: 0; top: 8px; width: 7px; height: 7px; border-radius: 2px; background: var(--add); }
+  .points b { color: var(--ink); }
+  .foot { margin-top: auto; font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 10px; }
+  .foot .sep { color: #d0d5dd; }
+  .foot code { font-family: "SF Mono", ui-monospace, Menlo, monospace; color: #475467; }
+
+  .mock {
+    flex: 1; background: var(--paper); border: 1px solid var(--line); border-radius: 16px;
+    box-shadow: 0 24px 60px rgba(16,24,40,.10), 0 2px 6px rgba(16,24,40,.05);
+    display: flex; overflow: hidden;
+  }
+  .pane { display: flex; flex-direction: column; }
+  .pane + .pane { border-left: 1px solid var(--line); }
+  .tree { width: 194px; }
+  .doc { flex: 1; }
+  .head {
+    height: 38px; display: flex; align-items: center; gap: 7px; padding: 0 12px;
+    border-bottom: 1px solid var(--line); font-size: 12px; color: var(--muted);
+  }
+  .traffic { display: flex; gap: 5px; }
+  .traffic i { width: 9px; height: 9px; border-radius: 50%; background: #e4e7ec; display: block; }
+  .rows { padding: 9px 7px; font-size: 12.5px; line-height: 1; }
+  .row { display: flex; align-items: center; gap: 7px; padding: 7px 8px; border-radius: 7px; color: #344054; }
+  .row.sel { background: #eef2ff; color: #26307a; }
+  .row .eye { margin-left: auto; color: #98a2b3; font-size: 11px; }
+  .row .name { font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 12px; }
+  .ic { width: 13px; text-align: center; color: #98a2b3; }
+  .ic.f { color: var(--accent); }
+
+  .tabbar { display: flex; align-items: center; gap: 6px; padding: 8px 10px 0; }
+  .tab {
+    font-size: 12px; padding: 6px 11px; border-radius: 8px 8px 0 0; color: #475467;
+    background: #f2f4f7; font-family: "SF Mono", ui-monospace, Menlo, monospace; display: flex; gap: 6px; align-items: center;
+  }
+  .tab.on { background: #fff; color: var(--ink); border: 1px solid var(--line); border-bottom-color: #fff; }
+  .code { padding: 10px 14px; font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 12.5px; line-height: 1.85; color: #344054; }
+  .ln { color: #98a2b3; display: inline-block; width: 22px; }
+  .k { color: #7a5af8; } .s { color: #0b8a3e; } .c { color: #98a2b3; }
+  .mark { background: #eaf0ff; border-radius: 3px; }
+
+  .review { border-top: 1px solid var(--line); padding: 10px 12px 12px; background: #fcfcfd; }
+  .review h4 { margin: 0 0 8px; font-size: 12.5px; font-weight: 600; color: #344054; display: flex; align-items: center; gap: 7px; }
+  .review h4 .n { color: var(--muted); font-weight: 400; }
+  .rrow { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 5px 0; color: #344054; }
+  .rrow .fn { font-family: "SF Mono", ui-monospace, Menlo, monospace; }
+  .rrow .path { color: #98a2b3; font-size: 11px; }
+  .stat { margin-left: auto; font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 11px; }
+  .stat .a { color: var(--add); } .stat .d { color: #e5484d; }
+  .badge { font-size: 10.5px; padding: 2px 7px; border-radius: 999px; background: #f2f4f7; color: #475467; }
+  .tick { color: var(--add); } .cross { color: #e5484d; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="left">
+    <div class="brand"><span class="dot"></span> DEEPSEEK HARNESS · PRODUCT PLUGIN</div>
+    <h1><code>dsh-file-edit</code></h1>
+    <div class="tagline">把<b>资源管理器、文件浏览器、修改审核</b>合成一个插件：<br>在 Harness 里看见每一次改动，并就地完成审阅。</div>
+    <div class="chips">
+      <span class="chip on">资源管理器</span>
+      <span class="chip on">修改审核</span>
+      <span class="chip">文件浏览器</span>
+      <span class="chip">文件引用</span>
+      <span class="chip">标记定位</span>
+      <span class="chip">按需隐藏</span>
+    </div>
+    <ul class="points">
+      <li><b>看得见</b>：会话里每一处文件改动都进审核列表，点一行就跳到改动位置。</li>
+      <li><b>改得动</b>：不离开 Harness 就能整篇打开、编辑、保存工作区文件。</li>
+      <li><b>带得走</b>：把文件与选段引用进对话，回答对象始终明确。</li>
+    </ul>
+    <div class="foot">
+      <code>github.com/snzhi000-sys/dsh-product-plugins</code>
+      <span class="sep">·</span> MIT
+    </div>
+  </div>
+
+  <div class="mock">
+    <div class="pane tree">
+      <div class="head"><span class="traffic"><i></i><i></i><i></i></span> 资源管理器</div>
+      <div class="rows">
+        <div class="row"><span class="ic">▾</span><span class="name">src</span></div>
+        <div class="row sel"><span class="ic f">◇</span><span class="name">calculator.js</span><span class="eye">◉</span></div>
+        <div class="row"><span class="ic f">◇</span><span class="name">greeting.js</span><span class="eye">◉</span></div>
+        <div class="row"><span class="ic">▸</span><span class="name">docs</span><span class="eye">◉</span></div>
+        <div class="row"><span class="ic f">◇</span><span class="name">README.md</span><span class="eye">◉</span></div>
+        <div class="row"><span class="ic">★</span><span class="name">notes.md</span><span class="eye">◉</span></div>
+      </div>
+    </div>
+
+    <div class="pane doc">
+      <div class="tabbar">
+        <span class="tab on">◇ calculator.js ✕</span>
+        <span class="tab">notes.md ✕</span>
+      </div>
+      <div class="code">
+        <div><span class="ln">1</span><span class="c">// 整篇编辑 · 保存即写回工作区</span></div>
+        <div><span class="ln">2</span><span class="k">export function</span> <span class="mark">divide</span>(a, b) {</div>
+        <div><span class="ln">3</span>  <span class="k">if</span> (b === 0) <span class="k">throw new</span> <span class="s">'除以零'</span></div>
+        <div><span class="ln">4</span>  <span class="k">return</span> a / b</div>
+        <div><span class="ln">5</span>}</div>
+      </div>
+      <div class="review">
+        <h4>修改的文件 <span class="n">4</span><span style="margin-left:auto" class="tick">✓</span><span style="margin-left:10px" class="cross">✕</span></h4>
+        <div class="rrow"><span class="fn">calculator.js</span><span class="path">src / 第二轮</span><span class="badge">修改</span><span class="stat"><span class="a">+6</span> <span class="d">−3</span></span><span class="tick">✓</span><span class="cross">✕</span></div>
+        <div class="rrow"><span class="fn">notes.md</span><span class="path">docs / 第二轮</span><span class="badge">修改</span><span class="stat"><span class="a">+1</span> <span class="d">−1</span></span><span class="tick">✓</span><span class="cross">✕</span></div>
+        <div class="rrow"><span class="fn">greeting.js</span><span class="path">src / 第二轮</span><span class="badge">修改</span><span class="stat"><span class="a">+2</span> <span class="d">−0</span></span><span class="tick">✓</span><span class="cross">✕</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
