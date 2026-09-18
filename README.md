@@ -45,6 +45,31 @@ npm run sync:plugins -- --check   # verify instead of writing; non-zero exit on 
 - The app-tree copy (`<app-tree>/plugins/<plugin>`) is **generated and git-ignored**. Never edit it: change this repository, then sync.
 - `DSH_PLUGIN_HOME` overrides where the sync reads from; it defaults to the `plugins` directory beside the app tree.
 
+## Iteration runbook
+
+Every change to a plugin follows this order. The plugin repository is the source of truth; the app-tree copy is materialized from it.
+
+1. **Change the source here**, never in the app tree: `npm run check:plugins` fails on drift and `dist:dev` / `dist:stable` overwrite that copy.
+2. **Build and test** in the plugin directory: `npm run build:client && npm test`. Bump `version` in `package.json` whenever a change ships, and mention it in the commit message.
+3. **Materialize into the app tree**: `cd "<app-tree>/desktop" && npm run sync:plugins`. Packaging runs this automatically before `prepare:profile`, so this step is only needed when you want the copy present without packaging. `npm run check:plugins` proves byte equality.
+4. **Build the Dev package**: `cd "<app-tree>/desktop" && npm run dist:dev`. The channel gate runs desktop tests, `verify:source-privacy`, the profile privacy verification, product identity and an isolated empty-userData launch.
+5. **Verify the behavior on the real app**: launch `<app-tree>/desktop/dist/dev/mac-arm64/DeepSeek Harness Dev.app` and exercise the feature in a test workspace. For behavior that must be proven rather than looked at, drive a packaged probe with isolated user data (for example `<app-tree>/desktop/scripts/probe-edit-open-service.mjs`).
+6. **Stable only after Dev is accepted**, and only with explicit approval to touch `/Applications`: `npm run dist:stable`, then the user replaces the installed app manually.
+7. **Record the change**: commit in this repository with a scoped message. App-side changes (a new mapping in `distribution/profile-manifest.json`, `desktop/**`, `packages/client/ui-explorer/**`) are committed in the app tree instead — those files are not part of this repository, and the app tree does not track plugin sources.
+8. **Once a GitHub remote exists**: push this repository for plugin changes and push the app tree separately through its own isolated-candidate flow. This repository stays the working source of truth; the remote mirrors it.
+
+A feature that spans both sides (for example a plugin plus an Explorer change) is two commits in two repositories, each message naming the other side. Neither repository can reproduce such a feature alone.
+
+### What lives where
+
+| Content | Repository |
+| --- | --- |
+| Plugin `host/`, `client/`, `tests/`, plugin READMEs, built client bundle | this repository |
+| `distribution/profile-manifest.json`, `distribution/cordis.patch.yml` | app tree |
+| `desktop/**` (product shell, packaging and verification scripts) | app tree |
+| `packages/client/ui-explorer/**` (our Explorer, not a plugin) | app tree |
+| `plugins/edit-migration-probes/**` (migration probe, not a product plugin) | app tree |
+
 ## Adding a plugin
 
 1. Create `<plugin>/` here with `package.json` named `dsh-<plugin>`, `"type": "module"`, and a `files` list that covers what must ship.
