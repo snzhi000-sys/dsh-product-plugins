@@ -1,0 +1,2 @@
+Local Dev research collection. Models: https://github.com/Eikanya/Live2d-model/tree/94ae3e5628226726af96c6b4bf0e1ce5c728e28e
+Characters and Live2D Core retain their respective owners and licenses. This local bundle is not a public redistribution grant.

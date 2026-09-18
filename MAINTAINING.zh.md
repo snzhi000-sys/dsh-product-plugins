@@ -38,6 +38,10 @@ node scripts/check-doc-links.mjs                       # 自述文件里的相�
 
 `client/dist/client.js` 是**故意入库**的：App 打包链用 `npm pack` 归档插件，其 `files` 字段只发 `host`、`client/dist`、`README.md`，而 `package.json` 没有 `prepare` 脚本。把它留在这里，同步与打包就不依赖联网安装。改了 `client/src/` 就要重新构建再提交——同步会拒绝"比最新 client 源码还旧"的 bundle。
 
+## 两种布局
+
+`file-edit/` 用下面的仓库布局。`desktop-pet/` 保留它迁移时自带的流水线 —— `src/`、`dist/`、`assets/` 与自己的 `cordis.patch.yml` —— 因为它的客户端 bundle 由自己的脚本构建（`npm run build`），而其中 95 MB 的 Live2D 模型是取自 `Eikanya/Live2d-model` 的第三方资源（见 `desktop-pet/assets/NOTICE.txt`）。`desktop/scripts/sync-product-plugins.mjs` 两种布局都能复制：校验包 `files` 里每个路径都存在、声明 `dsh.client` 的包在两种位置之一确实带 bundle，并且只对本仓库自己的 `client/src` + `client/dist/` 布局拒绝"比源码旧的 bundle"。
+
 ## App 怎么消费本仓库
 
 ```bash
@@ -75,6 +79,7 @@ npm run sync:plugins -- --check   # 只校验不写入；有漂移则非零退�
 | `desktop/**`（产品桌面壳、打包与验证脚本） | App 树 |
 | `packages/client/ui-explorer/**`（自研 Explorer，不是插件） | App 树 |
 | `plugins/edit-migration-probes/**`（迁移探针，不是产品插件） | App 树 |
+| `desktop-pet/**` —— 源码、构建出的 `dist/`、第三方 `assets/`、它的 bundle patch | 本仓库 |
 
 ## 新增插件
 
@@ -99,6 +104,20 @@ npm run sync:plugins -- --check   # 只校验不写入；有漂移则非零退�
 - 所有注册走 `ctx.effect()` / `ctx.on()`；可选 Cordis 服务用 `ctx.get(name)` 读取。
 - client bundle 只允许 `require()` App 暴露的平台模块，例如 `@deepseek-ai/dsh-client-ui-primitives`。
 - 插件的 `README.md` / `README.zh.md` 配对要随行为同步更新；第三方声明用 `scripts/collect-third-party-notices.mjs` 重新生成并用 `--check` 校验。
+
+## 第三方资源
+
+`desktop-pet/assets/` 携带取自第三方模型集的 Live2D 模型，并自带 `assets/NOTICE.txt`。它们由那份声明覆盖、不属于本仓库的 MIT 许可，因此**模型文件不提交进本仓库**（`.gitignore` 排除 `desktop-pet/assets/*`，只跟踪 `NOTICE.txt`）。
+
+所以全新克隆下来有桌宠代码但没有模型，需要从迁移来源恢复：
+
+```bash
+LEGACY=/Users/edy/Downloads/azg_ai/harness-macos-desktop-plugin-suite/plugins/desktop-pet
+cp -R "$LEGACY/assets/." desktop-pet/assets/
+test "$(find desktop-pet/assets -type f | wc -l | tr -d ' ')" = 781   # 781 个文件、23 个模型目录
+```
+
+把这些模型再发布到别处之前，先核对模型集条款。
 
 ## 许可证
 
