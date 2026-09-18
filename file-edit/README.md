@@ -2,7 +2,7 @@
 
 English | [中文](README.zh.md)
 
-![dsh-file-edit cover](docs/images/cover.png)
+![dsh-file-edit cover](../docs/images/cover.png)
 
 One plugin that combines the workspace Explorer, the file browser and agent-change review: see every file change inside DeepSeek Harness and settle it where it happened.
 
@@ -33,7 +33,7 @@ To make file changes inside a Harness session **visible, editable and referencea
 
 **Every file change in the session lands in one actionable list**: writes, edits, deletions and moves from the agent all appear under "modified files".
 
-![Modified files list](docs/images/review-list.webp)
+![Modified files list](../docs/images/review-list.webp)
 
 - **Per-row decisions**: accept or reject each change, or settle the whole batch, with one level of undo after a rejection;
 - **Line-level comparison**: each row reports added and removed line counts and expands to a line-level diff without leaving the session;
@@ -48,7 +48,7 @@ To make file changes inside a Harness session **visible, editable and referencea
 
 **A workspace file tree takes over the file entry point**: directories expand per workspace and open for reading or editing in place of the native sidebar.
 
-![Explorer and on-demand hiding](docs/images/explorer-hide.webp)
+![Explorer and on-demand hiding](../docs/images/explorer-hide.webp)
 
 - **Hide on demand**: files and directories you do not care about hide with one click, leaving the working set in view;
 - **Preferences persist**: hiding, expansion and ordering are stored per workspace, so reopening Harness does not mean reorganising;
@@ -72,9 +72,9 @@ To make file changes inside a Harness session **visible, editable and referencea
 
 **Files and selections travel into the conversation**: reference a file with `@` in the composer, or select text in a document and reference it directly.
 
-![Reference chip](docs/images/reference-chip.webp)
+![Reference chip](../docs/images/reference-chip.webp)
 
-![Selection reference bubble](docs/images/reference-bubble.webp)
+![Selection reference bubble](../docs/images/reference-bubble.webp)
 
 - **References carry a location**: the chip shows the path and the line range, so the model's target is exact;
 - **Selection references**: selecting text in a file or review view floats a bubble above the selection, and one click inserts the reference;
@@ -83,7 +83,7 @@ To make file changes inside a Harness session **visible, editable and referencea
 
 ### 5. The whole surface
 
-![Overall interface](docs/images/app-overview.webp)
+![Overall interface](../docs/images/app-overview.webp)
 
 - **Three surfaces, one plugin**: the Explorer, the file browser and change review share the session state, so switching never loses context;
 - **The existing layout survives**: with no browsable document the browser tab closes itself, leaving conversation, transcript and the rest of the session untouched.

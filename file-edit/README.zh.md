@@ -2,7 +2,7 @@
 
 [English](README.md) | 中文
 
-![dsh-file-edit 封面](docs/images/cover.png)
+![dsh-file-edit 封面](../docs/images/cover.png)
 
 把资源管理器、文件浏览器与修改审核合成一个插件：在 DeepSeek Harness 里看见每一次文件改动，并就地完成审阅。
 
@@ -33,7 +33,7 @@
 
 **把会话里的文件改动收进一张可操作的列表**：AI 的每一次写入、编辑、删除与移动都进入「修改的文件」，一眼看清本轮动了什么。
 
-![修改的文件列表](docs/images/review-list.webp)
+![修改的文件列表](../docs/images/review-list.webp)
 
 - **逐条处置**：每条改动可单独接受或拒绝，顶部支持整批接受与整批拒绝，拒绝后可撤销一层；
 - **行级对照**：列表给出新增与删除行数，展开即见行级差异，不必离开会话；
@@ -48,7 +48,7 @@
 
 **用工作区文件树接管文件入口**：按工作区展开目录结构，点开即浏览或编辑，替代原生文件侧栏。
 
-![资源管理器与按需隐藏](docs/images/explorer-hide.webp)
+![资源管理器与按需隐藏](../docs/images/explorer-hide.webp)
 
 - **按需隐藏**：不关心的文件与目录一键隐藏，视图只留常用内容；
 - **状态留存**：隐藏、展开与排序偏好按工作区保存，重开 Harness 不必重新整理；
@@ -72,9 +72,9 @@
 
 **把文件与选段带进对话**：在输入框以 `@` 引用文件，或在文档里选中文字后直接引用。
 
-![引用芯片](docs/images/reference-chip.webp)
+![引用芯片](../docs/images/reference-chip.webp)
 
-![选段引用气泡](docs/images/reference-bubble.webp)
+![选段引用气泡](../docs/images/reference-bubble.webp)
 
 - **引用即带位置**：引用芯片显示文件路径与行号范围，模型收到的对象明确到行；
 - **选段引用**：在文件或审核视图里选中文字，气泡浮现在选区上方，点击即插入引用；
@@ -83,7 +83,7 @@
 
 ### 五、整体界面
 
-![整体界面](docs/images/app-overview.webp)
+![整体界面](../docs/images/app-overview.webp)
 
 - **一个插件三块面**：资源管理器、文件浏览器与修改审核共享同一份会话状态，切换不丢上下文；
 - **不抢占原有流程**：没有可浏览文档时浏览器标签自行关闭，会话、对话与轨迹保持原生布局。

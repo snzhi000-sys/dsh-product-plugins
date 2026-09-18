@@ -1,102 +1,135 @@
 # Harness 产品插件库
 
-我们自己维护的 DeepSeek Harness 产品插件的**权威源码**。App 工程只是消费者，不再拥有插件源码。
+[English](README.md) | 中文
 
-## 目录与命名
+![dsh-file-edit 封面](docs/images/cover.png)
+
+面向 DeepSeek Harness 的产品插件库。当前提供一个插件 **dsh-file-edit**：把资源管理器、文件浏览器与修改审核合成一个插件，在 Harness 里看见每一次文件改动，并就地完成审阅。
+
+## 修订记录
+
+| 时间 | 修订内容 | 修订人 | 备注 | 飞书链接 |
+| --- | --- | --- | --- | --- |
+| 2026-09-18 | 首发：首页改为产品介绍，功能演示、来源与致谢、封面；维护规范移入《维护与迭代》 | snzhi000-sys | 对应版本 `1.13.44-local` | — |
+
+---
+
+## 概述
+
+为让 Harness 会话里的文件改动**看得见、改得动、带得走**，本插件在会话内建立统一的文件工作面。
+
+**核心能力**：
+
+- **改动可见**：会话内每一处文件改动进入审核列表，按会话与工作区归属，逐条可接受或拒绝；
+- **就地可改**：不离开 Harness 即可打开、编辑并写回工作区文件，Markdown 直接看渲染结果；
+- **引用明确**：文件与选段可以引用进对话，模型回答的对象始终清晰；
+- **按需收敛**：非常用文件按需隐藏，重要文件可标记并快速定位。
+
+---
+
+## 功能详情
+
+### 一、修改审核
+
+**把会话里的文件改动收进一张可操作的列表**：AI 的每一次写入、编辑、删除与移动都进入「修改的文件」。
+
+![修改的文件列表](docs/images/review-list.webp)
+
+- **逐条处置**：每条改动可单独接受或拒绝，顶部支持整批接受与整批拒绝，拒绝后可撤销一层；
+- **行级对照**：列表给出新增与删除行数，展开即见行级差异，不必离开会话；
+- **删除有隔离**：删除前完整转入持久隔离区，校验失败则禁止删除；拒绝时从隔离区恢复，大文件同样可恢复；
+- **删除有墓碑**：同一会话内新建后又被删除的文件显示为「本会话新建后删除」，不会按净零变化凭空消失；
+- **目录聚合成行**：完整目录删除在列表里聚合为一行，可展开查看目录内文件，也可整批接受或整批恢复；
+- **归属清晰**：子代理产生的改动沿父会话归属，消息编辑派生出的普通子会话保持独立账本；
+- **未捕获显式标注**：无法观察到的改动，例如后台 Shell 与未托管兼容 Shell 的写入，会在审核栏的「未捕获」一行具名标出并随会话持久化；
+- **快照优先恢复**：重启后先显示持久化待审账本，再校准待审目标的磁盘状态。
+
+### 二、资源管理器
+
+**用工作区文件树接管文件入口**：按工作区展开目录结构，点开即浏览或编辑，替代原生文件侧栏。
+
+![资源管理器与按需隐藏](docs/images/explorer-hide.webp)
+
+- **按需隐藏**：不关心的文件与目录一键隐藏，视图只留常用内容；
+- **状态留存**：隐藏、展开与排序偏好按工作区保存，重开 Harness 不必重新整理；
+- **官方视觉**：文件与文件夹图标沿用 Harness 官方图标组件，与内核界面观感一致；
+- **标签成对**：侧栏标签页自带图标与名称，多个工作区同时打开时不混淆；
+- **边界**：跳过 `.git`、`node_modules` 等依赖与缓存目录，树最多 8000 条目、16 层。
+
+### 三、文件浏览器
+
+**在侧栏内完成整篇阅读与编辑**：多标签打开文件，支持语法高亮与整篇编辑，保存即写回工作区。
+
+- **多标签**：文件以标签页并列打开，可切换、可关闭、可拖拽排序，标签状态跨会话保持；
+- **批量关闭**：更多菜单提供关闭全部与关闭已处理文件，后者只关已保存且无待审内容的标签；
+- **语法高亮**：覆盖 24 种语言与 Markdown；
+- **整篇编辑**：编辑器内直接修改并保存，用户编辑折入基线，不打扰 agent 的待审改动；
+- **大小边界**：超过 512 KB 或 8000 行的文件转为只读大文件，二进制超过 4 MB 时只保留拒绝与还原；
+- **改动定位**：从审核列表点开文件时直接定位到第一处改动并高亮提示。
+
+### 四、文件引用
+
+**把文件与选段带进对话**：在输入框以 `@` 引用文件，或在文档里选中文字后直接引用。
+
+![引用芯片](docs/images/reference-chip.webp)
+
+![选段引用气泡](docs/images/reference-bubble.webp)
+
+- **引用即带位置**：引用芯片显示文件路径与行号范围，模型收到的对象明确到行；
+- **选段引用**：在文件或审核视图里选中文字，气泡浮现在选区上方，点击即插入引用；
+- **两条通路分工**：差异视图与代码浏览走官方 `@path` 引用，行区间只显示在芯片上；渲染视图的引用把行范围写进文本，而选中行的正文并不发送；
+- **与官方一致**：两条通路都声明官方外观，与输入框内其它引用行为统一。
+
+### 五、整体界面
+
+![整体界面](docs/images/app-overview.webp)
+
+- **一个插件三块面**：资源管理器、文件浏览器与修改审核共享同一份会话状态，切换不丢上下文；
+- **不抢占原有流程**：没有可浏览文档时浏览器标签自行关闭，会话、对话与轨迹保持原生布局。
+
+### 六、行为与边界
+
+- **审核基准**：整文件接受即当前内容成为新基线；局部接受只结算该片段；局部拒绝把该片段恢复为基线，每次局部操作后重新计算剩余差异；
+- **权限归属**：沙箱、审批与权限归内核，本插件只记录变更，不在工具入口否决执行；
+- **Shell 记录**：可写工作区的前台 Shell 按执行前快照加递归监听捕获，快照失败不阻止命令执行，会话持久保留部分捕获的结论；
+- **修改前内容未知**：`write` 覆盖文件而工具未返回修改前内容时，该行显示「修改前内容未知」，只允许接受或手动处理。
+
+---
+
+## 来源与致谢
+
+**本插件基于原插件 `dsh-file-edit` 二次开发**，在原版基础上做了大量优化与功能补充，感谢原作者提供的基础能力。
+
+- 原版项目：[justarook1e/dsh-file-edit](https://github.com/justarook1e/dsh-file-edit)，以 MIT 发布，版权归原作者 `justarook1e` 所有；该仓库已停止维护并迁移为 [justarook1e/dsh-ide-lite](https://github.com/justarook1e/dsh-ide-lite)。
+- **沿用**：工作区文件浏览与编辑、变更审查的接受与拒绝、拒绝撤销、删除隔离、运行期状态目录与路由约定。
+- **本版优化与新增**：按会话与工作区归属的审核列表、子代理改动归属、目录删除批次聚合、未捕获改动的具名披露、删除墓碑、官方图标与标签成对、按需隐藏与偏好留存、渲染视图的行级引用、行号贯通的改动定位与高亮、审核栏与官方卡片对齐的宽度与墨色。
+- **许可证要求**：按 MIT 的要求，[LICENSE](LICENSE) 同时保留原作者版权声明；内嵌第三方组件见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。
+
+---
+
+## 安装与启用
+
+本插件由 Harness 产品 Profile 装配，随发行包进入运行时，不需要单独的安装脚本。
+
+- **产品清单**：App 树的 `distribution/profile-manifest.json` 把 `dsh-file-edit` 指向 `plugins/file-edit`；
+- **会话装配**：App 树的 `distribution/cordis.patch.yml` 插入 `dsh-file-edit` 条目；
+- **同步**：App 树通过 `npm run sync:plugins` 从本仓库取得插件源码，打包前自动执行。
+
+## 仓库结构
 
 ```
-<plugin>/            每个插件一个目录，目录名 = 包名去掉 `dsh-` 前缀
-  package.json       包名必须是 `dsh-<plugin>`
-  host/              Cordis host 入口（`main`）
-  client/src/        client 源码
-  client/dist/       构建出的 client bundle（**入库跟踪**，理由见下）
-  tests/             `node --test` 测试
-  README.md / README.zh.md
+file-edit/              插件源码与它自己的 README
+docs/                   封面源文件与功能演示图
+scripts/                第三方声明的生成与校验脚本
+MAINTAINING.md / .zh.md 维护与迭代规范：目录约定、构建、同步、发布流程、命名契约
+LICENSE                 许可证
+THIRD-PARTY-NOTICES.md  内嵌第三方与二次开发声明
 ```
 
-App 工程通过 `distribution/profile-manifest.json` 做位置映射：
+## 维护与迭代
 
-```json
-{ "productPlugins": { "dsh-file-edit": "plugins/file-edit" } }
-```
-
-映射关系是位置式的：App 树的 `plugins/<plugin>` 对应本仓库的 `<plugin>`。`desktop/scripts/prepare-profile.mjs` 会拒绝绝对路径和任何 `..` 段，所以 App 树不能直接引用本仓库——由同步步骤复制进去。
-
-## 构建与测试
-
-```bash
-cd file-edit
-npm install                # 只需一次，用于 esbuild 与 CodeMirror 开发依赖
-npm run build:icon         # 从 webp 资源重新生成 client/src/tab-icon.js
-npm run build:client       # esbuild → client/dist/client.js
-npm test                   # node --test tests/*.test.mjs
-```
-
-`client/dist/client.js` 是**故意入库**的：App 打包链用 `npm pack` 归档插件，其 `files` 字段只发 `host`、`client/dist`、`README.md`，而 `package.json` 没有 `prepare` 脚本。把它留在这里，同步与打包就不依赖联网安装。改了 `client/src/` 就要重新构建再提交——同步会拒绝"比最新 client 源码还旧"的 bundle。
-
-## App 怎么消费本仓库
-
-```bash
-cd <app-tree>/desktop
-npm run sync:plugins              # 把映射里的插件复制进 App 树
-npm run sync:plugins -- --check   # 只校验不写入；有漂移则非零退出
-```
-
-- App 打包链在 `prepare:profile` 之前跑 `sync:plugins`，所以 `npm run dist:dev` / `dist:stable` 打包的一定是本仓库的源码。
-- App 树里的副本（`<app-tree>/plugins/<plugin>`）是**生成物且已被 git 忽略**。不要编辑它：改本仓库，然后同步。
-- `DSH_PLUGIN_HOME` 可覆盖同步的读取位置，默认是 App 树旁边的 `plugins` 目录。
-
-## 迭代流程（Runbook）
-
-插件的每次改动都按这个顺序走。插件库是唯一权威源，App 树那份是从它生成出来的。
-
-1. **在本仓库改源码**，不要改 App 树里那份：`npm run check:plugins` 会报漂移，`dist:dev` / `dist:stable` 也会把那份覆盖掉。
-2. **在插件目录构建并测试**：`npm run build:client && npm test`。只要改动要交付，就在 `package.json` 里递增 `version`，并在提交信息里写明。
-3. **落到 App 树**：`cd "<app-tree>/desktop" && npm run sync:plugins`。打包链在 `prepare:profile` 之前会自动同步，所以只有在"不想打包但需要副本存在"时才需要手动跑这一步；`npm run check:plugins` 用来证明逐字节一致。
-4. **打 Dev 包**：`cd "<app-tree>/desktop" && npm run dist:dev`。通道门禁会跑 desktop 测试、`verify:source-privacy`、profile 隐私校验、产品身份校验与空 userData 隔离启动。
-5. **在真实 App 上验证行为**：启动 `<app-tree>/desktop/dist/dev/mac-arm64/DeepSeek Harness Dev.app`，在测试工作区里把功能走一遍。需要"证明"而不是"肉眼看"的行为，用隔离 userData 驱动打包探针（例如 `<app-tree>/desktop/scripts/probe-edit-open-service.mjs`）。
-6. **Dev 验收通过后才做 Stable**，而且要另外获得"可以动 `/Applications`"的明确批准：`npm run dist:stable`，然后由用户手动替换已安装的 App。
-7. **记录改动**：在本仓库提交、信息写清范围。App 侧的改动（`distribution/profile-manifest.json` 新映射、`desktop/**`、`packages/client/ui-explorer/**`）提交在 App 树——那些文件不属于本仓库，而且 App 树不跟踪插件源码。
-8. **将来有了 GitHub 远端**：插件改动推本仓库，App 改动按它自己的隔离候选流程单独推。本仓库始终是工作态的权威源，远端只是镜像。
-
-跨两侧的功能（例如插件 + Explorer 同时改）就是**两个仓库各一次提交**，提交信息互相指名；任何一侧单独都复现不出这个功能。
-
-### 什么内容在哪
-
-| 内容 | 所在仓库 |
-| --- | --- |
-| 插件 `host/`、`client/`、`tests/`、插件 README、构建出的 client bundle | 本仓库 |
-| `distribution/profile-manifest.json`、`distribution/cordis.patch.yml` | App 树 |
-| `desktop/**`（产品桌面壳、打包与验证脚本） | App 树 |
-| `packages/client/ui-explorer/**`（自研 Explorer，不是插件） | App 树 |
-| `plugins/edit-migration-probes/**`（迁移探针，不是产品插件） | App 树 |
-
-## 新增插件
-
-1. 在本仓库建 `<plugin>/`，`package.json` 名为 `dsh-<plugin>`、`"type": "module"`，`files` 覆盖必须进包的内容。
-2. 在 App 树的 `distribution/profile-manifest.json` 加映射 `"dsh-<plugin>": "plugins/<plugin>"`。
-3. 构建 client bundle、提交，再在 App 树跑 `npm run sync:plugins`，然后打包。
-
-## 命名与身份
-
-包名是 `dsh-file-edit`，保持不变。它旁边有三个字符串是**持久化契约**，绝不能跟着一起改名：
-
-- `dsh-file-edit-ref` —— 引用源名；它存在已发送消息与引用快照里，改名后历史会话不再认出自己的引用。
-- `application/x-dsh-file-edit-references+json` —— 把引用粘回来的剪贴板 MIME。
-- 作为侧栏**标签 kind** 的 `dsh-file-edit` —— 它同时是 `sidebarRightTabs` 的类型 id，官方侧栏把每个会话的标签布局存在浏览器里；改名只会让标签重开一次。
-
-包名、App 树 `distribution/profile-manifest.json` 里的 `productPlugins` 键、`distribution/cordis.patch.yml` 里的 `id`/`name` 是一组：要改一起改，`desktop/scripts/sync-product-plugins.mjs`（要求包名等于映射键）会拒绝改一半。运行时 Explorer 读取的跨包服务 `dshFileEditOpen` 与包名无关。
-
-## 规则
-
-- 二进制资源**不能**用 `require`：factory 里的 `require` 在运行时走 shell 的静态模块表。必须在模块顶层 `import`，让打包器把它内联（标签图标就是以生成的 data URL 模块发的，见 `scripts/embed-tab-icon.mjs`）。
-- 进包文件不得含绝对路径、本机路径、凭据或会话数据：App 的 profile 隐私门禁会拒绝。
-- 所有注册走 `ctx.effect()` / `ctx.on()`；可选 Cordis 服务用 `ctx.get(name)` 读取。
-- client bundle 只允许 `require()` App 暴露的平台模块，例如 `@deepseek-ai/dsh-client-ui-primitives`。
-- 插件的 `README.md` / `README.zh.md` 配对要随行为同步更新。
+插件源码只在本仓库维护，App 树里的副本是同步生成物。目录约定、构建与测试命令、同步与打包流程、持久化命名契约、新增插件的步骤见 **[MAINTAINING.zh.md](MAINTAINING.zh.md)**。
 
 ## 许可证
 
-以 **MIT License** 发布，见 [LICENSE](LICENSE)。在保留版权声明与许可声明的前提下，你可以使用、修改、再分发这些插件，包括打包进其它产品。
-
-此前阻塞这项授权的来源确认已经关闭：`file-edit` 来自我们自己的本地 fork（`dsh-file-edit-fork` 1.13.32-local），客户端 bundle 内嵌的第三方组件全部为 MIT。内嵌组件、版本与版权行见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。
+本仓库以 **MIT License** 发布，见 [LICENSE](LICENSE)。在保留版权声明与许可声明的前提下，可以使用、修改、再分发这些插件，包括打包进其它产品。内嵌第三方组件见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。
