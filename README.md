@@ -27,6 +27,7 @@ The mapping is positional: app-tree `plugins/<plugin>` corresponds to this repos
 ```bash
 cd file-edit
 npm install                # once, for esbuild and CodeMirror dev dependencies
+npm run build:icon         # regenerate client/src/tab-icon.js from the webp asset
 npm run build:client       # esbuild → client/dist/client.js
 npm test                   # node --test tests/*.test.mjs
 ```
@@ -78,6 +79,7 @@ A feature that spans both sides (for example a plugin plus an Explorer change) i
 
 ## Rules
 
+- Binary assets cannot be `require`d: inside the plugin factory `require` resolves through the shell's static module table at runtime. Import them at module scope so the bundler inlines them (the tab glyph ships as a generated data-URL module, see `scripts/embed-tab-icon.mjs`).
 - Shipped files must not contain absolute paths, personal paths, credentials or session data: the app's profile privacy gate rejects them.
 - Every registration goes through `ctx.effect()` / `ctx.on()`; optional Cordis services are read with `ctx.get(name)`.
 - Client bundles may `require()` only platform modules the app exposes, such as `@deepseek-ai/dsh-client-ui-primitives`.

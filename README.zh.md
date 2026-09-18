@@ -27,6 +27,7 @@ App 工程通过 `distribution/profile-manifest.json` 做位置映射：
 ```bash
 cd file-edit
 npm install                # 只需一次，用于 esbuild 与 CodeMirror 开发依赖
+npm run build:icon         # 从 webp 资源重新生成 client/src/tab-icon.js
 npm run build:client       # esbuild → client/dist/client.js
 npm test                   # node --test tests/*.test.mjs
 ```
@@ -78,6 +79,7 @@ npm run sync:plugins -- --check   # 只校验不写入；有漂移则非零退�
 
 ## 规则
 
+- 二进制资源**不能**用 `require`：factory 里的 `require` 在运行时走 shell 的静态模块表。必须在模块顶层 `import`，让打包器把它内联（标签图标就是以生成的 data URL 模块发的，见 `scripts/embed-tab-icon.mjs`）。
 - 进包文件不得含绝对路径、本机路径、凭据或会话数据：App 的 profile 隐私门禁会拒绝。
 - 所有注册走 `ctx.effect()` / `ctx.on()`；可选 Cordis 服务用 `ctx.get(name)` 读取。
 - client bundle 只允许 `require()` App 暴露的平台模块，例如 `@deepseek-ai/dsh-client-ui-primitives`。
