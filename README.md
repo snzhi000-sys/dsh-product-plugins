@@ -89,6 +89,7 @@ To make file changes inside a Harness session **visible, editable and referencea
 - **Selection references**: selecting text in a file or review view floats a bubble above the selection, and one click inserts the reference;
 - **Two paths, one vocabulary**: the diff view and code browsing use the official `@path` reference with the line range only in the chip label, while the rendered view writes the range into the text and never sends the selected text itself;
 - **Consistent with the official behaviour**: both paths declare the official appearance and behave like every other reference in the composer.
+- **The bubble is extensible**: the selection bubble exposes a registration seam, so another plugin can add its own action beside 引用 (the desktop companion contributes 朗读) instead of racing it for the same coordinates.
 
 ### 5. The whole surface
 
@@ -139,12 +140,16 @@ To make file changes inside a Harness session **visible, editable and referencea
 
 ### Reading text aloud
 
-**Speaking text is provided by this plugin**, through three entry points:
+**Speaking text is provided by this plugin**, through four entry points:
 
 - **A read-out button under every reply** in the official assistant action strip, beside copy and share; pressing it again while it plays stops all reading;
-- **Read a selection aloud**: selecting text in the conversation panel floats a 朗读 pill above it, and the file browser — which already floats its own reference bubble — receives the same action inside that bubble;
-- **Broadcast the main conversation** (a switch on the partner page): reads the part of the main agent's prose addressed to you;
-- **Only words a person would say**: reasoning, tool calls, fenced code, tables and markdown decoration are never read, and a read-out never writes into the pet's bubble — **the bubble only shows the companion's own reply**.
+- **Reading a selection aloud in the conversation**: selecting text in the conversation panel floats a 朗读 pill above it;
+- **Reading a selection aloud in a document**: selecting text in the file browser floats a bubble whose 朗读 sits beside @引用 — the reference comes from the file workspace, the read-out from this plugin, and the two actions share one coordinate instead of competing for it;
+- **Broadcast the main conversation** (a switch on the partner page): reads the part of the main agent's prose addressed to you.
+
+![Selecting text in the file browser floats 引用 and 朗读 side by side](docs/images/reference-actions.webp)
+
+That bubble is the entry point for reading a document selection: one passage selected is one passage read, under the same "only words a person would say" rules, and it is never written into the pet's bubble — **the bubble only shows the companion's own reply**.
 
 ### The voice and its key are yours to configure
 
