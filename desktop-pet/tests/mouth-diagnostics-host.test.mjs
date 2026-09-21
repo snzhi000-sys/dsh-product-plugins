@@ -120,11 +120,12 @@ test('a selection is spoken through the pet voice, the prose rules, and its own 
   const player = new AbortController()
   const events = []
   try {
-    // Two things have to exist before a selection can be read, and the person is told which one is missing
-    // instead of watching a button do nothing.
+    // The two things a read-out needs, each named rather than left as a button that does nothing: a voice, and a
+    // window able to play it. The pet window is one such window and not a requirement — with it hidden, the
+    // Harness window plays the same clip (2026-09-21).
     assert.throws(() => host.selection('念这句。'), /TTS Key/)
     await post('/config', { config: { ...conversationDefaults, model: 'test', ttsEnabled: true }, keys: { tts: 'test' } })
-    assert.throws(() => host.selection('念这句。'), /请先显示伙伴/)
+    assert.throws(() => host.selection('念这句。'), /没有可用的播放窗口/)
     const response = await fetch(base + '/events?role=player', { signal: player.signal })
     void (async () => {
       let buffer = ''

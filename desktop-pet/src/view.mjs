@@ -15,6 +15,7 @@ let dialogueActions
 let petChat
 let disposeSpeech
 let disposeDebug
+let conversationEvents
 let frame
 let disposed = false
 let lastHit
@@ -107,7 +108,7 @@ const preview = event => {
 }
 window.addEventListener('message', preview)
 
-function dispose() { disposed = true; cancelAnimationFrame(frame); disposeDebug?.(); disposeSpeech?.(); dialogueActions?.dispose(); petChat?.dispose(); unsubscribe?.(); unsubscribeReaction?.(); unsubscribeStatus?.(); window.removeEventListener('message', preview); renderer?.dispose() }
+function dispose() { disposed = true; cancelAnimationFrame(frame); disposeDebug?.(); disposeSpeech?.(); conversationEvents?.close(); dialogueActions?.dispose(); petChat?.dispose(); unsubscribe?.(); unsubscribeReaction?.(); unsubscribeStatus?.(); window.removeEventListener('message', preview); renderer?.dispose() }
 window.addEventListener('pagehide', dispose, { once: true })
 try {
   const response = await fetch('/desktop-pet/api/settings')
@@ -138,10 +139,13 @@ try {
   if (disposed) renderer.dispose()
   else {
     if (!query.has('preview')) automatic = new AutomaticActions(renderer, renderer.info.automaticActionIntervalMs)
+    if (!query.has('preview')) conversationEvents = new EventSource('/desktop-pet/api/conversation/events?role=player')
     disposeDebug = receiveActionDebug(renderer, error => { message.textContent = error.message })
     if (!query.has('preview')) {
       dialogueActions = conversationActions(renderer, () => settings.animated && !gestures?.down && menu.hidden && !document.hidden, error => { message.textContent = error.message })
-      petChat = mountPetChat(bubble, value => bridge ? bridge.command(value) : Promise.resolve(), focused => renderer.setInputFocused(focused)); disposeSpeech = mountSpeechPlayer(renderer, text => petChat.local(text), dialogueActions)
+      // One connection per window: the compact chat and the player seat read the same stream, because a browser
+      // gives an origin only a few connections and each extra stream starves the page's own assets (2026-09-21).
+      petChat = mountPetChat(bubble, value => bridge ? bridge.command(value) : Promise.resolve(), focused => renderer.setInputFocused(focused), { events: conversationEvents }); disposeSpeech = mountSpeechPlayer(renderer, text => petChat.local(text), dialogueActions, { role: 'player', events: conversationEvents })
     }
     gestures = new PetGestures(renderer.profile ?? { dragThreshold: 28, strokeThreshold: 7, strokeMs: 220 })
     const tick = now => {

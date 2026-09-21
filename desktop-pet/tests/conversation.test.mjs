@@ -192,6 +192,84 @@ test('non-ASCII digits, letters, and symbols are read instead of closing the mou
   assert.deepEqual(speechCues('，。；：', 2).cues.filter(cue => cue.shape !== 'm'), [])
 })
 
+test('reading aloud plays in the Harness window while the pet itself is hidden', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'pet-page-player-'))
+  const services = {
+    async converse(_c, _k, _m, delta) { delta('你好。') },
+    async synthesize() { return { pcm: Buffer.alloc(4800), duration: .1, sampleRate: 24000, subtitles: [] } },
+  }
+  const host = createConversationHost(dir, {}, services)
+  const server = createServer((req, res) => host.handle(req, res, new URL(req.url, 'http://localhost')))
+  server.listen(0, '127.0.0.1'); await once(server, 'listening'); const base = `http://127.0.0.1:${server.address().port}/desktop-pet/api/conversation`
+  const post = async (path, body) => { const r = await fetch(base + path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }); return { status: r.status, value: await r.json() } }
+  const listen = async role => {
+    const controller = new AbortController(), response = await fetch(`${base}/events?role=${role}`, { signal: controller.signal }), seen = []
+    void (async () => { try { let buffer = ''; for await (const chunk of response.body) { buffer += Buffer.from(chunk).toString('utf8'); let index; while ((index = buffer.indexOf('\n\n')) >= 0) { const frame = buffer.slice(0, index); buffer = buffer.slice(index + 2); const name = /^event: (.+)$/mu.exec(frame)?.[1]; const data = /^data: (.+)$/mu.exec(frame)?.[1]; if (name) seen.push({ name, value: data ? JSON.parse(data) : null }) } } } catch { /* the test closes these streams itself */ } })()
+    return { seen, close: () => controller.abort() }
+  }
+  const page = await listen('page')
+  try {
+    await post('/config', { config: { ...conversationDefaults, model: 'test' }, keys: { llm: 'test', tts: 'test' } })
+    // No pet window is attached at all: the read-out must still be synthesised and sent to the Harness window.
+    const readout = host.selection('这段话要念出来。')
+    assert.equal(readout.state, 'playing', `a hidden pet must not block a read-out, got ${JSON.stringify(readout)}`)
+    for (let i = 0; i < 200 && !page.seen.some(event => event.name === 'speech'); i++) await new Promise(r => setTimeout(r, 10))
+    const speech = page.seen.find(event => event.name === 'speech')
+    assert.notEqual(speech, undefined, 'the Harness window receives the clip')
+    // The clip is fetchable and acknowledgeable from that window, which is the whole playback contract.
+    const audio = await fetch(`${base}/audio?id=${speech.value.id}`)
+    assert.equal(audio.status, 200)
+    assert.equal((await post('/ack', { id: speech.value.id, epoch: speech.value.epoch, played: true, diagnosticsId: speech.value.diagnosticsId })).status, 200)
+  } finally { page.close(); await host.dispose(); server.closeAllConnections(); await new Promise(r => server.close(r)); rmSync(dir, { recursive: true, force: true }) }
+})
+
+test('the visible pet owns the audio, and hiding it hands the unplayed clip to the Harness window', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'pet-handover-'))
+  const services = {
+    async converse(_c, _k, _m, delta) { delta('你好。') },
+    async synthesize() { return { pcm: Buffer.alloc(4800), duration: .1, sampleRate: 24000, subtitles: [] } },
+  }
+  const host = createConversationHost(dir, {}, services)
+  const server = createServer((req, res) => host.handle(req, res, new URL(req.url, 'http://localhost')))
+  server.listen(0, '127.0.0.1'); await once(server, 'listening'); const base = `http://127.0.0.1:${server.address().port}/desktop-pet/api/conversation`
+  const post = async (path, body) => { const r = await fetch(base + path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }); return { status: r.status, value: await r.json() } }
+  const listen = async role => {
+    const controller = new AbortController(), response = await fetch(`${base}/events?role=${role}`, { signal: controller.signal }), seen = []
+    void (async () => { try { let buffer = ''; for await (const chunk of response.body) { buffer += Buffer.from(chunk).toString('utf8'); let index; while ((index = buffer.indexOf('\n\n')) >= 0) { const frame = buffer.slice(0, index); buffer = buffer.slice(index + 2); const name = /^event: (.+)$/mu.exec(frame)?.[1]; const data = /^data: (.+)$/mu.exec(frame)?.[1]; if (name) seen.push({ name, value: data ? JSON.parse(data) : null }) } } } catch { /* the test closes these streams itself */ } })()
+    return { seen, close: () => controller.abort() }
+  }
+  const pet = await listen('player'), page = await listen('page')
+  try {
+    await post('/config', { config: { ...conversationDefaults, model: 'test' }, keys: { llm: 'test', tts: 'test' } })
+    assert.equal(host.selection('这段话要念出来。').state, 'playing')
+    // The visible pet is the one that gets the clip; the standby window must not play it as well.
+    for (let i = 0; i < 200 && !pet.seen.some(event => event.name === 'speech'); i++) await new Promise(r => setTimeout(r, 10))
+    const played = pet.seen.find(event => event.name === 'speech')
+    assert.notEqual(played, undefined, 'the visible pet receives the clip')
+    assert.equal(page.seen.some(event => event.name === 'speech'), false, 'the standby window stays silent while the pet is on screen')
+    // Hiding the pet closes its stream; the clip it never acknowledged belongs to the window that is still there.
+    pet.close()
+    for (let i = 0; i < 200 && !page.seen.some(event => event.name === 'speech'); i++) await new Promise(r => setTimeout(r, 10))
+    const handed = page.seen.find(event => event.name === 'speech')
+    assert.notEqual(handed, undefined, 'the pending read-out survives hiding the pet')
+    assert.equal(handed.value.id, played.value.id, 'the same clip changes hands rather than being lost')
+    assert.equal((await post('/ack', { id: handed.value.id, epoch: handed.value.epoch, played: true, diagnosticsId: handed.value.diagnosticsId })).status, 200)
+
+    // Showing the pet again, while the Harness window is playing, must move the clip to the model instead of
+    // playing it in both windows.
+    assert.equal(host.selection('再念一段。').state, 'playing')
+    for (let i = 0; i < 200 && !page.seen.some(event => event.name === 'speech' && event.value.id !== handed.value.id); i++) await new Promise(r => setTimeout(r, 10))
+    const second = page.seen.filter(event => event.name === 'speech').at(-1)
+    const pet2 = await listen('player')
+    try {
+      for (let i = 0; i < 200 && !pet2.seen.some(event => event.name === 'speech'); i++) await new Promise(r => setTimeout(r, 10))
+      assert.notEqual(pet2.seen.find(event => event.name === 'speech'), undefined, 'the pet takes the clip over when it comes back')
+      assert.equal(page.seen.filter(event => event.name === 'speech-stop').length >= 1, true, 'and the window that lost the audio is told to stop')
+      assert.equal(pet2.seen.find(event => event.name === 'speech').value.id, second.value.id, 'the clip that was playing in the window moves to the pet')
+    } finally { pet2.close() }
+  } finally { page.close(); await host.dispose(); server.closeAllConnections(); await new Promise(r => server.close(r)); rmSync(dir, { recursive: true, force: true }) }
+})
+
 test('only a turn that outlived its own model bound is abandoned', () => {
   const now = 1_000_000
   // A model call is bounded by `config.timeoutMs`, so a turn inside that bound is simply still working.

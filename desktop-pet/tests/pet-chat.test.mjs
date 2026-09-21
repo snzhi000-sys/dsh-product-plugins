@@ -10,6 +10,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { JSDOM } from 'jsdom'
 import { mountPetChat } from '../src/pet-chat.mjs'
+import { mountSpeechPlayer } from '../src/speech-player.mjs'
 
 const IDLE = { generating: false, recording: null, session: { id: 'session', messages: [] } }
 
@@ -119,4 +120,36 @@ test('a failed send says so even while the bubble holds a reply', async () => {
     assert.equal(panel.input.value, '发得出去吗', 'the draft stays so the person can retry')
     assert.match(panel.bubble(), /没有发出去/, 'and the failure is shown rather than hidden behind the held reply')
   } finally { panel.close() }
+})
+
+test('the pet window reads its chat and its voice from one shared stream', () => {
+  const dom = new JSDOM('<!doctype html><html><body><div id="bubble"></div><button data-action="chat">聊天</button><form id="pet-chat" hidden><textarea id="pet-input"></textarea><button type="submit">发送</button></form></body></html>', { url: 'http://127.0.0.1/' })
+  const saved = ['window', 'document', 'fetch', 'EventSource', 'AudioContext', 'requestAnimationFrame', 'cancelAnimationFrame'].map(name => [name, Object.getOwnPropertyDescriptor(globalThis, name)])
+  const borrow = (name, value) => Object.defineProperty(globalThis, name, { configurable: true, writable: true, value })
+  // The window's own stream, handed to both readers; opening a second one is what the test forbids.
+  class StubEventSource {
+    constructor(url) { this.url = String(url); StubEventSource.opened.push(this.url); this.listeners = new Map() }
+    addEventListener(name, listener) { this.listeners.set(name, [...(this.listeners.get(name) ?? []), listener]) }
+    close() { this.closed = true }
+    emit(name, value) { for (const listener of this.listeners.get(name) ?? []) listener({ data: JSON.stringify(value) }) }
+  }
+  StubEventSource.opened = []
+  borrow('window', dom.window); borrow('document', dom.window.document); borrow('EventSource', StubEventSource)
+  borrow('fetch', async () => ({ ok: true, status: 200, json: async () => ({}) }))
+  borrow('requestAnimationFrame', dom.window.requestAnimationFrame?.bind(dom.window) ?? (() => 0))
+  borrow('cancelAnimationFrame', dom.window.cancelAnimationFrame?.bind(dom.window) ?? (() => {}))
+  const stream = new StubEventSource('/desktop-pet/api/conversation/events?role=player')
+  StubEventSource.opened = []
+  try {
+    const chat = mountPetChat(dom.window.document.getElementById('bubble'), async () => {}, () => {}, { events: stream })
+    const player = mountSpeechPlayer(undefined, () => {}, undefined, { role: 'player', events: stream })
+    assert.deepEqual(StubEventSource.opened, [], 'neither reader opens a stream of its own')
+    stream.emit('reply', { text: '我在听。', generating: false, speaking: true, voiced: false })
+    assert.equal(dom.window.document.getElementById('bubble').textContent, '我在听。', 'the chat still reads the shared stream')
+    chat.dispose(); player()
+    assert.equal(stream.closed === true, false, 'neither reader closes a stream it does not own')
+  } finally {
+    for (const [name, descriptor] of saved) { if (descriptor === undefined) delete globalThis[name]; else Object.defineProperty(globalThis, name, descriptor) }
+    dom.window.close()
+  }
 })

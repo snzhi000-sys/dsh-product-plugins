@@ -11,9 +11,17 @@
  */
 import { conversationApi as api } from './conversation-api.mjs'
 import { renderBubbleText } from './bubble-text.mjs'
-export function mountPetChat(bubble, command, onInputFocus) {
+/**
+ * @param bubble - the element drawing the pet's own reply.
+ * @param command - the window's native pet command channel.
+ * @param onInputFocus - reports whether the compact input holds focus.
+ * @param options - `events` passes the window's shared conversation stream instead of opening another one.
+ * @returns the mounted input, including its disposer.
+ */
+export function mountPetChat(bubble, command, onInputFocus, options = {}) {
   const form = document.getElementById('pet-chat'), input = document.getElementById('pet-input'), send = form.querySelector('button')
-  const toggle = document.querySelector('[data-action="chat"]'), events = new EventSource('/desktop-pet/api/conversation/events')
+  const toggle = document.querySelector('[data-action="chat"]'), events = options.events ?? new EventSource('/desktop-pet/api/conversation/events')
+  const ownsStream = options.events === undefined
   let open = false, sending = false, generating = false, recording = false, disposed = false, timer, sessionId, held = false
   const show = text => { renderBubbleText(bubble, text); bubble.scrollTop = bubble.scrollHeight }
   // `aria-disabled` rather than `disabled`: a disabled button swallows the press completely, so a person cannot
@@ -37,7 +45,8 @@ export function mountPetChat(bubble, command, onInputFocus) {
   // The broadcast caption is deliberately not shown here. This bubble is the pet's own conversation: sharing it
   // with the main agent's prose brought back a caption the person had already dismissed and kept one on screen
   // after the speech that produced it had ended (2026-09-20). The prose is still spoken while broadcast is on.
-  events.onerror = () => { clearTimeout(timer); held = false; local('连接中断，正在重连…') }
+  // `addEventListener` rather than `onerror`: the player seat reads the same stream and both handlers must run.
+  events.addEventListener('error', () => { clearTimeout(timer); held = false; local('连接中断，正在重连…') })
   // `force` is for the answer to the person's own press: a held reply must not swallow the reason their message
   // did not go out, while background notices still wait for the character to finish speaking.
   function local(text, force = false) { if ((held && !force) || disposed) return; clearTimeout(timer); show(text); timer = setTimeout(() => show(''), 2800) }
@@ -83,6 +92,6 @@ export function mountPetChat(bubble, command, onInputFocus) {
       if (open) input.focus(); else input.blur()
       updateFocus()
     },
-    dispose() { disposed = true; clearTimeout(timer); events.close(); form.onsubmit = null; input.onkeydown = null; input.removeEventListener('focus', updateFocus); input.removeEventListener('blur', updateFocus); window.removeEventListener('focus', updateFocus); window.removeEventListener('blur', updateFocus); onInputFocus(false) },
+    dispose() { disposed = true; clearTimeout(timer); if (ownsStream) events.close(); form.onsubmit = null; input.onkeydown = null; input.removeEventListener('focus', updateFocus); input.removeEventListener('blur', updateFocus); window.removeEventListener('focus', updateFocus); window.removeEventListener('blur', updateFocus); onInputFocus(false) },
   }
 }

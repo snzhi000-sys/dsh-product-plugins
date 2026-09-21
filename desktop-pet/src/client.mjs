@@ -9,6 +9,7 @@ import { mountConversationSettings } from './conversation-settings.mjs'
 import { mountActionDebug } from './action-debug.mjs'
 import { PANEL_STYLE } from './panel-style.mjs'
 import { createSelectionSpeak } from './selection-speak.mjs'
+import { mountSpeechPlayer } from './speech-player.mjs'
 
 export const name = 'desktop-pet-client'
 /** The slots registry owns both contributions; the layout service selects the panel the entry names. */
@@ -59,6 +60,45 @@ const READOUT_SPEAKER_VIEWBOX = '0 0 31 25'
 const READOUT_SPEAKER = [
   'M13.83812,0.65637046C14.825261,-0.071926124,16.127447,-0.20439202,17.239569,0.31035504C18.35169,0.82510209,19.098766,1.9060704,19.191008,3.133961C19.660484,9.3690577,19.660484,15.63094,19.191008,21.866039C19.098766,23.093927,18.35169,24.174896,17.239569,24.689644C16.127447,25.204391,14.82526,25.071928,13.838119,24.343628L6.9722991,19.278631L3.6600192,19.278631C2.0771675,19.27865,0.70767713,18.170486,0.36863032,16.615307L0.33897814,16.464144C0.11395912,15.154883,0.00055402151,13.828682,0,12.499999C0,11.178165,0.11321729,9.8563318,0.33897802,8.5358543C0.6172173,6.909575,2.0194516,5.7212214,3.6600192,5.721365L6.9716253,5.721365L13.83812,0.65637046ZM16.320139,2.9231455C16.086529,2.6754725,15.706256,2.641201,15.432595,2.8431578L8.2102747,8.1704865C7.9790344,8.3409986,7.6997595,8.4328947,7.4130378,8.4328184L3.6593454,8.4328184C3.3314703,8.4329653,3.0512793,8.6704483,2.9955413,8.9954453C2.7965083,10.152903,2.6961792,11.325353,2.6956499,12.499999C2.6956499,13.66728,2.7953889,14.835238,2.9955409,16.004553C3.0513222,16.329803,3.3318892,16.567362,3.6600187,16.567181L7.4130378,16.567181C7.6997595,16.567102,7.9790354,16.658998,8.2102757,16.829512L15.432596,22.157516C15.630114,22.303001,15.890533,22.3293,16.11286,22.226217C16.33519,22.123131,16.484457,21.906878,16.502771,21.661322C16.961998,15.562505,16.961998,9.4374886,16.502771,3.3386734C16.493422,3.2123365,16.449064,3.0911627,16.374727,2.9888961L16.320139,2.9231455ZM29.210737,4.7323632C30.392134,7.1490598,31.004368,9.8069515,30.999977,12.499999C31.003069,15.192898,30.390903,17.850496,29.210739,20.267635C28.881979,20.939079,28.074509,21.21557,27.406752,20.885347C26.738995,20.55512,26.463558,19.743109,26.791393,19.071207C27.790915,17.02681,28.30862,14.778229,28.304325,12.499999C28.307316,10.221917,27.789679,7.973629,26.791393,5.9287915C26.462492,5.256722,26.73773,4.443717,27.406046,4.1132183C28.07436,3.7827194,28.882492,4.059968,29.210737,4.7323632ZM24.687437,7.8288426C25.297382,9.3096657,25.610456,10.897113,25.608677,12.499999C25.608677,14.122805,25.293285,15.702903,24.687439,17.171154C24.392143,17.846121,23.614649,18.159891,22.937447,17.877392C22.260241,17.594891,21.931719,16.819738,22.198006,16.132668C22.672022,14.981009,22.915018,13.746453,22.913027,12.499999C22.913027,11.235784,22.667723,10.008173,22.198008,8.8673296C21.931721,8.1802616,22.260242,7.4051089,22.93745,7.1226068C23.614653,6.8401055,24.392147,7.1538754,24.687437,7.8288426Z',
 ]
+/**
+ * The sound toggle in the conversation header, from the icons supplied for it: one speaker with waves, one with a
+ * cross. Both are single paths on a 30-unit grid, painted with `currentColor` so the header's own ink tokens decide
+ * their colour instead of the grey they were exported with.
+ */
+const SOUND_ON_VIEWBOX = '0 0 30 23'
+const SOUND_ON = [
+  'M6.0524993,4.9060459L13.631248,0.2785936C14.509498,-0.25745472,15.665999,0.0033352838,16.214998,0.86101329C16.401373,1.1522232,16.499998,1.4886909,16.499998,1.8318362L16.499998,21.168159C16.499998,22.180161,15.660374,23,14.624999,23C14.273623,23,13.929375,22.903549,13.631248,22.721775L6.0524993,18.09395L2.6249995,18.09395C1.1752497,18.09395,0,16.945805,0,15.529449L0,7.4705462C0,6.0541911,1.1752497,4.9060459,2.6249995,4.9060459L6.0524993,4.9060459ZM6.9712496,6.9370942C6.7919888,7.0463486,6.5855508,7.1041465,6.375,7.1040297L2.6249995,7.1040297C2.4179997,7.1040297,2.2499995,7.2679973,2.2499995,7.4705453L2.2499995,15.52982C2.2499995,15.731998,2.4179997,15.896337,2.6249995,15.896337L6.3749986,15.896337C6.5857482,15.896337,6.7923741,15.954207,6.9712486,16.063271L14.249998,20.507097L14.249998,2.4929008L6.9712496,6.9370942ZM25.156874,22.547419C24.708073,22.969206,24.000408,22.957487,23.566124,22.52108C23.133926,22.086746,23.146095,21.386114,23.593124,20.966724C29.135624,15.733853,29.135624,7.2653999,23.593124,2.0325274C23.146351,1.6131757,23.134182,0.91283625,23.566124,0.47854346C24.000404,0.042136021,24.708073,0.030418748,25.156874,0.45220459C31.614372,6.5490603,31.614372,16.450562,25.156874,22.547419ZM21.398624,18.158871C20.945475,18.576361,20.237701,18.557547,19.807875,18.116579C19.380789,17.67774,19.400385,16.977749,19.851374,16.562967C22.882874,13.759565,22.882874,9.2400627,19.851374,6.4362884C19.400385,6.0215077,19.380789,5.3215141,19.807875,4.8826752C20.237701,4.4417095,20.945475,4.422894,21.398624,4.8403845C25.367249,8.5111113,25.367249,14.488514,21.398624,18.159241L21.398624,18.158871Z',
+]
+const SOUND_OFF_VIEWBOX = '0 0 30 23.41747283935547'
+const SOUND_OFF = [
+  'M2.2222173,8.1601896L2.2222173,15.134619L7.3999834,15.134619L13.492191,19.997942L13.492191,3.4279783L7.5966501,8.1601896L2.2222173,8.1601896ZM6.8144288,5.9379725L13.907745,0.24465188C14.24111,-0.022955419,14.698439,-0.075580634,15.083872,0.10931361C15.469308,0.29420787,15.714488,0.68383014,15.71441,1.1113168L15.71441,22.306826C15.714227,22.733679,15.469533,23.12269,15.084853,23.307688C14.700172,23.492683,14.243522,23.440954,13.909969,23.174603L6.6210966,17.356836L1.1111087,17.356836C0.49746031,17.356836,0,16.859375,0,16.245728L0,7.0490813C-1.3245447e-7,6.4354324,0.49746031,5.9379725,1.1111087,5.9379725L6.8144288,5.9379725ZM23.888836,9.4824085L27.999937,4.0013103C28.36813,3.5103917,29.064571,3.4108992,29.555489,3.7790878C30.046408,4.1472759,30.145899,4.8437204,29.777714,5.33464L25.277721,11.334627L29.77771,17.334614C30.145899,17.825531,30.046406,18.521976,29.555489,18.890163C29.064569,19.258354,28.368126,19.158863,27.999937,18.667944L23.888834,13.186845L19.777731,18.667944C19.409346,19.158257,18.713367,19.257381,18.22274,18.889412C17.732117,18.521444,17.632402,17.825548,17.999956,17.334614L22.499945,11.334627L17.999956,5.3346415C17.631769,4.8437228,17.73126,4.1472783,18.222179,3.7790897C18.713097,3.4109011,19.409542,3.5103929,19.777731,4.0013113L23.888836,9.4824085Z',
+]
+
+/**
+ * @returns the speaker for the current sound state, so on and off are told apart by shape as well as colour.
+ */
+function SoundIcon({ on }) {
+  const React = require('react')
+  const paths = on ? SOUND_ON : SOUND_OFF
+  return React.createElement('svg', {
+    width: 16, height: on ? 12.27 : 12.49, viewBox: on ? SOUND_ON_VIEWBOX : SOUND_OFF_VIEWBOX, fill: 'currentColor', 'aria-hidden': true,
+  }, paths.map((d, index) => React.createElement('path', { key: index, d })))
+}
+
+/**
+ * Styles for that toggle, matching the header's 28px round utilities (see
+ * `ui-open-in-app/src/client/OpenInAppAction.module.css` for the row's metrics): a 28px box, a 16px glyph,
+ * `label-tertiary` at rest, `label-secondary` on hover, and the primary ink while the pet is speaking the main
+ * conversation.
+ */
+const SOUND_STYLE = `
+.dsh-pet-sound{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:28px;height:28px;padding:6px;border:0;border-radius:28px;background:transparent;color:var(--dsw-alias-label-tertiary);cursor:pointer}
+.dsh-pet-sound svg{display:block}
+.dsh-pet-sound:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary)}
+.dsh-pet-sound:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:1px}
+.dsh-pet-sound[aria-pressed="true"]{color:var(--dsw-alias-label-primary)}
+`
+
 /** The four bars of the playing state, left to right; the stylesheet animates their height. */
 const READOUT_BARS = [1.6, 5.2, 8.8, 12.4]
 /** Each bar starts its own rise a little later, which is what makes the four read as a waveform. */
@@ -106,27 +146,26 @@ const READOUT_STYLE = `
  * A read-out is owned by one control at a time — a message, or the selection — and the host names that owner in
  * every event. `has` answers for one control, `anyPlaying` for the whole pet: a person reading a selection sees the
  * message strip light up too, because both are the same voice and the same queue.
+ * The stream is the plugin's single connection to the host (passed in, never opened here): a browser allows only a
+ * handful of connections per origin, and every extra long-lived stream takes one away from the page's own assets —
+ * which is what starved the settings panel's preview iframe (2026-09-21).
+ * @param stream - the window's shared conversation stream.
  * @returns the store: `has`, `anyPlaying`, `isPending`, `subscribe`, `stop`, and `toggle`/`settle` fed by the host.
  */
-function readoutStore() {
+function readoutStore(stream) {
   const playing = new Set(), listeners = new Set(), pending = new Set()
   const notify = () => { for (const listener of listeners) listener() }
-  let stream
-  const ensureStream = () => {
-    if (stream) return
-    stream = new EventSource('/desktop-pet/api/conversation/events?role=chat')
-    stream.addEventListener('readout', event => {
-      const value = JSON.parse(event.data)
-      if (value.messageId) { playing.add(value.messageId); pending.delete(value.messageId) } else { playing.clear() }
-      if (value.state === 'idle' && value.messageId) playing.delete(value.messageId)
-      notify()
-    })
-  }
+  stream.addEventListener('readout', event => {
+    const value = JSON.parse(event.data)
+    if (value.messageId) { playing.add(value.messageId); pending.delete(value.messageId) } else { playing.clear() }
+    if (value.state === 'idle' && value.messageId) playing.delete(value.messageId)
+    notify()
+  })
   return {
     has: messageId => playing.has(messageId),
     anyPlaying: () => playing.size > 0,
     isPending: messageId => pending.has(messageId),
-    subscribe(listener) { ensureStream(); listeners.add(listener); return () => { listeners.delete(listener); if (!listeners.size) { stream?.close(); stream = undefined } } },
+    subscribe(listener) { listeners.add(listener); return () => { listeners.delete(listener) } },
     toggle(messageId) { pending.add(messageId); notify() },
     settle(messageId) { pending.delete(messageId); notify() },
     // Cancelling belongs to whoever holds the voice, not to one control: the strip's stop clears every owner at
@@ -153,8 +192,8 @@ function mountPicker(container, session) {
       <div class="pet-pageBody"><div class="pet-body"><aside id="library" class="pet-library"></aside><section class="pet-detail" aria-label="当前角色与设置"><div class="pet-portrait"><iframe id="model-preview" class="pet-preview" title="角色立绘" src="about:blank"></iframe></div><h3 id="character-name" class="pet-characterTitle">正在加载伙伴…</h3><p id="character-subtitle" class="pet-characterSubtitle"></p>
       <div class="pet-field"><label class="pet-sizeLabel" for="height"><span class="pet-label">角色显示大小</span><output id="height-value" class="pet-sizeValue"></output></label><input id="height" class="pet-range" type="range" min="180" max="1000" step="10"></div>
       <div class="pet-detailGrid"><div class="pet-switchRow"><span id="animated-label" class="pet-label">开启动画</span><button id="animated" class="pet-switch" type="button" role="switch" aria-checked="false" aria-labelledby="animated-label"><span class="pet-thumb"></span></button></div><div class="pet-switchRow"><span id="alwaysOnTop-label" class="pet-label">保持在窗口上方</span><button id="alwaysOnTop" class="pet-switch" type="button" role="switch" aria-checked="false" aria-labelledby="alwaysOnTop-label"><span class="pet-thumb"></span></button></div>
-      <div class="pet-switchRow"><span id="broadcastEnabled-label" class="pet-label">播报主对话</span><button id="broadcastEnabled" class="pet-switch" type="button" role="switch" aria-checked="false" aria-labelledby="broadcastEnabled-label"><span class="pet-thumb"></span></button></div></div>
-      <p class="pet-hintLine">播报主对话时，桌宠念出 Harness 里大模型说给你听的那部分文字（思考与工具调用不念），气泡只保留最近几句。</p>
+      </div>
+      <p class="pet-hintLine">播报主对话的开关在对话标题栏右侧（喇叭图标）：打开后桌宠念出 Harness 里大模型说给你听的那部分文字（思考与工具调用不念），气泡只显示伙伴自己的回复。</p>
       <p class="pet-hintLine">轻轻摸头、点击互动，按住角色即可拖动。</p></section></div></div>
       </div></div>`
   container.append(host)
@@ -182,6 +221,9 @@ function mountPicker(container, session) {
       const tab = event.target.closest('[data-tab]')?.dataset.tab; if (!tab) return
       selectTab(tab)
       actionDebug.suspend(); selectedTab = tab; shadow.querySelector('.pet-body').hidden = tab !== 'partner'; voiceRoot.hidden = ['partner', 'history'].includes(tab); history.hidden = tab !== 'history'; history.src = tab === 'history' ? '/desktop-pet/chat' : 'about:blank'; voiceSettings.show(tab)
+      // Leaving the settings pages closes their stream: a browser gives only a few connections per origin, and one
+      // left open for a page nobody is looking at starves the page that is (2026-09-21).
+      if (tab === 'partner' || tab === 'history') voiceSettings.suspend()
       if (tab !== 'partner') { find('model-preview').src = 'about:blank'; if (tab !== 'history') { await voiceSettings.load() } }
       else preview(await library.refresh())
     } catch (error) { status(error.message) }
@@ -203,8 +245,10 @@ function mountPicker(container, session) {
     void actionDebug.load(model.id)
   }
   let updates = Promise.resolve()
+  // The stored settings are read back before every write: the conversation header owns `broadcastEnabled` now, and
+  // saving this panel's older copy would silently turn the pet's sound back off.
   const updateSettings = patch => {
-    const result = updates.then(async () => { settings = await api('settings', { ...settings, ...patch }); pet.settings = settings })
+    const result = updates.then(async () => { const stored = await api('settings'); settings = await api('settings', { ...stored, ...patch }); pet.settings = settings })
     updates = result.catch(() => {})
     return result
   }
@@ -228,7 +272,7 @@ function mountPicker(container, session) {
   // The panel mounts instead of a dialog opening, so the first paint is where the form is filled in. The
   // partner controls stay disabled until the stored settings land: they save on change, so a click on a
   // not-yet-filled control would write the template's default over the stored value.
-  const partnerControls = ['height', 'animated', 'alwaysOnTop', 'broadcastEnabled'].map(find)
+  const partnerControls = ['height', 'animated', 'alwaysOnTop'].map(find)
   const partnerEnabled = enabled => { for (const control of partnerControls) control.disabled = !enabled }
   partnerEnabled(false)
   const enter = run(async () => {
@@ -237,7 +281,7 @@ function mountPicker(container, session) {
     settings = await api('settings')
     if (disposed) return
     find('height').value = settings.height; find('height-value').value = `${settings.height} px`
-    for (const key of ['animated', 'alwaysOnTop', 'broadcastEnabled']) setOn(key, settings[key])
+    for (const key of ['animated', 'alwaysOnTop']) setOn(key, settings[key])
     partnerEnabled(true)
     preview(await library.refresh())
   })
@@ -250,10 +294,10 @@ function mountPicker(container, session) {
   const saveSelected = async () => {
     if (selectedTab === 'history') return
     if (selectedTab !== 'partner') { await voiceSettings.save(); flashSaved(); return }
+    // `broadcastEnabled` is not written here any more: the conversation header owns that switch, and re-sending a
+    // stale copy from this panel would fight it.
     await updateSettings({
       height: Number(find('height').value), animated: isOn('animated'), alwaysOnTop: isOn('alwaysOnTop'),
-      broadcastEnabled: isOn('broadcastEnabled'),
-      // The host refuses a sentence count outside its own range, so a half-typed number never leaves the panel.
     })
     if (disposed) return
     await configure()
@@ -262,7 +306,7 @@ function mountPicker(container, session) {
   const saveSoon = () => { clearTimeout(saveTimer); saveTimer = setTimeout(() => { void run(saveSelected)() }, 300) }
   find('height').oninput = () => { find('height-value').value = `${find('height').value} px`; saveSoon() }
   find('height').onchange = () => { void run(saveSelected)() }
-  for (const key of ['animated', 'alwaysOnTop', 'broadcastEnabled']) find(key).onclick = () => { setOn(key, !isOn(key)); void run(saveSelected)() }
+  for (const key of ['animated', 'alwaysOnTop']) find(key).onclick = () => { setOn(key, !isOn(key)); void run(saveSelected)() }
   // Delegated because those pages rebuild their own controls; change (not input) keeps a key field from
   // hitting the network on every keystroke.
   voiceRoot.addEventListener('change', saveSoon)
@@ -343,7 +387,11 @@ export function apply(ctx) {
   }, PetPanel))
   // The per-message read-out control lives in the official assistant action strip, beside copy and share: the
   // slot hands each entry the durable message id, and the host owns the voice, the queue, and the state.
-  const readout = readoutStore()
+  // One connection serves the whole window: the read-out store and the audio seat below both read from it. Two
+  // streams here cost the page one of the browser's few same-origin connections (2026-09-21).
+  const conversationEvents = new EventSource('/desktop-pet/api/conversation/events?role=page')
+  ctx.effect(() => () => conversationEvents.close(), 'desktop-pet: conversation stream')
+  const readout = readoutStore(conversationEvents)
   ctx.effect(() => {
     if (document.getElementById('dsh-pet-readout-style')) return () => {}
     const style = document.createElement('style'); style.id = 'dsh-pet-readout-style'; style.textContent = READOUT_STYLE
@@ -411,7 +459,59 @@ export function apply(ctx) {
       pill: selectionSpeak.pill,
     }), 'desktop-pet: file browser selection action')
   })
+  // Reading aloud needs a window to play in, and the Harness window is always there: this seat plays the pet's voice
+  // while the pet itself is hidden, and stands by while the visible pet (which also drives its mouth) is attached.
+  // The host hands each clip to exactly one of them.
+  ctx.effect(() => {
+    if (document.getElementById('dsh-pet-sound-style')) return () => {}
+    const style = document.createElement('style'); style.id = 'dsh-pet-sound-style'; style.textContent = SOUND_STYLE
+    document.head.append(style)
+    return () => { style.remove() }
+  }, 'desktop-pet: sound toggle styles')
+  const pagePlayer = mountSpeechPlayer(undefined, message => { console.warn(`[desktop-pet] ${message}`) }, undefined, { role: 'page', events: conversationEvents })
+  ctx.effect(() => () => pagePlayer(), 'desktop-pet: window read-out player')
+  // The sound toggle belongs to the conversation, not to the settings page: it sits in the header's right-aligned
+  // utilities, before the official ones (`order: -20` against open-in-app's -10), and shows the pet's own on/off
+  // icons. It reads and writes the same `broadcastEnabled` setting the panel used to own.
+  const SoundAction = () => {
+    const React = require('react')
+    const [settings, setSettings] = React.useState(null)
+    React.useEffect(() => {
+      let live = true
+      void api('settings').then(value => { if (live) setSettings(value) }).catch(() => {})
+      return () => { live = false }
+    }, [])
+    const on = settings?.broadcastEnabled === true
+    const toggle = () => {
+      if (!settings) return
+      const next = !on
+      setSettings({ ...settings, broadcastEnabled: next })
+      // Read the current settings first: the panel edits size, animation and window preferences through the same
+      // endpoint, and writing this button's older copy back would undo whichever of those changed last.
+      void api('settings')
+        .then(stored => api('settings', { ...stored, broadcastEnabled: next }))
+        .then(saved => setSettings(saved))
+        .catch(() => { void api('settings').then(setSettings).catch(() => {}) })
+    }
+    return React.createElement('button', {
+      type: 'button',
+      className: 'dsh-pet-sound',
+      'data-pet-sound': on ? 'on' : 'off',
+      'aria-pressed': String(on),
+      title: on ? '关闭桌宠播报' : '开启桌宠播报',
+      'aria-label': on ? '关闭桌宠播报' : '开启桌宠播报',
+      disabled: settings === null,
+      onClick: toggle,
+    }, React.createElement(SoundIcon, { on }))
+  }
+  const disposeSound = ctx.slots.inject('conversation.session.header.utilities', () => ctx.slots.register({
+    name: 'conversation.session.header.utilities',
+    id: 'desktop-pet-sound',
+    order: -20,
+  }, SoundAction))
   // The pet window's own menu asks to open these settings: the entry's panel is the settings page now.
+  // The shell reports the pet window's own shows and hides, so this panel's switch always mirrors reality.
+  const unsubscribeVisibility = window.harnessDesktop?.onPetVisibility?.(visible => { setVisible(visible === true) })
   const unsubscribe = window.harnessDesktop?.onPetSettings?.(() => { ctx.layout.selectPanel(PANEL_ID) })
-  ctx.effect(() => () => { unsubscribe?.(); disposeReadout(); disposePanel(); disposeEntry() }, 'desktop-pet: sidebar entry and panel')
+  ctx.effect(() => () => { unsubscribe?.(); unsubscribeVisibility?.(); disposeSound(); disposeReadout(); disposePanel(); disposeEntry() }, 'desktop-pet: sidebar entry and panel')
 }

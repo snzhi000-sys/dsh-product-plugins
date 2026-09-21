@@ -145,7 +145,7 @@ To make file changes inside a Harness session **visible, editable and referencea
 - **A read-out button under every reply** in the official assistant action strip, beside copy and share; pressing it again while it plays stops all reading;
 - **Reading a selection aloud in the conversation**: selecting text in the conversation panel floats a 朗读 pill above it;
 - **Reading a selection aloud in a document**: selecting text in the file browser floats a bubble whose 朗读 sits beside @引用 — the reference comes from the file workspace, the read-out from this plugin, and the two actions share one coordinate instead of competing for it;
-- **Broadcast the main conversation** (a switch on the partner page): reads the part of the main agent's prose addressed to you.
+- **Broadcast the main conversation** (off by default): reads the part of the main agent's prose addressed to you; its switch sits in the **conversation header's right side**, where the speaker icon tells 声音开启 from 声音关闭.
 
 ![Selecting text in the file browser floats 引用 and 朗读 side by side](docs/images/reference-actions.webp)
 
@@ -158,8 +158,9 @@ The pet keeps its own speech configuration (settings → 对话 / 声音) and **
 - **Endpoint and keys**: fill in the Ark endpoint and model, then the model / TTS / ASR keys separately;
 - **Reading voice**: read-out needs a **TTS key and a voice ID**; we use the **Doubao voice** (Volcengine Ark) speech synthesis API;
 - **Cloned voices supported**: a speaker ID starting with `S_` is synthesised as a clone, and cloned voices take the same read-out path as the official ones;
-- **Missing pieces are named**: without a TTS key, without a voice, or without the pet on screen, the control states the reason instead of failing silently;
-- **Read-out is optional**: the character library, pointer following and text chat all work without TTS.
+- **Missing pieces are named**: without a TTS key, without a voice, or without a window that can play, the control states the reason instead of failing silently;
+- **Read-out is optional**: the character library, pointer following and text chat all work without TTS;
+- **Read-out does not depend on the pet being on screen**: the visible pet plays and drives its mouth, the Harness window plays while it is hidden (without a mouth), and hiding the pet never interrupts a read-out — unplayed clips are handed to the window that is still there.
 
 ### Behaviour and boundaries
 

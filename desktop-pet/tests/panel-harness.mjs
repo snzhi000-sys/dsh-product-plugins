@@ -9,14 +9,15 @@ import { JSDOM } from 'jsdom'
 const source = readFileSync(new URL('../dist/client.js', import.meta.url), 'utf8')
 
 /** Globals the plugin body reads that jsdom must supply instead of the Node host. */
-const BORROWED = ['window', 'document', 'navigator', 'fetch', 'location', 'EventSource']
+const BORROWED = ['window', 'document', 'navigator', 'fetch', 'location', 'EventSource', 'requestAnimationFrame', 'cancelAnimationFrame']
 
 /**
  * Load the built client bundle, apply the plugin against stubs, and mount its main panel.
  * @returns the mounted panel: its id, the requests the body made, the shadow root, and a disposer.
  */
 export function mountPanel() {
-  const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'http://127.0.0.1/' })
+  // `pretendToBeVisual` gives jsdom the animation frame pair the read-out player stops with on teardown.
+  const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'http://127.0.0.1/', pretendToBeVisual: true })
   // Some of these are accessor-only on the Node host (navigator, fetch), so every swap goes through
   // defineProperty and is restored from the descriptor this harness saves.
   const saved = BORROWED.map(name => [name, Object.getOwnPropertyDescriptor(globalThis, name)])
@@ -44,6 +45,10 @@ export function mountPanel() {
     close() { this.closed = true }
   }
   borrow('EventSource', StubEventSource)
+  // The window read-out player stops its mouth timeline with the animation frame pair, which the borrowed window
+  // owns; the plugin body calls them as globals.
+  borrow('requestAnimationFrame', dom.window.requestAnimationFrame.bind(dom.window))
+  borrow('cancelAnimationFrame', dom.window.cancelAnimationFrame.bind(dom.window))
   // jsdom implements Selection and Range but not the range's own geometry, which is the only thing the floating
   // pill positions itself from. A fixed rectangle keeps the placement assertion deterministic.
   dom.window.Range.prototype.getBoundingClientRect = function () {

@@ -34,6 +34,26 @@ export function mountActionPresetSettings(root, status) {
     <div class="pet-actionsPane"><iframe class="pet-actionsPortrait" title="动作立绘预览" src="about:blank"></iframe><div class="pet-cards" data-action-keywords></div></div></div>`
   const select = root.querySelector('select'), list = root.querySelector('[data-action-keywords]'), newPreset = root.querySelector('[data-new-preset]'), conflict = root.querySelector('[data-keyword-conflict]'), portrait = root.querySelector('iframe'), channel = new BroadcastChannel('dsh-pet-action-debug')
   let draft = {}, recipes = {}, revision = 0, disposed = false, held, timer, animated = false, visible = false
+  // A same-origin iframe's document is readable, so the panel can tell a rendered preview from a blank one. A
+  // browser allows only a few connections per origin and a queued request is not an error, so without this watch a
+  // starved preview stays silent and the person only sees an empty box (2026-09-21).
+  const PORTRAIT_TIMEOUT_MS = 7000
+  let watchdog
+  const watchPortrait = () => {
+    clearTimeout(watchdog)
+    const expected = portrait.getAttribute('src')
+    if (!visible || !expected || expected === 'about:blank') return
+    let reloaded = false
+    const check = () => {
+      if (disposed || portrait.getAttribute('src') !== expected) return
+      let rendered = false
+      try { rendered = Boolean(portrait.contentDocument?.querySelector('#stage canvas, #stage > *')) } catch { rendered = false }
+      if (rendered) return
+      if (!reloaded) { reloaded = true; portrait.src = expected; watchdog = setTimeout(check, PORTRAIT_TIMEOUT_MS); return }
+      status('预览加载超时，已重试一次：浏览器把同源连接分给了其它请求。切走再回到本页会重新加载预览。')
+    }
+    watchdog = setTimeout(check, PORTRAIT_TIMEOUT_MS)
+  }
   const json = async path => { const r = await fetch('/desktop-pet/api/' + path), value = await r.json(); if (!r.ok) throw Error(value.error); return value }
   const stop = () => { clearInterval(timer); if (held) channel.postMessage({ ...held, kind: 'release' }); held = null }
   const send = () => { if (held) channel.postMessage({ ...held, kind: 'hold' }) }
@@ -83,13 +103,15 @@ export function mountActionPresetSettings(root, status) {
     try {
       const model = await json('model?id=' + encodeURIComponent(id)); if (disposed || token !== revision) return
       const src = '/desktop-pet/view?preview=1&model=' + encodeURIComponent(id)
-      if (visible && portrait.getAttribute('src') !== src) portrait.src = src
+      if (visible && portrait.getAttribute('src') !== src) { portrait.src = src; watchPortrait() }
       const modules = model.actionModules.filter(a => a.category === 'body' && a.automaticEligible)
       draft[id] ??= modules.map(a => ({ id: 'default:' + a.id, actionId: a.id, name: a.label, weight: 1, enabled: true, keywords: [] }))
       const entries = draft[id]
       const check = () => {
         const seen = new Set(), duplicates = new Set()
-        for (const preset of entries.filter(p => p.enabled)) for (const tag of p.keywords) { const key = tag.toLocaleLowerCase(); if (seen.has(key)) duplicates.add(tag); seen.add(key) }
+        // The filter's own parameter is not the loop's preset: reading `p.keywords` here threw on every render,
+        // which left the 动作与关键词 page with no cards and only a reference error in the status line (2026-09-21).
+        for (const preset of entries.filter(entry => entry.enabled)) for (const tag of preset.keywords) { const key = tag.toLocaleLowerCase(); if (seen.has(key)) duplicates.add(tag); seen.add(key) }
         conflict.textContent = duplicates.size ? '重复关键词按列表顺序匹配：' + [...duplicates].join('、') : ''
       }
       newPreset.disabled = !modules.length
@@ -152,8 +174,8 @@ export function mountActionPresetSettings(root, status) {
       await render(); select.disabled = false
     },
     value() { return { actionPresets: draft, mouthRecipes: recipes } }, stop,
-    show(value) { visible = value; stop(); portrait.src = value && select.value ? '/desktop-pet/view?preview=1&model=' + encodeURIComponent(select.value) : 'about:blank' },
-    suspend() { ++revision; stop(); portrait.src = 'about:blank' },
-    dispose() { disposed = true; ++revision; stop(); channel.close(); window.removeEventListener('blur', stop); document.removeEventListener('visibilitychange', visibility); root.replaceChildren() },
+    show(value) { visible = value; stop(); portrait.src = value && select.value ? '/desktop-pet/view?preview=1&model=' + encodeURIComponent(select.value) : 'about:blank'; watchPortrait() },
+    suspend() { ++revision; clearTimeout(watchdog); stop(); portrait.src = 'about:blank' },
+    dispose() { disposed = true; ++revision; clearTimeout(watchdog); stop(); channel.close(); window.removeEventListener('blur', stop); document.removeEventListener('visibilitychange', visibility); root.replaceChildren() },
   }
 }

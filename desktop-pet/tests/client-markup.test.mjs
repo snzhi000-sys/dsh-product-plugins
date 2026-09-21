@@ -22,7 +22,7 @@ const REQUIRED = [
   '[data-test]', '[data-sample]', '[data-insert-emotion]', '[data-insert-history]', '[data-insert-intimacy]',
   '[data-prompt-actions]', '[data-emotion-status]', '[data-emotion-text]', '[data-intimacy-status]',
   '[data-intimacy-levels]', '[data-add-level]', '[data-action-character]', '[data-new-preset]',
-  '[data-keyword-conflict]', '#visibility', '#animated', '#alwaysOnTop', '#broadcastEnabled',
+  '[data-keyword-conflict]', '#visibility', '#animated', '#alwaysOnTop',
   '#height', '#model-preview', '#status',
 ]
 
@@ -177,7 +177,9 @@ test('the settings markup keeps its namespacing, control, and layout contracts',
 
     // Switches: the official contract, state readable from the attribute, one thumb each.
     const switches = [...shadow.querySelectorAll('[role="switch"]')]
-    assert.equal(switches.length >= 5, true, `expected the on/off settings as switches, got ${String(switches.length)}`)
+    // Visibility, animation, keep-on-top and the voice page's automatic reading; the sound toggle left this panel
+    // for the conversation header (2026-09-21).
+    assert.equal(switches.length >= 4, true, `expected the on/off settings as switches, got ${String(switches.length)}`)
     for (const control of switches) {
       assert.equal(control.tagName, 'BUTTON', 'a switch is a button')
       assert.equal(control.classList.contains('pet-switch'), true, 'a switch carries the official track class')
@@ -217,10 +219,9 @@ test('the settings markup keeps its namespacing, control, and layout contracts',
     assert.equal(shadow.querySelectorAll('.pet-page').length, 1, 'the panel renders one page frame')
     assert.equal(shadow.querySelector('.pet-pageHead').contains(shadow.querySelector('#visibility')), true, 'the visibility switch belongs in the header')
 
-    // The broadcast preference is an on/off switch. Its caption bound is gone with the caption itself: the pet's
-    // bubble belongs to the pet's own conversation (2026-09-20).
-    const broadcast = shadow.querySelector('#broadcastEnabled').closest('.pet-switchRow')
-    assert.equal(broadcast.querySelector('.pet-label').textContent, '播报主对话', 'the broadcast switch names what it reads')
+    // Reading the main conversation aloud moved to the conversation header's own toggle (2026-09-21), so the panel
+    // must not offer a second control for the same setting.
+    assert.equal(shadow.querySelector('#broadcastEnabled'), null, 'the panel no longer carries the sound switch')
     assert.equal(shadow.querySelector('#broadcastBubbleSentences'), null, 'the retired caption bound is not rendered')
 
     // Every key the form reads must exist: a rename here is a silent settings write of `undefined`.
@@ -229,6 +230,64 @@ test('the settings markup keeps its namespacing, control, and layout contracts',
   } finally {
     panel.close()
   }
+})
+
+test('one window keeps one conversation stream, whatever reads it', () => {
+  const panel = mountPanel()
+  try {
+    // The read-out store and the window's audio seat are two readers of the same stream: a browser allows only a
+    // handful of connections per origin, and a second long-lived stream takes one from the page's own assets — which
+    // is what starved the settings panel's preview iframe (2026-09-21).
+    assert.equal(panel.streams.length, 1, `the plugin must open exactly one stream per window, got ${String(panel.streams.length)}`)
+    assert.match(panel.streams[0].url, /conversation\/events\?role=page/, 'and it is the audio seat that owns it')
+    const entry = panel.entries.find(item => item.definition.name === 'conversation.chat.assistant-actions')
+    const stream = panel.streams[0]
+    const emitReadout = value => { for (const listener of stream.listeners.get('readout') ?? []) listener({ data: JSON.stringify(value) }) }
+    emitReadout({ messageId: 'selection', state: 'playing' })
+    assert.equal(entry.Component({ messageId: 'message-1', sessionId: 'session-1' }).props['data-playing'], 'true', 'the strip still follows the shared stream')
+    // Closing the panel closes the window's only stream.
+    panel.close()
+    assert.equal(stream.closed, true, 'the stream is released with the plugin')
+  } catch (error) { panel.close(); throw error }
+})
+
+test('the sound toggle registers in the conversation header and speaks for the pet setting', () => {
+  const panel = mountPanel()
+  try {
+    const entry = panel.entries.find(item => item.definition.name === 'conversation.session.header.utilities')
+    assert.notEqual(entry, undefined, 'the pet contributes one utility to the conversation header')
+    assert.equal(entry.definition.id, 'desktop-pet-sound')
+    // The official open-in-app split button registers at -10; earlier order puts the speaker to its left.
+    assert.equal(entry.definition.order, -20, 'the toggle sorts before the official utilities')
+    const element = entry.Component({})
+    assert.equal(element.type, 'button', 'the header entry is a button, not a link or a div')
+    assert.equal(element.props.className, 'dsh-pet-sound')
+    assert.equal(element.props['data-pet-sound'], 'off', 'the state is on the element, not only in the picture')
+    assert.equal(element.props['aria-pressed'], 'false')
+    assert.equal(element.props.title, '开启桌宠播报', 'the tooltip says what pressing it will do')
+    assert.equal(element.props.disabled, true, 'it waits for the stored setting before it can write one')
+    const icon = element.children[0]
+    // The stub React does not render, so the icon is invoked the way the renderer would.
+    const glyph = icon.type({ ...icon.props, on: false })
+    assert.equal(glyph.type, 'svg')
+    assert.equal(glyph.props.fill, 'currentColor', 'the glyph takes the header colour rather than its exported grey')
+    assert.equal(glyph.props.viewBox, '0 0 30 23.41747283935547', 'the off state is the crossed speaker')
+    const lit = icon.type({ ...icon.props, on: true })
+    assert.equal(lit.props.viewBox, '0 0 30 23', 'the on state is the speaker with waves')
+  } finally {
+    panel.close()
+  }
+})
+
+test('the sound toggle keeps the official header metrics and writes the setting it owns', () => {
+  const source = readFileSync(new URL('../dist/client.js', import.meta.url), 'utf8')
+  assert.match(source, /conversation\.session\.header\.utilities/)
+  assert.match(source, /desktop-pet-sound/)
+  assert.match(source, /\.dsh-pet-sound\{[^}]*width:28px;height:28px;padding:6px[^}]*color:var\(--dsw-alias-label-tertiary\)/)
+  assert.match(source, /\.dsh-pet-sound:hover\{[^}]*background:var\(--dsw-alias-interactive-bg-hover\)/)
+  assert.match(source, /\.dsh-pet-sound\[aria-pressed="true"\]\{color:var\(--dsw-alias-label-primary\)\}/)
+  assert.match(source, /api\(["']settings["'], \{ \.\.\.stored, broadcastEnabled: next \}\)/, 'the toggle reads the stored settings before it writes')
+  assert.doesNotMatch(source, /broadcastEnabled: isOn\(/, 'the panel no longer writes the setting the header owns')
 })
 
 // The picker's watchers tear down through the shell's module table, which this stub cannot provide.

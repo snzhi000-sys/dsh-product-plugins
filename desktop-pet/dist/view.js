@@ -30,9 +30,10 @@ function renderBubbleText(element, text) {
 }
 
 // src/pet-chat.mjs
-function mountPetChat(bubble2, command2, onInputFocus) {
+function mountPetChat(bubble2, command2, onInputFocus, options = {}) {
   const form = document.getElementById("pet-chat"), input = document.getElementById("pet-input"), send = form.querySelector("button");
-  const toggle = document.querySelector('[data-action="chat"]'), events = new EventSource("/desktop-pet/api/conversation/events");
+  const toggle = document.querySelector('[data-action="chat"]'), events = options.events ?? new EventSource("/desktop-pet/api/conversation/events");
+  const ownsStream = options.events === void 0;
   let open = false, sending = false, generating = false, recording = false, disposed2 = false, timer, sessionId, held = false;
   const show = (text) => {
     renderBubbleText(bubble2, text);
@@ -77,11 +78,11 @@ function mountPetChat(bubble2, command2, onInputFocus) {
   events.addEventListener("notice", (e) => {
     if (!held) local(JSON.parse(e.data).message);
   });
-  events.onerror = () => {
+  events.addEventListener("error", () => {
     clearTimeout(timer);
     held = false;
     local("\u8FDE\u63A5\u4E2D\u65AD\uFF0C\u6B63\u5728\u91CD\u8FDE\u2026");
-  };
+  });
   function local(text, force = false) {
     if (held && !force || disposed2) return;
     clearTimeout(timer);
@@ -148,7 +149,7 @@ function mountPetChat(bubble2, command2, onInputFocus) {
     dispose() {
       disposed2 = true;
       clearTimeout(timer);
-      events.close();
+      if (ownsStream) events.close();
       form.onsubmit = null;
       input.onkeydown = null;
       input.removeEventListener("focus", updateFocus);
@@ -258,8 +259,9 @@ var PetGestures = class {
 };
 
 // src/speech-player.mjs
-function mountSpeechPlayer(renderer2, notice, actions) {
-  const events = new EventSource("/desktop-pet/api/conversation/events?role=player");
+function mountSpeechPlayer(renderer2, notice, actions, options = {}) {
+  const events = options.events ?? new EventSource(`/desktop-pet/api/conversation/events?role=${options.role ?? "player"}`);
+  const ownsStream = options.events === void 0;
   let context, source, frame2, disposed2 = false, generation = 0, active = false, paused = false, queue = [], controller = new AbortController();
   const stop = () => {
     generation++;
@@ -270,7 +272,7 @@ function mountSpeechPlayer(renderer2, notice, actions) {
     source?.stop();
     source = null;
     cancelAnimationFrame(frame2);
-    renderer2.speech?.cancel();
+    renderer2?.speech?.cancel();
     actions?.reset();
     active = false;
     void context?.close();
@@ -289,7 +291,7 @@ function mountSpeechPlayer(renderer2, notice, actions) {
       context ??= new AudioContext({ sampleRate: item.sampleRate });
       await context.resume();
       if (token !== generation || disposed2) return;
-      if (context.state !== "running") throw new Error("\u8BF7\u70B9\u51FB\u684C\u5BA0\u4EE5\u5141\u8BB8\u64AD\u653E\u58F0\u97F3");
+      if (context.state !== "running") throw new Error(renderer2 ? "\u8BF7\u70B9\u51FB\u684C\u5BA0\u4EE5\u5141\u8BB8\u64AD\u653E\u58F0\u97F3" : "\u8BF7\u70B9\u51FB Harness \u7A97\u53E3\u4EE5\u5141\u8BB8\u64AD\u653E\u58F0\u97F3");
       const buffer = context.createBuffer(1, bytes.byteLength / 2, item.sampleRate), channel = buffer.getChannelData(0), view = new DataView(bytes);
       for (let i = 0; i < channel.length; i++) channel[i] = view.getInt16(i * 2, true) / 32768;
       source = context.createBufferSource();
@@ -297,7 +299,7 @@ function mountSpeechPlayer(renderer2, notice, actions) {
       source.connect(context.destination);
       let lastSound = 0;
       const started = context.currentTime;
-      renderer2.speech?.start(weightedTimeline(item.timeline, item.mouthRecipes?.[renderer2.info.id], renderer2.info.kind), () => context ? context.currentTime - started : -1);
+      renderer2?.speech?.start(weightedTimeline(item.timeline, item.mouthRecipes?.[renderer2?.info?.id], renderer2?.info?.kind), () => context ? context.currentTime - started : -1);
       actions?.beginSpeech();
       source.start();
       if (actions?.play((item.asides ?? []).join("\n"), item.actionKeywords, item.actionPresets) === true) actionHits++;
@@ -311,7 +313,7 @@ function mountSpeechPlayer(renderer2, notice, actions) {
         const silent = peak < 8e-3 && audioTime - lastSound > 0.25;
         if (silent && !wasSilent) silentFrames++;
         wasSilent = silent;
-        if (renderer2.speech?.silence) renderer2.speech.silence(silent);
+        if (renderer2?.speech?.silence) renderer2.speech.silence(silent);
         frame2 = requestAnimationFrame(tick);
       };
       tick();
@@ -321,7 +323,7 @@ function mountSpeechPlayer(renderer2, notice, actions) {
       });
       if (token !== generation) return;
       cancelAnimationFrame(frame2);
-      renderer2.speech?.cancel();
+      renderer2?.speech?.cancel();
       actions?.endSpeech();
       source.disconnect();
       source = null;
@@ -335,7 +337,7 @@ function mountSpeechPlayer(renderer2, notice, actions) {
     } finally {
       if (token === generation) {
         cancelAnimationFrame(frame2);
-        renderer2.speech?.cancel();
+        renderer2?.speech?.cancel();
         actions?.endSpeech();
         source?.disconnect();
         source = null;
@@ -370,10 +372,10 @@ function mountSpeechPlayer(renderer2, notice, actions) {
     }
   });
   events.addEventListener("notice", (e) => notice(JSON.parse(e.data).message));
-  events.onerror = stop;
+  events.addEventListener("error", stop);
   return () => {
     disposed2 = true;
-    events.close();
+    if (ownsStream) events.close();
     stop();
   };
 }
@@ -511,6 +513,7 @@ var dialogueActions;
 var petChat;
 var disposeSpeech;
 var disposeDebug;
+var conversationEvents;
 var frame;
 var disposed = false;
 var lastHit;
@@ -642,6 +645,7 @@ function dispose() {
   cancelAnimationFrame(frame);
   disposeDebug?.();
   disposeSpeech?.();
+  conversationEvents?.close();
   dialogueActions?.dispose();
   petChat?.dispose();
   unsubscribe?.();
@@ -692,6 +696,7 @@ try {
   if (disposed) renderer.dispose();
   else {
     if (!query.has("preview")) automatic = new AutomaticActions(renderer, renderer.info.automaticActionIntervalMs);
+    if (!query.has("preview")) conversationEvents = new EventSource("/desktop-pet/api/conversation/events?role=player");
     disposeDebug = receiveActionDebug(renderer, (error) => {
       message.textContent = error.message;
     });
@@ -699,8 +704,8 @@ try {
       dialogueActions = conversationActions(renderer, () => settings.animated && !gestures?.down && menu.hidden && !document.hidden, (error) => {
         message.textContent = error.message;
       });
-      petChat = mountPetChat(bubble, (value) => bridge ? bridge.command(value) : Promise.resolve(), (focused) => renderer.setInputFocused(focused));
-      disposeSpeech = mountSpeechPlayer(renderer, (text) => petChat.local(text), dialogueActions);
+      petChat = mountPetChat(bubble, (value) => bridge ? bridge.command(value) : Promise.resolve(), (focused) => renderer.setInputFocused(focused), { events: conversationEvents });
+      disposeSpeech = mountSpeechPlayer(renderer, (text) => petChat.local(text), dialogueActions, { role: "player", events: conversationEvents });
     }
     gestures = new PetGestures(renderer.profile ?? { dragThreshold: 28, strokeThreshold: 7, strokeMs: 220 });
     const tick = (now) => {

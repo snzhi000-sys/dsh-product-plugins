@@ -47,7 +47,11 @@ export function createConversationHost(root, defaults = {}, services = { convers
   const store = conversationStore(root, defaults), clients = new Set(), audio = new Map(), tasks = new Set(), checks = new Set()
   // What each read-out actually handed the mouth, and what the player then reported back.
   const diagnostics = createMouthDiagnostics(root)
-  let reply, turn, recording, speechController = new AbortController(), speechEpoch = randomUUID(), disposed = false, playback, speechTail = Promise.resolve(), queued = 0
+  let reply, turn, recording, speechController = new AbortController(), speechEpoch = randomUUID(), disposed = false, playback, pagePlayback, speechTail = Promise.resolve(), queued = 0
+  // Reading aloud belongs to the plugin rather than to the pet window: the visible pet plays a clip with its mouth,
+  // and while the person has the pet hidden the Harness window plays the same clip without one. Whoever is attached
+  // owns the audio; with neither attached there is nowhere to play, so nothing is queued (reported 2026-09-21).
+  const audioOwner = () => playback ?? pagePlayback
   // The subset of `queued` that belongs to the pet's own conversation, which is the only speech that may drive
   // the pet chat's bubble (`reply.speaking` / `reply.voiced`).
   let chatQueued = 0
@@ -62,7 +66,29 @@ export function createConversationHost(root, defaults = {}, services = { convers
   const releaseSlot = () => { slotWaiters.shift()?.() }
   const emotionState = () => ({ ...store.session.emotion, generating: Boolean(emotionJob), error: emotionError })
   const snapshot = () => ({ session: { id: store.session.id, messages: store.session.messages }, intimacy: intimacyState(store.session, store.config.intimacyLevels), emotion: emotionState(), generating: Boolean(turn), recording: recording?.id ?? null, ttsEnabled: store.config.ttsEnabled, reply })
-  const emit = (type, value, role) => { if (disposed) return; const frame = `event: ${type}\ndata: ${JSON.stringify(value)}\n\n`; for (const client of clients) if (!role || client.role === role) { if (client.res.writableLength > 1024 * 1024) client.res.destroy(); else client.res.write(frame) } }
+  const send = (client, type, value) => { if (disposed || !client) return; const frame = `event: ${type}\ndata: ${JSON.stringify(value)}\n\n`; if (client.res.writableLength > 1024 * 1024) client.res.destroy(); else client.res.write(frame) }
+  const emit = (type, value, role) => { if (disposed) return; for (const client of clients) if (!role || client.role === role) send(client, type, value) }
+  // One clip has one player: the pet window when it is on screen, otherwise the Harness window. Only the owner is
+  // sent the clip, so the other one never plays it as well.
+  const emitSpeech = value => send(audioOwner(), 'speech', value)
+  const emitToPlayers = (type, value) => { send(playback, type, value); send(pagePlayback, type, value) }
+  /**
+   * Hand the clips nobody has played yet to whichever window holds the audio now.
+   *
+   * Hiding the pet, showing it again, or reloading the Harness window changes who owns the audio; those clips are
+   * still queued, so the new owner receives them instead of the read-out dying with the window that started it.
+   * The seat that lost the audio is told to stop, or both windows would play the same clip at once. With no player
+   * left the queue ends here: a clip held for a window that will never play it only leaves the bubble claiming
+   * speech.
+   * @param from - the seat that held the audio until now, when a window just took it.
+   */
+  const handOverAudio = from => {
+    const owner = audioOwner()
+    if (from === owner) return
+    if (from) send(from, 'speech-stop', { epoch: speechEpoch })
+    if (!owner) { if (queued || audio.size) stopSpeech(); return }
+    for (const item of audio.values()) if (item.epoch === speechEpoch && item.frame) send(owner, 'speech', item.frame)
+  }
   const track = promise => { tasks.add(promise); promise.finally(() => tasks.delete(promise)).catch(() => {}); return promise }
   const updateEmotion = (config, key, context, sourceReplyId) => {
     emotionJob?.controller.abort()
@@ -105,7 +131,7 @@ export function createConversationHost(root, defaults = {}, services = { convers
     broadcastSaturated = false; speechTail = Promise.resolve()
     const waiting = slotWaiters; slotWaiters = []
     for (const release of waiting) release()
-    emit('speech-stop', { epoch: speechEpoch })
+    emitToPlayers('speech-stop', { epoch: speechEpoch })
     // Stopping is also the end of a manual read-out, whatever stopped it.
     if (readoutId !== undefined) { readoutId = undefined; emit('readout', { messageId: null, state: 'idle' }) }
     publishReply()
@@ -116,7 +142,7 @@ export function createConversationHost(root, defaults = {}, services = { convers
     // `allowed` is the caller's own gate: the pet's chat passes its auto-read switch, broadcast passes its own.
     const source = options.source ?? 'chat'
     const allowed = options.allowed ?? store.config.ttsEnabled
-    if (!allowed || !/[\p{L}\p{N}]/u.test(text) || epoch !== speechEpoch || !playback) return false
+    if (!allowed || !/[\p{L}\p{N}]/u.test(text) || epoch !== speechEpoch || !audioOwner()) return false
     if (options.saturate && broadcastSaturated) return false
     if (++queued > (options.cap ?? config.queueSegments)) {
       // A chat reply that outruns its budget stops, which the person sees as "text continues". Broadcast reads
@@ -135,7 +161,7 @@ export function createConversationHost(root, defaults = {}, services = { convers
       await awaitSlot(Math.max(1, config.speechLookahead ?? 3))
       if (signal.aborted || epoch !== speechEpoch) return
       const result = await services.synthesize(config, key, text, signal)
-      if (signal.aborted || epoch !== speechEpoch || !playback) return
+      if (signal.aborted || epoch !== speechEpoch || !audioOwner()) return
       if ([...audio.values()].reduce((n, a) => n + a.pcm.length, 0) + result.pcm.length > 16 * 1024 * 1024) throw new Error('语音播放缓冲已满，请缩短回复')
       const id = randomUUID(), mask = speechMask(result.pcm, result.sampleRate)
       const cues = speechCues(text, result.duration, result.subtitles, mask)
@@ -150,7 +176,8 @@ export function createConversationHost(root, defaults = {}, services = { convers
         speechSeconds: mask.last === null ? null : Number((mask.segments.reduce((sum, [from, to]) => sum + (to - from), 0)).toFixed(3)),
         ...statistics, ...poseStatistics(cues.cues, result.duration, mask),
       })
-      audio.set(id, { ...result, epoch, source }); emit('speech', { id, epoch, sampleRate: result.sampleRate, timeline: cues, asides, diagnosticsId, actionKeywords: config.actionKeywords, actionPresets: config.actionPresets, mouthRecipes: config.mouthRecipes }, 'player')
+      const frame = { id, epoch, sampleRate: result.sampleRate, timeline: cues, asides, diagnosticsId, actionKeywords: config.actionKeywords, actionPresets: config.actionPresets, mouthRecipes: config.mouthRecipes }
+      audio.set(id, { ...result, epoch, source, frame }); emitSpeech(frame)
     }).catch(error => { if (!signal.aborted && epoch === speechEpoch) { queued = Math.max(0, queued - 1); if (source === 'chat') chatQueued = Math.max(0, chatQueued - 1); publishReply(); emit('notice', { message: error.message }) } })
     speechTail = track(job)
     return accepted
@@ -280,15 +307,15 @@ export function createConversationHost(root, defaults = {}, services = { convers
      * Speak text the person selected in the interface, whatever it came from.
      *
      * This is the read-out path without a message behind it: the selection is not session content, so nothing here
-     * touches the log or the model. The pet window owns the audio, so a hidden pet or a missing voice key is
-     * reported to the caller rather than swallowed — the person pressed a button and deserves to know why nothing
-     * happened.
+     * touches the log or the model. The plugin owns the voice rather than the pet window, so a hidden pet still
+     * reads; a missing voice key, or a run with no window able to play, is reported to the caller rather than
+     * swallowed — the person pressed a button and deserves to know why nothing happened.
      * @param text - the selected prose.
      * @returns the state the selection control should show, and how many clips were queued.
      */
     selection(text) {
       if (!store.keys.tts) throw new Error('请先在桌宠设置里配置 TTS Key')
-      if (!playback) throw new Error('请先显示伙伴，声音由桌宠窗口播放')
+      if (!audioOwner()) throw new Error('没有可用的播放窗口，请打开 Harness 窗口')
       stopSpeech()
       const clips = readAloud(SELECTION_OWNER, text, 'selection')
       if (!clips) throw new Error('这段文字没有可朗读的内容')
@@ -312,12 +339,25 @@ export function createConversationHost(root, defaults = {}, services = { convers
       try {
         if (disposed) throw new Error('桌宠已卸载')
         if (action === '/events' && method === 'GET') {
-          const role = url.searchParams.get('role') === 'player' ? 'player' : 'chat'
+          const requested = url.searchParams.get('role')
+          const role = requested === 'player' || requested === 'page' ? requested : 'chat'
           if (role === 'player' && playback) throw new Error('已有桌宠播放窗口')
-          const client = { res, role }; clients.add(client); if (role === 'player') playback = client
+          if (role === 'page' && pagePlayback) throw new Error('已有 Harness 播放窗口')
+          const client = { res, role }; clients.add(client)
+          const previous = audioOwner()
+          if (role === 'player') playback = client
+          else if (role === 'page') pagePlayback = client
+          // A window that joins while the other one is already playing takes the audio over: showing the pet after a
+          // read-out started must move the clip to the model, not play it twice.
+          if (role !== 'chat') handOverAudio(previous)
           res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store', connection: 'keep-alive' }); res.write(`event: state\ndata: ${JSON.stringify(snapshot())}\n\n`)
           const timer = setInterval(() => res.write(': heartbeat\n\n'), 15000)
-          res.on('close', () => { clearInterval(timer); clients.delete(client); if (playback === client) { playback = null; stop() } })
+          res.on('close', () => {
+            clearInterval(timer); clients.delete(client)
+            // Hiding the pet is not the end of a read-out: the other window takes over whatever has not been played.
+            // With no player left there is nowhere to put the audio, so the queue ends rather than leaking clips.
+            if (playback === client) { playback = null; handOverAudio() } else if (pagePlayback === client) { pagePlayback = null; handOverAudio() }
+          })
           return true
         }
         if (action === '/config' && method === 'GET') { json(200, store.publicConfig()); return true }
@@ -328,7 +368,7 @@ export function createConversationHost(root, defaults = {}, services = { convers
         if (action === '/config') { const wasEnabled = store.config.ttsEnabled, value = store.save(body); if (wasEnabled && !store.config.ttsEnabled) stopSpeech(); emit('state', snapshot()); json(200, value) }
         else if (action === '/send') json(200, start(body.text))
         else if (action === '/stop') { if (body.speechOnly) stopSpeech(); else stop(); json(200, { ok: true }) }
-        else if (action === '/pause') { if (typeof body.paused !== 'boolean') throw new Error('暂停状态无效'); emit('speech-pause', { paused: body.paused }, 'player'); json(200, { ok: true }) }
+        else if (action === '/pause') { if (typeof body.paused !== 'boolean') throw new Error('暂停状态无效'); emitToPlayers('speech-pause', { paused: body.paused }); json(200, { ok: true }) }
         else if (action === '/new') { stop(); await Promise.allSettled([...tasks]); store.reset(); reply = undefined; emit('state', snapshot()); json(200, snapshot()) }
         else if (action === '/ack') {
           if (body.diagnosticsId !== undefined) diagnostics.playback(body.diagnosticsId, { played: body.played !== false, silentFrames: Number(body.silentFrames) || 0, actionHits: Number(body.actionHits) || 0 })
@@ -356,7 +396,7 @@ export function createConversationHost(root, defaults = {}, services = { convers
         else if (action === '/sample') {
           if (!playback) throw new Error('请先显示桌宠再试听')
           stopSpeech(); const config = { ...store.config }, epoch = speechEpoch, signal = speechController.signal
-          const job = services.synthesize(config, store.keys.tts, '你好，我是你的桌面伙伴。今天过得怎么样？', signal).then(result => { if (signal.aborted || epoch !== speechEpoch) return; const id = randomUUID(); audio.set(id, { ...result, epoch }); emit('speech', { id, epoch, sampleRate: result.sampleRate, timeline: speechCues('你好，我是你的桌面伙伴。今天过得怎么样？', result.duration, result.subtitles, speechMask(result.pcm, result.sampleRate)) }, 'player') })
+          const job = services.synthesize(config, store.keys.tts, '你好，我是你的桌面伙伴。今天过得怎么样？', signal).then(result => { if (signal.aborted || epoch !== speechEpoch) return; const id = randomUUID(); const frame = { id, epoch, sampleRate: result.sampleRate, timeline: speechCues('你好，我是你的桌面伙伴。今天过得怎么样？', result.duration, result.subtitles, speechMask(result.pcm, result.sampleRate)) }; audio.set(id, { ...result, epoch, frame }); emitSpeech(frame) })
           await track(job); json(200, { ok: true })
         }
         else if (action === '/record/start') {

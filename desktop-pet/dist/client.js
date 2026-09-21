@@ -162,6 +162,15 @@ var defaultMouthRecipes = Object.freeze([
   { phoneme: "y", base: "i", weight: 0.7 }
 ]);
 var mouthPhonemes = ["a", "o", "i", "m", "e", "w", "y", "u", "\xFC", "v"];
+function weightedTimeline(timeline, recipes, engine) {
+  const byPhoneme = new Map((recipes ?? []).map((r) => [r.phoneme, r]));
+  return { ...timeline, cues: timeline.cues.map((cue) => {
+    const recipe = byPhoneme.get(cue.phoneme ?? cue.shape) ?? byPhoneme.get(cue.shape);
+    const shaped = recipe ? { ...cue, shape: recipe.base, weight: recipe.weight } : cue;
+    if (engine === "dragonbones" && shaped.shape === "i") return { ...shaped, shape: "a", weight: (shaped.weight ?? 1) * 0.7 };
+    return shaped;
+  }) };
+}
 
 // src/action-preset-settings.mjs
 function field(text, control2, wide = false) {
@@ -198,6 +207,32 @@ function mountActionPresetSettings(root, status) {
     <div class="pet-actionsPane"><iframe class="pet-actionsPortrait" title="\u52A8\u4F5C\u7ACB\u7ED8\u9884\u89C8" src="about:blank"></iframe><div class="pet-cards" data-action-keywords></div></div></div>`;
   const select = root.querySelector("select"), list = root.querySelector("[data-action-keywords]"), newPreset = root.querySelector("[data-new-preset]"), conflict = root.querySelector("[data-keyword-conflict]"), portrait = root.querySelector("iframe"), channel = new BroadcastChannel("dsh-pet-action-debug");
   let draft = {}, recipes = {}, revision = 0, disposed = false, held, timer, animated = false, visible = false;
+  const PORTRAIT_TIMEOUT_MS = 7e3;
+  let watchdog;
+  const watchPortrait = () => {
+    clearTimeout(watchdog);
+    const expected = portrait.getAttribute("src");
+    if (!visible || !expected || expected === "about:blank") return;
+    let reloaded = false;
+    const check = () => {
+      if (disposed || portrait.getAttribute("src") !== expected) return;
+      let rendered = false;
+      try {
+        rendered = Boolean(portrait.contentDocument?.querySelector("#stage canvas, #stage > *"));
+      } catch {
+        rendered = false;
+      }
+      if (rendered) return;
+      if (!reloaded) {
+        reloaded = true;
+        portrait.src = expected;
+        watchdog = setTimeout(check, PORTRAIT_TIMEOUT_MS);
+        return;
+      }
+      status("\u9884\u89C8\u52A0\u8F7D\u8D85\u65F6\uFF0C\u5DF2\u91CD\u8BD5\u4E00\u6B21\uFF1A\u6D4F\u89C8\u5668\u628A\u540C\u6E90\u8FDE\u63A5\u5206\u7ED9\u4E86\u5176\u5B83\u8BF7\u6C42\u3002\u5207\u8D70\u518D\u56DE\u5230\u672C\u9875\u4F1A\u91CD\u65B0\u52A0\u8F7D\u9884\u89C8\u3002");
+    };
+    watchdog = setTimeout(check, PORTRAIT_TIMEOUT_MS);
+  };
   const json = async (path) => {
     const r = await fetch("/desktop-pet/api/" + path), value = await r.json();
     if (!r.ok) throw Error(value.error);
@@ -349,13 +384,16 @@ function mountActionPresetSettings(root, status) {
       const model = await json("model?id=" + encodeURIComponent(id));
       if (disposed || token !== revision) return;
       const src = "/desktop-pet/view?preview=1&model=" + encodeURIComponent(id);
-      if (visible && portrait.getAttribute("src") !== src) portrait.src = src;
+      if (visible && portrait.getAttribute("src") !== src) {
+        portrait.src = src;
+        watchPortrait();
+      }
       const modules = model.actionModules.filter((a) => a.category === "body" && a.automaticEligible);
       draft[id] ??= modules.map((a) => ({ id: "default:" + a.id, actionId: a.id, name: a.label, weight: 1, enabled: true, keywords: [] }));
       const entries = draft[id];
       const check = () => {
         const seen = /* @__PURE__ */ new Set(), duplicates = /* @__PURE__ */ new Set();
-        for (const preset of entries.filter((p2) => p2.enabled)) for (const tag of p.keywords) {
+        for (const preset of entries.filter((entry) => entry.enabled)) for (const tag of preset.keywords) {
           const key = tag.toLocaleLowerCase();
           if (seen.has(key)) duplicates.add(tag);
           seen.add(key);
@@ -461,7 +499,7 @@ function mountActionPresetSettings(root, status) {
           element.dataset.phoneme = recipe.phoneme;
           const grid = document.createElement("div");
           grid.className = "pet-grid";
-          const phoneme = options(mouthPhonemes.filter((p2) => p2 === recipe.phoneme || !recipes[id].some((r) => r.phoneme === p2)).map((p2) => [p2, p2]), recipe.phoneme, (value) => {
+          const phoneme = options(mouthPhonemes.filter((p) => p === recipe.phoneme || !recipes[id].some((r) => r.phoneme === p)).map((p) => [p, p]), recipe.phoneme, (value) => {
             recipe.phoneme = value;
             void render();
           });
@@ -520,15 +558,18 @@ function mountActionPresetSettings(root, status) {
       visible = value;
       stop();
       portrait.src = value && select.value ? "/desktop-pet/view?preview=1&model=" + encodeURIComponent(select.value) : "about:blank";
+      watchPortrait();
     },
     suspend() {
       ++revision;
+      clearTimeout(watchdog);
       stop();
       portrait.src = "about:blank";
     },
     dispose() {
       disposed = true;
       ++revision;
+      clearTimeout(watchdog);
       stop();
       channel.close();
       window.removeEventListener("blur", stop);
@@ -1433,6 +1474,128 @@ function createSelectionSpeak({ api: api2, readout, React }) {
   return { style: SELECTION_SPEAK_STYLE, pill: ContributedPill, mountConversation };
 }
 
+// src/speech-player.mjs
+function mountSpeechPlayer(renderer, notice, actions, options = {}) {
+  const events = options.events ?? new EventSource(`/desktop-pet/api/conversation/events?role=${options.role ?? "player"}`);
+  const ownsStream = options.events === void 0;
+  let context, source, frame, disposed = false, generation = 0, active = false, paused = false, queue = [], controller = new AbortController();
+  const stop = () => {
+    generation++;
+    paused = false;
+    queue = [];
+    controller.abort();
+    controller = new AbortController();
+    source?.stop();
+    source = null;
+    cancelAnimationFrame(frame);
+    renderer?.speech?.cancel();
+    actions?.reset();
+    active = false;
+    void context?.close();
+    context = null;
+  };
+  const play = async () => {
+    if (active || disposed || paused || !queue.length) return;
+    active = true;
+    const item = queue.shift(), token = generation, signal = controller.signal;
+    let silentFrames = 0, actionHits = 0, wasSilent = false;
+    try {
+      const response = await fetch(`/desktop-pet/api/conversation/audio?id=${encodeURIComponent(item.id)}`, { signal });
+      if (!response.ok) throw new Error("\u97F3\u9891\u5DF2\u8FC7\u671F");
+      const bytes = await response.arrayBuffer();
+      if (token !== generation || disposed) return;
+      context ??= new AudioContext({ sampleRate: item.sampleRate });
+      await context.resume();
+      if (token !== generation || disposed) return;
+      if (context.state !== "running") throw new Error(renderer ? "\u8BF7\u70B9\u51FB\u684C\u5BA0\u4EE5\u5141\u8BB8\u64AD\u653E\u58F0\u97F3" : "\u8BF7\u70B9\u51FB Harness \u7A97\u53E3\u4EE5\u5141\u8BB8\u64AD\u653E\u58F0\u97F3");
+      const buffer = context.createBuffer(1, bytes.byteLength / 2, item.sampleRate), channel = buffer.getChannelData(0), view = new DataView(bytes);
+      for (let i = 0; i < channel.length; i++) channel[i] = view.getInt16(i * 2, true) / 32768;
+      source = context.createBufferSource();
+      source.buffer = buffer;
+      source.connect(context.destination);
+      let lastSound = 0;
+      const started = context.currentTime;
+      renderer?.speech?.start(weightedTimeline(item.timeline, item.mouthRecipes?.[renderer?.info?.id], renderer?.info?.kind), () => context ? context.currentTime - started : -1);
+      actions?.beginSpeech();
+      source.start();
+      if (actions?.play((item.asides ?? []).join("\n"), item.actionKeywords, item.actionPresets) === true) actionHits++;
+      const tick = () => {
+        if (token !== generation || disposed) return;
+        const at = Math.floor((context.currentTime - started) * item.sampleRate);
+        let peak = 0;
+        for (let i = at; i < Math.min(channel.length, at + 240); i++) peak = Math.max(peak, Math.abs(channel[i]));
+        const audioTime = context.currentTime - started;
+        if (peak >= 8e-3) lastSound = audioTime;
+        const silent = peak < 8e-3 && audioTime - lastSound > 0.25;
+        if (silent && !wasSilent) silentFrames++;
+        wasSilent = silent;
+        if (renderer?.speech?.silence) renderer.speech.silence(silent);
+        frame = requestAnimationFrame(tick);
+      };
+      tick();
+      await new Promise((resolve) => {
+        source.onended = resolve;
+        signal.addEventListener("abort", resolve, { once: true });
+      });
+      if (token !== generation) return;
+      cancelAnimationFrame(frame);
+      renderer?.speech?.cancel();
+      actions?.endSpeech();
+      source.disconnect();
+      source = null;
+      await conversationApi("/ack", { id: item.id, epoch: item.epoch, played: true, diagnosticsId: item.diagnosticsId, silentFrames, actionHits });
+    } catch (error) {
+      if (!signal.aborted && !disposed) {
+        notice(error.message);
+        await conversationApi("/ack", { id: item.id, epoch: item.epoch, played: false, diagnosticsId: item.diagnosticsId, silentFrames, actionHits }).catch(() => {
+        });
+      }
+    } finally {
+      if (token === generation) {
+        cancelAnimationFrame(frame);
+        renderer?.speech?.cancel();
+        actions?.endSpeech();
+        source?.disconnect();
+        source = null;
+        active = false;
+        if (queue.length) void play();
+        else {
+          void context?.close();
+          context = null;
+        }
+      }
+    }
+  };
+  events.addEventListener("speech", (e) => {
+    if (!disposed) {
+      queue.push(JSON.parse(e.data));
+      void play();
+    }
+  });
+  events.addEventListener("action-aside", (e) => {
+    if (!disposed) {
+      const value = JSON.parse(e.data);
+      actions?.play(value.text, value.actionKeywords, value.actionPresets);
+    }
+  });
+  events.addEventListener("speech-stop", stop);
+  events.addEventListener("speech-pause", (e) => {
+    paused = JSON.parse(e.data).paused;
+    if (paused) void context?.suspend();
+    else {
+      void context?.resume();
+      void play();
+    }
+  });
+  events.addEventListener("notice", (e) => notice(JSON.parse(e.data).message));
+  events.addEventListener("error", stop);
+  return () => {
+    disposed = true;
+    if (ownsStream) events.close();
+    stop();
+  };
+}
+
 // src/client.mjs
 var name = "desktop-pet-client";
 var inject = ["slots", "layout", "sessions"];
@@ -1467,6 +1630,32 @@ var READOUT_SPEAKER_VIEWBOX = "0 0 31 25";
 var READOUT_SPEAKER = [
   "M13.83812,0.65637046C14.825261,-0.071926124,16.127447,-0.20439202,17.239569,0.31035504C18.35169,0.82510209,19.098766,1.9060704,19.191008,3.133961C19.660484,9.3690577,19.660484,15.63094,19.191008,21.866039C19.098766,23.093927,18.35169,24.174896,17.239569,24.689644C16.127447,25.204391,14.82526,25.071928,13.838119,24.343628L6.9722991,19.278631L3.6600192,19.278631C2.0771675,19.27865,0.70767713,18.170486,0.36863032,16.615307L0.33897814,16.464144C0.11395912,15.154883,0.00055402151,13.828682,0,12.499999C0,11.178165,0.11321729,9.8563318,0.33897802,8.5358543C0.6172173,6.909575,2.0194516,5.7212214,3.6600192,5.721365L6.9716253,5.721365L13.83812,0.65637046ZM16.320139,2.9231455C16.086529,2.6754725,15.706256,2.641201,15.432595,2.8431578L8.2102747,8.1704865C7.9790344,8.3409986,7.6997595,8.4328947,7.4130378,8.4328184L3.6593454,8.4328184C3.3314703,8.4329653,3.0512793,8.6704483,2.9955413,8.9954453C2.7965083,10.152903,2.6961792,11.325353,2.6956499,12.499999C2.6956499,13.66728,2.7953889,14.835238,2.9955409,16.004553C3.0513222,16.329803,3.3318892,16.567362,3.6600187,16.567181L7.4130378,16.567181C7.6997595,16.567102,7.9790354,16.658998,8.2102757,16.829512L15.432596,22.157516C15.630114,22.303001,15.890533,22.3293,16.11286,22.226217C16.33519,22.123131,16.484457,21.906878,16.502771,21.661322C16.961998,15.562505,16.961998,9.4374886,16.502771,3.3386734C16.493422,3.2123365,16.449064,3.0911627,16.374727,2.9888961L16.320139,2.9231455ZM29.210737,4.7323632C30.392134,7.1490598,31.004368,9.8069515,30.999977,12.499999C31.003069,15.192898,30.390903,17.850496,29.210739,20.267635C28.881979,20.939079,28.074509,21.21557,27.406752,20.885347C26.738995,20.55512,26.463558,19.743109,26.791393,19.071207C27.790915,17.02681,28.30862,14.778229,28.304325,12.499999C28.307316,10.221917,27.789679,7.973629,26.791393,5.9287915C26.462492,5.256722,26.73773,4.443717,27.406046,4.1132183C28.07436,3.7827194,28.882492,4.059968,29.210737,4.7323632ZM24.687437,7.8288426C25.297382,9.3096657,25.610456,10.897113,25.608677,12.499999C25.608677,14.122805,25.293285,15.702903,24.687439,17.171154C24.392143,17.846121,23.614649,18.159891,22.937447,17.877392C22.260241,17.594891,21.931719,16.819738,22.198006,16.132668C22.672022,14.981009,22.915018,13.746453,22.913027,12.499999C22.913027,11.235784,22.667723,10.008173,22.198008,8.8673296C21.931721,8.1802616,22.260242,7.4051089,22.93745,7.1226068C23.614653,6.8401055,24.392147,7.1538754,24.687437,7.8288426Z"
 ];
+var SOUND_ON_VIEWBOX = "0 0 30 23";
+var SOUND_ON = [
+  "M6.0524993,4.9060459L13.631248,0.2785936C14.509498,-0.25745472,15.665999,0.0033352838,16.214998,0.86101329C16.401373,1.1522232,16.499998,1.4886909,16.499998,1.8318362L16.499998,21.168159C16.499998,22.180161,15.660374,23,14.624999,23C14.273623,23,13.929375,22.903549,13.631248,22.721775L6.0524993,18.09395L2.6249995,18.09395C1.1752497,18.09395,0,16.945805,0,15.529449L0,7.4705462C0,6.0541911,1.1752497,4.9060459,2.6249995,4.9060459L6.0524993,4.9060459ZM6.9712496,6.9370942C6.7919888,7.0463486,6.5855508,7.1041465,6.375,7.1040297L2.6249995,7.1040297C2.4179997,7.1040297,2.2499995,7.2679973,2.2499995,7.4705453L2.2499995,15.52982C2.2499995,15.731998,2.4179997,15.896337,2.6249995,15.896337L6.3749986,15.896337C6.5857482,15.896337,6.7923741,15.954207,6.9712486,16.063271L14.249998,20.507097L14.249998,2.4929008L6.9712496,6.9370942ZM25.156874,22.547419C24.708073,22.969206,24.000408,22.957487,23.566124,22.52108C23.133926,22.086746,23.146095,21.386114,23.593124,20.966724C29.135624,15.733853,29.135624,7.2653999,23.593124,2.0325274C23.146351,1.6131757,23.134182,0.91283625,23.566124,0.47854346C24.000404,0.042136021,24.708073,0.030418748,25.156874,0.45220459C31.614372,6.5490603,31.614372,16.450562,25.156874,22.547419ZM21.398624,18.158871C20.945475,18.576361,20.237701,18.557547,19.807875,18.116579C19.380789,17.67774,19.400385,16.977749,19.851374,16.562967C22.882874,13.759565,22.882874,9.2400627,19.851374,6.4362884C19.400385,6.0215077,19.380789,5.3215141,19.807875,4.8826752C20.237701,4.4417095,20.945475,4.422894,21.398624,4.8403845C25.367249,8.5111113,25.367249,14.488514,21.398624,18.159241L21.398624,18.158871Z"
+];
+var SOUND_OFF_VIEWBOX = "0 0 30 23.41747283935547";
+var SOUND_OFF = [
+  "M2.2222173,8.1601896L2.2222173,15.134619L7.3999834,15.134619L13.492191,19.997942L13.492191,3.4279783L7.5966501,8.1601896L2.2222173,8.1601896ZM6.8144288,5.9379725L13.907745,0.24465188C14.24111,-0.022955419,14.698439,-0.075580634,15.083872,0.10931361C15.469308,0.29420787,15.714488,0.68383014,15.71441,1.1113168L15.71441,22.306826C15.714227,22.733679,15.469533,23.12269,15.084853,23.307688C14.700172,23.492683,14.243522,23.440954,13.909969,23.174603L6.6210966,17.356836L1.1111087,17.356836C0.49746031,17.356836,0,16.859375,0,16.245728L0,7.0490813C-1.3245447e-7,6.4354324,0.49746031,5.9379725,1.1111087,5.9379725L6.8144288,5.9379725ZM23.888836,9.4824085L27.999937,4.0013103C28.36813,3.5103917,29.064571,3.4108992,29.555489,3.7790878C30.046408,4.1472759,30.145899,4.8437204,29.777714,5.33464L25.277721,11.334627L29.77771,17.334614C30.145899,17.825531,30.046406,18.521976,29.555489,18.890163C29.064569,19.258354,28.368126,19.158863,27.999937,18.667944L23.888834,13.186845L19.777731,18.667944C19.409346,19.158257,18.713367,19.257381,18.22274,18.889412C17.732117,18.521444,17.632402,17.825548,17.999956,17.334614L22.499945,11.334627L17.999956,5.3346415C17.631769,4.8437228,17.73126,4.1472783,18.222179,3.7790897C18.713097,3.4109011,19.409542,3.5103929,19.777731,4.0013113L23.888836,9.4824085Z"
+];
+function SoundIcon({ on }) {
+  const React = require("react");
+  const paths = on ? SOUND_ON : SOUND_OFF;
+  return React.createElement("svg", {
+    width: 16,
+    height: on ? 12.27 : 12.49,
+    viewBox: on ? SOUND_ON_VIEWBOX : SOUND_OFF_VIEWBOX,
+    fill: "currentColor",
+    "aria-hidden": true
+  }, paths.map((d, index) => React.createElement("path", { key: index, d })));
+}
+var SOUND_STYLE = `
+.dsh-pet-sound{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:28px;height:28px;padding:6px;border:0;border-radius:28px;background:transparent;color:var(--dsw-alias-label-tertiary);cursor:pointer}
+.dsh-pet-sound svg{display:block}
+.dsh-pet-sound:hover{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary)}
+.dsh-pet-sound:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:1px}
+.dsh-pet-sound[aria-pressed="true"]{color:var(--dsw-alias-label-primary)}
+`;
 var READOUT_BARS = [1.6, 5.2, 8.8, 12.4];
 var READOUT_BAR_DELAYS = [0, 0.14, 0.28, 0.42];
 function ReadoutIcon({ playing }) {
@@ -1505,40 +1694,30 @@ var READOUT_STYLE = `
 @keyframes dsh-pet-readout-bar{from{transform:scaleY(.35)}to{transform:scaleY(1)}}
 @media (prefers-reduced-motion:reduce){.dsh-pet-readout-bar{animation:none;transform:scaleY(.7)}}
 `;
-function readoutStore() {
+function readoutStore(stream) {
   const playing = /* @__PURE__ */ new Set(), listeners = /* @__PURE__ */ new Set(), pending = /* @__PURE__ */ new Set();
   const notify = () => {
     for (const listener of listeners) listener();
   };
-  let stream;
-  const ensureStream = () => {
-    if (stream) return;
-    stream = new EventSource("/desktop-pet/api/conversation/events?role=chat");
-    stream.addEventListener("readout", (event) => {
-      const value = JSON.parse(event.data);
-      if (value.messageId) {
-        playing.add(value.messageId);
-        pending.delete(value.messageId);
-      } else {
-        playing.clear();
-      }
-      if (value.state === "idle" && value.messageId) playing.delete(value.messageId);
-      notify();
-    });
-  };
+  stream.addEventListener("readout", (event) => {
+    const value = JSON.parse(event.data);
+    if (value.messageId) {
+      playing.add(value.messageId);
+      pending.delete(value.messageId);
+    } else {
+      playing.clear();
+    }
+    if (value.state === "idle" && value.messageId) playing.delete(value.messageId);
+    notify();
+  });
   return {
     has: (messageId) => playing.has(messageId),
     anyPlaying: () => playing.size > 0,
     isPending: (messageId) => pending.has(messageId),
     subscribe(listener) {
-      ensureStream();
       listeners.add(listener);
       return () => {
         listeners.delete(listener);
-        if (!listeners.size) {
-          stream?.close();
-          stream = void 0;
-        }
       };
     },
     toggle(messageId) {
@@ -1569,8 +1748,8 @@ function mountPicker(container, session) {
       <div class="pet-pageBody"><div class="pet-body"><aside id="library" class="pet-library"></aside><section class="pet-detail" aria-label="\u5F53\u524D\u89D2\u8272\u4E0E\u8BBE\u7F6E"><div class="pet-portrait"><iframe id="model-preview" class="pet-preview" title="\u89D2\u8272\u7ACB\u7ED8" src="about:blank"></iframe></div><h3 id="character-name" class="pet-characterTitle">\u6B63\u5728\u52A0\u8F7D\u4F19\u4F34\u2026</h3><p id="character-subtitle" class="pet-characterSubtitle"></p>
       <div class="pet-field"><label class="pet-sizeLabel" for="height"><span class="pet-label">\u89D2\u8272\u663E\u793A\u5927\u5C0F</span><output id="height-value" class="pet-sizeValue"></output></label><input id="height" class="pet-range" type="range" min="180" max="1000" step="10"></div>
       <div class="pet-detailGrid"><div class="pet-switchRow"><span id="animated-label" class="pet-label">\u5F00\u542F\u52A8\u753B</span><button id="animated" class="pet-switch" type="button" role="switch" aria-checked="false" aria-labelledby="animated-label"><span class="pet-thumb"></span></button></div><div class="pet-switchRow"><span id="alwaysOnTop-label" class="pet-label">\u4FDD\u6301\u5728\u7A97\u53E3\u4E0A\u65B9</span><button id="alwaysOnTop" class="pet-switch" type="button" role="switch" aria-checked="false" aria-labelledby="alwaysOnTop-label"><span class="pet-thumb"></span></button></div>
-      <div class="pet-switchRow"><span id="broadcastEnabled-label" class="pet-label">\u64AD\u62A5\u4E3B\u5BF9\u8BDD</span><button id="broadcastEnabled" class="pet-switch" type="button" role="switch" aria-checked="false" aria-labelledby="broadcastEnabled-label"><span class="pet-thumb"></span></button></div></div>
-      <p class="pet-hintLine">\u64AD\u62A5\u4E3B\u5BF9\u8BDD\u65F6\uFF0C\u684C\u5BA0\u5FF5\u51FA Harness \u91CC\u5927\u6A21\u578B\u8BF4\u7ED9\u4F60\u542C\u7684\u90A3\u90E8\u5206\u6587\u5B57\uFF08\u601D\u8003\u4E0E\u5DE5\u5177\u8C03\u7528\u4E0D\u5FF5\uFF09\uFF0C\u6C14\u6CE1\u53EA\u4FDD\u7559\u6700\u8FD1\u51E0\u53E5\u3002</p>
+      </div>
+      <p class="pet-hintLine">\u64AD\u62A5\u4E3B\u5BF9\u8BDD\u7684\u5F00\u5173\u5728\u5BF9\u8BDD\u6807\u9898\u680F\u53F3\u4FA7\uFF08\u5587\u53ED\u56FE\u6807\uFF09\uFF1A\u6253\u5F00\u540E\u684C\u5BA0\u5FF5\u51FA Harness \u91CC\u5927\u6A21\u578B\u8BF4\u7ED9\u4F60\u542C\u7684\u90A3\u90E8\u5206\u6587\u5B57\uFF08\u601D\u8003\u4E0E\u5DE5\u5177\u8C03\u7528\u4E0D\u5FF5\uFF09\uFF0C\u6C14\u6CE1\u53EA\u663E\u793A\u4F19\u4F34\u81EA\u5DF1\u7684\u56DE\u590D\u3002</p>
       <p class="pet-hintLine">\u8F7B\u8F7B\u6478\u5934\u3001\u70B9\u51FB\u4E92\u52A8\uFF0C\u6309\u4F4F\u89D2\u8272\u5373\u53EF\u62D6\u52A8\u3002</p></section></div></div>
       </div></div>`;
   container.append(host);
@@ -1627,6 +1806,7 @@ function mountPicker(container, session) {
       history.hidden = tab !== "history";
       history.src = tab === "history" ? "/desktop-pet/chat" : "about:blank";
       voiceSettings.show(tab);
+      if (tab === "partner" || tab === "history") voiceSettings.suspend();
       if (tab !== "partner") {
         find("model-preview").src = "about:blank";
         if (tab !== "history") {
@@ -1657,7 +1837,8 @@ function mountPicker(container, session) {
   let updates = Promise.resolve();
   const updateSettings = (patch) => {
     const result = updates.then(async () => {
-      settings = await api("settings", { ...settings, ...patch });
+      const stored = await api("settings");
+      settings = await api("settings", { ...stored, ...patch });
       pet.settings = settings;
     });
     updates = result.catch(() => {
@@ -1691,7 +1872,7 @@ function mountPicker(container, session) {
       status(error.message);
     }
   };
-  const partnerControls = ["height", "animated", "alwaysOnTop", "broadcastEnabled"].map(find);
+  const partnerControls = ["height", "animated", "alwaysOnTop"].map(find);
   const partnerEnabled = (enabled) => {
     for (const control2 of partnerControls) control2.disabled = !enabled;
   };
@@ -1708,7 +1889,7 @@ function mountPicker(container, session) {
     if (disposed) return;
     find("height").value = settings.height;
     find("height-value").value = `${settings.height} px`;
-    for (const key of ["animated", "alwaysOnTop", "broadcastEnabled"]) setOn(key, settings[key]);
+    for (const key of ["animated", "alwaysOnTop"]) setOn(key, settings[key]);
     partnerEnabled(true);
     preview(await library.refresh());
   });
@@ -1729,9 +1910,7 @@ function mountPicker(container, session) {
     await updateSettings({
       height: Number(find("height").value),
       animated: isOn("animated"),
-      alwaysOnTop: isOn("alwaysOnTop"),
-      broadcastEnabled: isOn("broadcastEnabled")
-      // The host refuses a sentence count outside its own range, so a half-typed number never leaves the panel.
+      alwaysOnTop: isOn("alwaysOnTop")
     });
     if (disposed) return;
     await configure();
@@ -1750,7 +1929,7 @@ function mountPicker(container, session) {
   find("height").onchange = () => {
     void run(saveSelected)();
   };
-  for (const key of ["animated", "alwaysOnTop", "broadcastEnabled"]) find(key).onclick = () => {
+  for (const key of ["animated", "alwaysOnTop"]) find(key).onclick = () => {
     setOn(key, !isOn(key));
     void run(saveSelected)();
   };
@@ -1857,7 +2036,9 @@ function apply(ctx) {
     name: "main",
     key: PANEL_ID
   }, PetPanel));
-  const readout = readoutStore();
+  const conversationEvents = new EventSource("/desktop-pet/api/conversation/events?role=page");
+  ctx.effect(() => () => conversationEvents.close(), "desktop-pet: conversation stream");
+  const readout = readoutStore(conversationEvents);
   ctx.effect(() => {
     if (document.getElementById("dsh-pet-readout-style")) return () => {
     };
@@ -1927,11 +2108,70 @@ function apply(ctx) {
       pill: selectionSpeak.pill
     }), "desktop-pet: file browser selection action");
   });
+  ctx.effect(() => {
+    if (document.getElementById("dsh-pet-sound-style")) return () => {
+    };
+    const style = document.createElement("style");
+    style.id = "dsh-pet-sound-style";
+    style.textContent = SOUND_STYLE;
+    document.head.append(style);
+    return () => {
+      style.remove();
+    };
+  }, "desktop-pet: sound toggle styles");
+  const pagePlayer = mountSpeechPlayer(void 0, (message) => {
+    console.warn(`[desktop-pet] ${message}`);
+  }, void 0, { role: "page", events: conversationEvents });
+  ctx.effect(() => () => pagePlayer(), "desktop-pet: window read-out player");
+  const SoundAction = () => {
+    const React = require("react");
+    const [settings, setSettings] = React.useState(null);
+    React.useEffect(() => {
+      let live = true;
+      void api("settings").then((value) => {
+        if (live) setSettings(value);
+      }).catch(() => {
+      });
+      return () => {
+        live = false;
+      };
+    }, []);
+    const on = settings?.broadcastEnabled === true;
+    const toggle = () => {
+      if (!settings) return;
+      const next = !on;
+      setSettings({ ...settings, broadcastEnabled: next });
+      void api("settings").then((stored) => api("settings", { ...stored, broadcastEnabled: next })).then((saved) => setSettings(saved)).catch(() => {
+        void api("settings").then(setSettings).catch(() => {
+        });
+      });
+    };
+    return React.createElement("button", {
+      type: "button",
+      className: "dsh-pet-sound",
+      "data-pet-sound": on ? "on" : "off",
+      "aria-pressed": String(on),
+      title: on ? "\u5173\u95ED\u684C\u5BA0\u64AD\u62A5" : "\u5F00\u542F\u684C\u5BA0\u64AD\u62A5",
+      "aria-label": on ? "\u5173\u95ED\u684C\u5BA0\u64AD\u62A5" : "\u5F00\u542F\u684C\u5BA0\u64AD\u62A5",
+      disabled: settings === null,
+      onClick: toggle
+    }, React.createElement(SoundIcon, { on }));
+  };
+  const disposeSound = ctx.slots.inject("conversation.session.header.utilities", () => ctx.slots.register({
+    name: "conversation.session.header.utilities",
+    id: "desktop-pet-sound",
+    order: -20
+  }, SoundAction));
+  const unsubscribeVisibility = window.harnessDesktop?.onPetVisibility?.((visible) => {
+    setVisible(visible === true);
+  });
   const unsubscribe = window.harnessDesktop?.onPetSettings?.(() => {
     ctx.layout.selectPanel(PANEL_ID);
   });
   ctx.effect(() => () => {
     unsubscribe?.();
+    unsubscribeVisibility?.();
+    disposeSound();
     disposeReadout();
     disposePanel();
     disposeEntry();

@@ -1,10 +1,24 @@
-/** The visible pet owns audio playback and mouth timing; settings previews never instantiate this player. */
+/**
+ * One window plays the pet's voice and, when a model is on screen, drives its mouth from the same timeline.
+ *
+ * The visible pet window and the Harness window both mount this player; the host sends each clip to whichever one
+ * is attached, so reading aloud does not depend on the pet being shown. Settings previews never instantiate it.
+ */
 import { conversationApi as api } from './conversation-api.mjs'
 import { weightedTimeline } from './action-presets.mjs'
-export function mountSpeechPlayer(renderer, notice, actions) {
-  const events = new EventSource('/desktop-pet/api/conversation/events?role=player')
+/**
+ * @param renderer - the visible model this window drives, or undefined for an audio-only window.
+ * @param notice - reports a playback failure to the person.
+ * @param actions - the speech-driven action presets, when a model is present.
+ * @param options - `role` selects which player seat this window claims, and `events` passes the window's shared
+ *   conversation stream instead of opening another one.
+ * @returns a disposer that stops the audio and closes the stream only when this player opened it.
+ */
+export function mountSpeechPlayer(renderer, notice, actions, options = {}) {
+  const events = options.events ?? new EventSource(`/desktop-pet/api/conversation/events?role=${options.role ?? 'player'}`)
+  const ownsStream = options.events === undefined
   let context, source, frame, disposed = false, generation = 0, active = false, paused = false, queue = [], controller = new AbortController()
-  const stop = () => { generation++; paused = false; queue = []; controller.abort(); controller = new AbortController(); source?.stop(); source = null; cancelAnimationFrame(frame); renderer.speech?.cancel(); actions?.reset(); active = false; void context?.close(); context = null }
+  const stop = () => { generation++; paused = false; queue = []; controller.abort(); controller = new AbortController(); source?.stop(); source = null; cancelAnimationFrame(frame); renderer?.speech?.cancel(); actions?.reset(); active = false; void context?.close(); context = null }
   const play = async () => {
     if (active || disposed || paused || !queue.length) return
     active = true; const item = queue.shift(), token = generation, signal = controller.signal
@@ -16,13 +30,13 @@ export function mountSpeechPlayer(renderer, notice, actions) {
       const bytes = await response.arrayBuffer(); if (token !== generation || disposed) return
       context ??= new AudioContext({ sampleRate: item.sampleRate }); await context.resume()
       if (token !== generation || disposed) return
-      if (context.state !== 'running') throw new Error('请点击桌宠以允许播放声音')
+      if (context.state !== 'running') throw new Error(renderer ? '请点击桌宠以允许播放声音' : '请点击 Harness 窗口以允许播放声音')
       const buffer = context.createBuffer(1, bytes.byteLength / 2, item.sampleRate), channel = buffer.getChannelData(0), view = new DataView(bytes)
       for (let i = 0; i < channel.length; i++) channel[i] = view.getInt16(i * 2, true) / 32768
       source = context.createBufferSource(); source.buffer = buffer; source.connect(context.destination)
       let lastSound = 0
       const started = context.currentTime
-      renderer.speech?.start(weightedTimeline(item.timeline, item.mouthRecipes?.[renderer.info.id], renderer.info.kind), () => context ? context.currentTime - started : -1)
+      renderer?.speech?.start(weightedTimeline(item.timeline, item.mouthRecipes?.[renderer?.info?.id], renderer?.info?.kind), () => context ? context.currentTime - started : -1)
       actions?.beginSpeech()
       source.start()
       if (actions?.play((item.asides ?? []).join('\n'), item.actionKeywords, item.actionPresets) === true) actionHits++
@@ -37,21 +51,22 @@ export function mountSpeechPlayer(renderer, notice, actions) {
         const silent = peak < .008 && audioTime - lastSound > .25
         if (silent && !wasSilent) silentFrames++
         wasSilent = silent
-        if (renderer.speech?.silence) renderer.speech.silence(silent)
+        if (renderer?.speech?.silence) renderer.speech.silence(silent)
         frame = requestAnimationFrame(tick)
       }; tick()
       await new Promise(resolve => { source.onended = resolve; signal.addEventListener('abort', resolve, { once: true }) })
       if (token !== generation) return
-      cancelAnimationFrame(frame); renderer.speech?.cancel(); actions?.endSpeech(); source.disconnect(); source = null
+      cancelAnimationFrame(frame); renderer?.speech?.cancel(); actions?.endSpeech(); source.disconnect(); source = null
       await api('/ack', { id: item.id, epoch: item.epoch, played: true, diagnosticsId: item.diagnosticsId, silentFrames, actionHits })
     } catch (error) { if (!signal.aborted && !disposed) { notice(error.message); await api('/ack', { id: item.id, epoch: item.epoch, played: false, diagnosticsId: item.diagnosticsId, silentFrames, actionHits }).catch(() => {}) } }
-    finally { if (token === generation) { cancelAnimationFrame(frame); renderer.speech?.cancel(); actions?.endSpeech(); source?.disconnect(); source = null; active = false; if (queue.length) void play(); else { void context?.close(); context = null } } }
+    finally { if (token === generation) { cancelAnimationFrame(frame); renderer?.speech?.cancel(); actions?.endSpeech(); source?.disconnect(); source = null; active = false; if (queue.length) void play(); else { void context?.close(); context = null } } }
   }
   events.addEventListener('speech', e => { if (!disposed) { queue.push(JSON.parse(e.data)); void play() } })
   events.addEventListener('action-aside', e => { if (!disposed) { const value = JSON.parse(e.data); actions?.play(value.text, value.actionKeywords, value.actionPresets) } })
   events.addEventListener('speech-stop', stop)
   events.addEventListener('speech-pause', e => { paused = JSON.parse(e.data).paused; if (paused) void context?.suspend(); else { void context?.resume(); void play() } })
   events.addEventListener('notice', e => notice(JSON.parse(e.data).message))
-  events.onerror = stop
-  return () => { disposed = true; events.close(); stop() }
+  // A shared stream is not this player's to close, and `onerror` would clobber the other listener that reads it.
+  events.addEventListener('error', stop)
+  return () => { disposed = true; if (ownsStream) events.close(); stop() }
 }
