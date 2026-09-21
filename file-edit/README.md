@@ -78,6 +78,7 @@ To make file changes inside a Harness session **visible, editable and referencea
 
 - **References carry a location**: the chip shows the path and the line range, so the model's target is exact;
 - **Selection references**: selecting text in a file or review view floats a bubble above the selection, and one click inserts the reference;
+- **The bubble is a contribution seam**: other plugins add their own action beside `@引用` through the client service `dshFileEditSelectionActions` (`register({ id, order, pill })`, where `pill` is a React component receiving `{ text, path, start, end, lineRef }`). The bubble group positions itself once and lays the actions out in a row, so a contributed action never has to measure the selection; the desktop pet's 朗读 is the first consumer. The service is published with `ctx.provide` and waited on with `ctx.inject`, so the two plugins' activation order does not matter;
 - **Two paths, one vocabulary**: the diff view and code browsing use the official `@path` reference with the line range only in the chip label, while the rendered view writes the range into the text so the model knows which lines are meant; the selected text itself is never sent;
 - **Consistent with the official behaviour**: both paths declare the official appearance, so both draw the official file icon and behave like every other reference in the composer.
 

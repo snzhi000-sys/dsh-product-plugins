@@ -35381,6 +35381,34 @@
           };
           const FILE_BROWSER_KIND = "dsh-file-edit";
           const FILE_BROWSER_TITLE = "Edit \u6587\u4EF6\u6D4F\u89C8\u5668";
+          const selectionActions = /* @__PURE__ */ new Set();
+          const selectionActionListeners = /* @__PURE__ */ new Set();
+          const notifySelectionActions = () => {
+            for (const listener of selectionActionListeners) listener();
+          };
+          const selectionActionService = {
+            version: 1,
+            /**
+             * 注册一个选区动作。贡献方提供组件，气泡负责定位与并排布局。
+             * @param action - `{ id, order?, pill }`；`pill` 接收 `{ text, path, start, end, lineRef }`。
+             * @returns 注销函数；参数不合法时返回空函数而不是抛错，避免拖垮贡献方的装配。
+             */
+            register(action) {
+              if (!action || typeof action.id !== "string" || !action.id || typeof action.pill !== "function") return () => {
+              };
+              const entry = { id: action.id, order: Number.isFinite(action.order) ? action.order : 0, pill: action.pill };
+              selectionActions.add(entry);
+              notifySelectionActions();
+              return () => {
+                if (selectionActions.delete(entry)) notifySelectionActions();
+              };
+            }
+          };
+          try {
+            ctx.effect(() => ctx.provide("dshFileEditSelectionActions", selectionActionService));
+          } catch (e) {
+            console.warn("[dsh-file-edit] \u53D1\u5E03\u9009\u533A\u52A8\u4F5C\u670D\u52A1\u5931\u8D25\uFF0C\u5176\u5B83\u63D2\u4EF6\u7684\u9009\u533A\u52A8\u4F5C\u5C06\u4E0D\u53EF\u7528:", e);
+          }
           const activateFilesView = (sid) => {
             if (!sid) return false;
             try {
@@ -37408,8 +37436,11 @@
             ".dsh-fe-sidebar-host .dsh-fe-iconbtn, .dsh-fe-sidebar-host .dsh-fe-secbtn { border-radius:999px; }",
             ".dsh-fe-sidebar-host .dsh-fe-iconbtn:hover, .dsh-fe-sidebar-host .dsh-fe-secbtn:hover { background:var(--dsw-alias-interactive-bg-hover); color:var(--dsw-alias-label-primary); }",
             ".dsh-fe-sidebar-host .dsh-fe-iconbtn-ok:hover { color:var(--dsh-fe-review-add, var(--dsw-alias-state-success-primary)); }",
+            // 选中气泡容器：定位只在这一层做，气泡们并排挂在里面（引用、朗读…），
+            // 因此谁贡献动作都不需要自己再算一次坐标，也就不会与引用气泡错位。
+            ".dsh-fe-refbubble-group { position:fixed; z-index:80; display:inline-flex; align-items:center; gap:6px; }",
             // 选中引用气泡：浮在选区上方，用与官方同一套交互规范（胶囊、交互底色、仰角描边）。
-            ".dsh-fe-refbubble { position:fixed; z-index:80; display:inline-flex; align-items:center; height:30px; padding:0 12px; border:0; border-radius:999px; background:var(--dsw-alias-bg-layer-2); color:var(--dsw-alias-label-primary); font-size:12px; line-height:1; white-space:nowrap; cursor:pointer; box-shadow:var(--dsw-elevation-soft); }",
+            ".dsh-fe-refbubble { display:inline-flex; align-items:center; height:30px; padding:0 12px; border:0; border-radius:999px; background:var(--dsw-alias-bg-layer-2); color:var(--dsw-alias-label-primary); font-size:12px; line-height:1; white-space:nowrap; cursor:pointer; box-shadow:var(--dsw-elevation-soft); }",
             // 悬浮气泡是浮在内容之上的：hover 必须是不透明底色（官方 interactive-bg-hover-solid），
             // 用半透明的 interactive-bg-hover 会让整颗气泡变透明，看起来像 bug。
             ".dsh-fe-refbubble:hover { background:var(--dsw-alias-interactive-bg-hover-solid); }",
@@ -42060,6 +42091,13 @@
             const [draftText, setDraftText] = React.useState("");
             const [savingDocument, setSavingDocument] = React.useState(false);
             const [selectionBubble, setSelectionBubble] = React.useState(null);
+            const [, refreshSelectionActions] = React.useReducer((value) => value + 1, 0);
+            React.useEffect(() => {
+              selectionActionListeners.add(refreshSelectionActions);
+              return () => {
+                selectionActionListeners.delete(refreshSelectionActions);
+              };
+            }, []);
             const [reviewAction, setReviewAction] = React.useState(null);
             const [focusIdx, setFocusIdx] = React.useState(null);
             const hunkRefs = React.useState({})[0];
@@ -42112,14 +42150,14 @@
                 if (insideMarkdown(sel.anchorNode) && insideMarkdown(sel.focusNode)) {
                   const rows = markdownLineRange(sel);
                   if (!rows) return setSelectionBubble(null);
-                  setSelectionBubble({ start: rows.start, end: rows.end, rect: range2.getBoundingClientRect(), lineRef: true });
+                  setSelectionBubble({ start: rows.start, end: rows.end, rect: range2.getBoundingClientRect(), lineRef: true, text: sel.toString() });
                   return;
                 }
                 const a2 = markOf(sel.anchorNode), b = markOf(sel.focusNode);
                 if (!a2 || !b) return;
                 const an = Number(a2.dataset.n), bn = Number(b.dataset.n);
                 if (!an || !bn) return setSelectionBubble(null);
-                setSelectionBubble({ start: Math.min(an, bn), end: Math.max(an, bn), rect: range2.getBoundingClientRect() });
+                setSelectionBubble({ start: Math.min(an, bn), end: Math.max(an, bn), rect: range2.getBoundingClientRect(), text: sel.toString() });
               };
               document.addEventListener("selectionchange", onSelection);
               window.addEventListener("scroll", onSelection, true);
@@ -42325,10 +42363,10 @@
               const above = rect.top - gap - height;
               const top2 = above >= 8 ? above : Math.min(window.innerHeight - height - 8, rect.bottom + gap);
               const left = Math.max(8, Math.min(rect.left, window.innerWidth - 96));
-              return React.createElement("button", {
+              const text = typeof bubble.text === "string" && bubble.text ? bubble.text : typeof window !== "undefined" && window.getSelection ? String(window.getSelection() || "") : "";
+              const reference = React.createElement("button", {
                 type: "button",
                 className: "dsh-fe-refbubble",
-                style: { left: left + "px", top: Math.max(8, top2) + "px" },
                 title: "\u5F15\u7528\u9009\u4E2D\u5185\u5BB9\uFF08Command+U\uFF09",
                 "aria-label": "\u5F15\u7528\u9009\u4E2D\u5185\u5BB9",
                 onPointerDown: (event) => {
@@ -42340,6 +42378,18 @@
                   setSelectionBubble(null);
                 }
               }, "@\u5F15\u7528");
+              const contributed = [...selectionActions].sort((a2, b) => a2.order - b.order).map((action) => React.createElement(action.pill, {
+                key: action.id,
+                text,
+                path,
+                start: bubble.start,
+                end: bubble.end,
+                lineRef: Boolean(bubble.lineRef)
+              }));
+              return React.createElement("div", {
+                className: "dsh-fe-refbubble-group",
+                style: { left: left + "px", top: Math.max(8, top2) + "px" }
+              }, reference, contributed);
             };
             const onHunk = async (h, action) => {
               if (reviewAction) return;

@@ -91,6 +91,32 @@ window.__ModuleLoader__.load({
         const FILE_BROWSER_KIND = 'dsh-file-edit'
         // 右侧栏标签名：类型注册的 title 与 title 席位共用，避免两处文案漂移。
         const FILE_BROWSER_TITLE = 'Edit 文件浏览器'
+        // 选区动作的贡献缝：气泡里除「@引用」以外还能挂别的动作（桌宠的「朗读」是第一个消费者）。
+        // 与 dshFileEditOpen 一样用客户端服务发布；消费者用 ctx.inject(['dshFileEditSelectionActions'], …)
+        // 等它出现，因此两侧的装配顺序无关，也不会出现「谁先谁后」的静默失配。
+        const selectionActions = new Set()
+        const selectionActionListeners = new Set()
+        const notifySelectionActions = () => { for (const listener of selectionActionListeners) listener() }
+        const selectionActionService = {
+          version: 1,
+          /**
+           * 注册一个选区动作。贡献方提供组件，气泡负责定位与并排布局。
+           * @param action - `{ id, order?, pill }`；`pill` 接收 `{ text, path, start, end, lineRef }`。
+           * @returns 注销函数；参数不合法时返回空函数而不是抛错，避免拖垮贡献方的装配。
+           */
+          register(action) {
+            if (!action || typeof action.id !== 'string' || !action.id || typeof action.pill !== 'function') return () => {}
+            const entry = { id: action.id, order: Number.isFinite(action.order) ? action.order : 0, pill: action.pill }
+            selectionActions.add(entry)
+            notifySelectionActions()
+            return () => { if (selectionActions.delete(entry)) notifySelectionActions() }
+          },
+        }
+        try {
+          ctx.effect(() => ctx.provide('dshFileEditSelectionActions', selectionActionService))
+        } catch (e) {
+          console.warn('[dsh-file-edit] 发布选区动作服务失败，其它插件的选区动作将不可用:', e)
+        }
         // 把文件浏览器带到屏幕上。新宿主是官方右侧栏的一个页面型标签：一个标签承载
         // 整个浏览器，内部的文档子标签（store.tabs/store.active）都在里面切换。
         // 没有这套侧栏服务的旧产品退回会话视图宿主，由下面的注册分支保留。
@@ -2140,8 +2166,11 @@ window.__ModuleLoader__.load({
           '.dsh-fe-sidebar-host .dsh-fe-iconbtn, .dsh-fe-sidebar-host .dsh-fe-secbtn { border-radius:999px; }',
           '.dsh-fe-sidebar-host .dsh-fe-iconbtn:hover, .dsh-fe-sidebar-host .dsh-fe-secbtn:hover { background:var(--dsw-alias-interactive-bg-hover); color:var(--dsw-alias-label-primary); }',
           '.dsh-fe-sidebar-host .dsh-fe-iconbtn-ok:hover { color:var(--dsh-fe-review-add, var(--dsw-alias-state-success-primary)); }',
+          // 选中气泡容器：定位只在这一层做，气泡们并排挂在里面（引用、朗读…），
+          // 因此谁贡献动作都不需要自己再算一次坐标，也就不会与引用气泡错位。
+          '.dsh-fe-refbubble-group { position:fixed; z-index:80; display:inline-flex; align-items:center; gap:6px; }',
           // 选中引用气泡：浮在选区上方，用与官方同一套交互规范（胶囊、交互底色、仰角描边）。
-          '.dsh-fe-refbubble { position:fixed; z-index:80; display:inline-flex; align-items:center; height:30px; padding:0 12px; border:0; border-radius:999px; background:var(--dsw-alias-bg-layer-2); color:var(--dsw-alias-label-primary); font-size:12px; line-height:1; white-space:nowrap; cursor:pointer; box-shadow:var(--dsw-elevation-soft); }',
+          '.dsh-fe-refbubble { display:inline-flex; align-items:center; height:30px; padding:0 12px; border:0; border-radius:999px; background:var(--dsw-alias-bg-layer-2); color:var(--dsw-alias-label-primary); font-size:12px; line-height:1; white-space:nowrap; cursor:pointer; box-shadow:var(--dsw-elevation-soft); }',
           // 悬浮气泡是浮在内容之上的：hover 必须是不透明底色（官方 interactive-bg-hover-solid），
           // 用半透明的 interactive-bg-hover 会让整颗气泡变透明，看起来像 bug。
           '.dsh-fe-refbubble:hover { background:var(--dsw-alias-interactive-bg-hover-solid); }',
@@ -3994,6 +4023,12 @@ window.__ModuleLoader__.load({
           const [draftText, setDraftText] = React.useState('')
           const [savingDocument, setSavingDocument] = React.useState(false)
           const [selectionBubble, setSelectionBubble] = React.useState(null)
+          // 贡献缝是活的：贡献方晚于文件浏览器装配（或插件热更）时，注册完要让气泡重画一次。
+          const [, refreshSelectionActions] = React.useReducer(value => value + 1, 0)
+          React.useEffect(() => {
+            selectionActionListeners.add(refreshSelectionActions)
+            return () => { selectionActionListeners.delete(refreshSelectionActions) }
+          }, [])
           const [reviewAction, setReviewAction] = React.useState(null)
           // v1.7.1: hunk heads (行号范围 + 接受/拒绝) are PERMANENT — the
           // old hover-show/hover-hide made adjacent hunks jitter while the
@@ -4062,7 +4097,7 @@ window.__ModuleLoader__.load({
                 const rows = markdownLineRange(sel)
                 if (!rows) return setSelectionBubble(null)
                 // lineRef：这一条带真实行号，插入时走插件自己的 ref codec（host 会读回这些行）。
-                setSelectionBubble({ start: rows.start, end: rows.end, rect: range.getBoundingClientRect(), lineRef: true })
+                setSelectionBubble({ start: rows.start, end: rows.end, rect: range.getBoundingClientRect(), lineRef: true, text: sel.toString() })
                 return
               }
               const a = markOf(sel.anchorNode), b = markOf(sel.focusNode)
@@ -4070,7 +4105,7 @@ window.__ModuleLoader__.load({
               // onSelection 负责设置气泡，在这里清空会让气泡刚出现就被抹掉（选中在代码里几乎出不来）。
               if (!a || !b) return
               const an = Number(a.dataset.n), bn = Number(b.dataset.n); if (!an || !bn) return setSelectionBubble(null)
-              setSelectionBubble({ start: Math.min(an,bn), end: Math.max(an,bn), rect: range.getBoundingClientRect() })
+              setSelectionBubble({ start: Math.min(an,bn), end: Math.max(an,bn), rect: range.getBoundingClientRect(), text: sel.toString() })
             }
             document.addEventListener('selectionchange', onSelection); window.addEventListener('scroll', onSelection, true)
             return () => { document.removeEventListener('selectionchange', onSelection); window.removeEventListener('scroll', onSelection, true) }
@@ -4290,9 +4325,10 @@ window.__ModuleLoader__.load({
             const rows = startLine > 0 ? (endLine > startLine ? startLine + '-' + endLine : String(startLine)) : ''
             insertOfficialReference({ path: path, kind: 'file', label: rows ? name + ':' + rows : name })
           }
-          // 选中内容后浮在选区**上方**的引用气泡：编辑/浏览视图与 Command+U 同一条官方引用路径，
-          // 渲染视图则带上真实行号（见 referenceDocumentLines），让不用快捷键的读者也能引用。
-          // 上方放不下时（选区贴顶）才翻到下方。
+          // 选中内容后浮在选区**上方**的气泡组：容器只负责定位，引用与其它插件贡献的动作并排挂在里面，
+          // 于是贡献方不必自己再算一次坐标，也就不会与引用气泡错位。
+          // 编辑/浏览视图与 Command+U 同一条官方引用路径，渲染视图则带上真实行号（见 referenceDocumentLines），
+          // 让不用快捷键的读者也能引用。上方放不下时（选区贴顶）才翻到下方。
           const selectionBubbleElement = () => {
             const bubble = selectionBubble
             if (!bubble || !bubble.rect) return null
@@ -4302,10 +4338,13 @@ window.__ModuleLoader__.load({
             const above = rect.top - gap - height
             const top = above >= 8 ? above : Math.min(window.innerHeight - height - 8, rect.bottom + gap)
             const left = Math.max(8, Math.min(rect.left, window.innerWidth - 96))
-            return React.createElement('button', {
+            // 代码编辑器里的选区由 CodeMirror 自己上报，不经过上面的 DOM 选区分支，因此这里兜一次实时选区文本。
+            const text = typeof bubble.text === 'string' && bubble.text
+              ? bubble.text
+              : (typeof window !== 'undefined' && window.getSelection ? String(window.getSelection() || '') : '')
+            const reference = React.createElement('button', {
               type: 'button',
               className: 'dsh-fe-refbubble',
-              style: { left: left + 'px', top: Math.max(8, top) + 'px' },
               title: '引用选中内容（Command+U）',
               'aria-label': '引用选中内容',
               onPointerDown: (event) => { event.preventDefault() },
@@ -4315,6 +4354,15 @@ window.__ModuleLoader__.load({
                 setSelectionBubble(null)
               },
             }, '@引用')
+            const contributed = [...selectionActions]
+              .sort((a, b) => a.order - b.order)
+              .map(action => React.createElement(action.pill, {
+                key: action.id, text: text, path: path, start: bubble.start, end: bubble.end, lineRef: Boolean(bubble.lineRef),
+              }))
+            return React.createElement('div', {
+              className: 'dsh-fe-refbubble-group',
+              style: { left: left + 'px', top: Math.max(8, top) + 'px' },
+            }, reference, contributed)
           }
           const onHunk = async (h, action) => {
             if (reviewAction) return

@@ -132,17 +132,37 @@ test('selection references use the official reference source, and a bubble sits 
   assert.match(source, /insertOfficialReference\(\{ path: path, kind: 'file', label: rows \? name \+ ':' \+ rows : name \}\)/)
   assert.match(source, /const referenced = insertOfficialReference\(\{/)
   assert.doesNotMatch(source, /window\.__dshFileRef\(\{ path: path, startLine/)
-  // The bubble floats above the selection, keeps the selection on pointer down, and reads @引用.
+  // The bubble group floats above the selection, keeps the selection on pointer down, and reads @引用.
   assert.match(source, /const top = above >= 8 \? above : Math\.min\(window\.innerHeight - height - 8, rect\.bottom \+ gap\)/)
   assert.match(source, /const above = rect\.top - gap - height/)
   assert.match(source, /className: 'dsh-fe-refbubble'/)
   assert.match(source, /'@引用'\)/)
   assert.match(source, /onPointerDown: \(event\) => \{ event\.preventDefault\(\) \}/)
-  assert.match(source, /'\.dsh-fe-refbubble \{ position:fixed;[^']*border-radius:999px;[^']*box-shadow:var\(--dsw-elevation-soft\); \}'/)
+  // Positioning belongs to the group, so a contributed pill never has to measure the selection itself.
+  assert.match(source, /'\.dsh-fe-refbubble-group \{ position:fixed;[^']*display:inline-flex;[^']*gap:6px; \}'/)
+  assert.match(source, /'\.dsh-fe-refbubble \{ display:inline-flex;[^']*border-radius:999px;[^']*box-shadow:var\(--dsw-elevation-soft\); \}'/)
   // A floating bubble keeps an opaque hover fill; the translucent hover token would make it see-through.
   assert.match(source, /'\.dsh-fe-refbubble:hover \{ background:var\(--dsw-alias-interactive-bg-hover-solid\); \}'/)
   // Mounted wherever a selection can happen: the markdown render view, the document editor, and the diff view.
   assert.equal((source.match(/selectionBubbleElement\(\),/g) || []).length, 3)
+})
+
+test('the selection bubble carries a contribution seam for other plugins', async () => {
+  const source = await readFile(sourceUrl, 'utf8')
+  // Published as a client service and waited on with ctx.inject, so activation order cannot silently break it.
+  assert.match(source, /ctx\.effect\(\(\) => ctx\.provide\('dshFileEditSelectionActions', selectionActionService\)\)/)
+  assert.match(source, /register\(action\) \{/)
+  assert.match(source, /return \(\) => \{ if \(selectionActions\.delete\(entry\)\) notifySelectionActions\(\) \}/)
+  // The registry is live: a late or hot-reloaded contribution repaints the bubble.
+  assert.match(source, /selectionActionListeners\.add\(refreshSelectionActions\)/)
+  // Every contributed pill receives the selected text and the file it came from, in order.
+  assert.match(source, /const contributed = \[\.\.\.selectionActions\]/)
+  assert.match(source, /\.sort\(\(a, b\) => a\.order - b\.order\)/)
+  assert.match(source, /React\.createElement\(action\.pill, \{\n\s+key: action\.id, text: text, path: path, start: bubble\.start, end: bubble\.end, lineRef: Boolean\(bubble\.lineRef\),/)
+  // The DOM listener records the selected text; the editor path falls back to the live selection.
+  assert.match(source, /rect: range\.getBoundingClientRect\(\), lineRef: true, text: sel\.toString\(\) \}/)
+  assert.match(source, /rect: range\.getBoundingClientRect\(\), text: sel\.toString\(\) \}/)
+  assert.match(source, /window\.getSelection \? String\(window\.getSelection\(\) \|\| ''\) : ''/)
 })
 
 test('a CodeMirror selection keeps its bubble instead of being cleared by the line-view listener', async () => {
