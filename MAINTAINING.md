@@ -40,7 +40,7 @@ node scripts/check-doc-links.mjs                       # every relative README r
 
 ## The two layouts
 
-`file-edit/` uses the repository layout below. `desktop-pet/` keeps the pipeline it was migrated with — `src/`, `dist/`, `assets/` and its own `cordis.patch.yml` — because its client bundle is built by its own scripts (`npm run build`) and its 95 MB of Live2D models are third-party assets curated from `Eikanya/Live2d-model` (see `desktop-pet/assets/NOTICE.txt`). `desktop/scripts/sync-product-plugins.mjs` copies either layout: it checks that every path in the package's `files` list exists and that a package declaring `dsh.client` ships a bundle in either place, and it only refuses a stale bundle for its own `client/src` + `client/dist/` layout.
+`file-edit/` uses the repository layout below. `desktop-pet/` keeps its own pipeline — `src/`, `dist/`, `assets/` and its own `cordis.patch.yml` — because its client bundle is built by its own scripts (`npm run build`) and its 95 MB of Live2D models are third-party assets curated from `Eikanya/Live2d-model` (see `desktop-pet/assets/NOTICE.txt`). `desktop/scripts/sync-product-plugins.mjs` copies either layout: it checks that every path in the package's `files` list exists and that a package declaring `dsh.client` ships a bundle in either place, and it only refuses a stale bundle for its own `client/src` + `client/dist/` layout.
 
 ## How the app consumes this repository
 
@@ -109,11 +109,11 @@ The package name, the `productPlugins` key in the app tree's `distribution/profi
 
 `desktop-pet/assets/` carries Live2D models curated from a third-party collection and ships its own `assets/NOTICE.txt`. They are covered by that notice, not by this repository's MIT license, so **the model files are not committed here** (`.gitignore` keeps `desktop-pet/assets/*` out and tracks `NOTICE.txt` alone).
 
-A fresh clone therefore has the pet's code but no models. Restore them from the legacy project the plugin was migrated from:
+A fresh clone therefore has the pet's code but no models. Restore them from the upstream collection recorded in `desktop-pet/assets/NOTICE.txt` (`desktop-pet/assets/catalog.json` lists every model directory and entry):
 
 ```bash
-LEGACY=/Users/edy/Downloads/azg_ai/harness-macos-desktop-plugin-suite/plugins/desktop-pet
-cp -R "$LEGACY/assets/." desktop-pet/assets/
+ARCHIVE=/path/to/Live2d-model/94ae3e5628226726af96c6b4bf0e1ce5c728e28e
+cp -R "$ARCHIVE/." desktop-pet/assets/
 test "$(find desktop-pet/assets -type f | wc -l | tr -d ' ')" = 781   # 781 files, 23 model directories
 ```
 

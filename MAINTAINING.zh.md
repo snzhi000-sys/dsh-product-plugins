@@ -40,7 +40,7 @@ node scripts/check-doc-links.mjs                       # 自述文件里的相�
 
 ## 两种布局
 
-`file-edit/` 用下面的仓库布局。`desktop-pet/` 保留它迁移时自带的流水线 —— `src/`、`dist/`、`assets/` 与自己的 `cordis.patch.yml` —— 因为它的客户端 bundle 由自己的脚本构建（`npm run build`），而其中 95 MB 的 Live2D 模型是取自 `Eikanya/Live2d-model` 的第三方资源（见 `desktop-pet/assets/NOTICE.txt`）。`desktop/scripts/sync-product-plugins.mjs` 两种布局都能复制：校验包 `files` 里每个路径都存在、声明 `dsh.client` 的包在两种位置之一确实带 bundle，并且只对本仓库自己的 `client/src` + `client/dist/` 布局拒绝"比源码旧的 bundle"。
+`file-edit/` 用下面的仓库布局。`desktop-pet/` 保留它自带的流水线 —— `src/`、`dist/`、`assets/` 与自己的 `cordis.patch.yml` —— 因为它的客户端 bundle 由自己的脚本构建（`npm run build`），而其中 95 MB 的 Live2D 模型是取自 `Eikanya/Live2d-model` 的第三方资源（见 `desktop-pet/assets/NOTICE.txt`）。`desktop/scripts/sync-product-plugins.mjs` 两种布局都能复制：校验包 `files` 里每个路径都存在、声明 `dsh.client` 的包在两种位置之一确实带 bundle，并且只对本仓库自己的 `client/src` + `client/dist/` 布局拒绝"比源码旧的 bundle"。
 
 ## App 怎么消费本仓库
 
@@ -109,11 +109,11 @@ npm run sync:plugins -- --check   # 只校验不写入；有漂移则非零退�
 
 `desktop-pet/assets/` 携带取自第三方模型集的 Live2D 模型，并自带 `assets/NOTICE.txt`。它们由那份声明覆盖、不属于本仓库的 MIT 许可，因此**模型文件不提交进本仓库**（`.gitignore` 排除 `desktop-pet/assets/*`，只跟踪 `NOTICE.txt`）。
 
-所以全新克隆下来有桌宠代码但没有模型，需要从迁移来源恢复：
+所以全新克隆下来有桌宠代码但没有模型，需要按 `desktop-pet/assets/NOTICE.txt` 记录的上游合集恢复（`desktop-pet/assets/catalog.json` 列出每个模型的目录与入口）：
 
 ```bash
-LEGACY=/Users/edy/Downloads/azg_ai/harness-macos-desktop-plugin-suite/plugins/desktop-pet
-cp -R "$LEGACY/assets/." desktop-pet/assets/
+ARCHIVE=/path/to/Live2d-model/94ae3e5628226726af96c6b4bf0e1ce5c728e28e
+cp -R "$ARCHIVE/." desktop-pet/assets/
 test "$(find desktop-pet/assets -type f | wc -l | tr -d ' ')" = 781   # 781 个文件、23 个模型目录
 ```
 

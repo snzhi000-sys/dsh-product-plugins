@@ -4,17 +4,27 @@ English | [中文](README.zh.md)
 
 ![dsh-file-edit cover](docs/images/cover.png)
 
-Product plugins for DeepSeek Harness. The repository currently ships one plugin, **dsh-file-edit**: it combines the workspace Explorer, the file browser and agent-change review, so every file change inside Harness is visible and can be settled where it happened.
+Product plugins for DeepSeek Harness. The repository currently ships two plugins: **dsh-file-edit** combines the workspace Explorer, the file browser and agent-change review into one file workspace, so every file change inside Harness is visible and can be settled where it happened; **dsh-desktop-pet** is a companion living in a transparent desktop window, with 23 outfits to choose from, who follows your pointer, moves her mouth while she speaks, and reads text aloud (the flagship character, **Mengmei**, is built on material provided by **苍月动漫**).
 
 ## Revision history
 
 | Date | Change | Author | Note | Link |
 | --- | --- | --- | --- | --- |
 | 2026-09-18 | First release of this page as a product introduction: feature demos, origin and credits, cover; maintenance rules moved to Maintaining and iterating | snzhi000-sys | Version `1.13.44-local` | — |
+| 2026-09-21 | Added the desktop-pet plugin introduction: flagship character and asset credit, built-in companion library, pointer lock, speech mouth, text read-out and voice configuration; four new screenshots | snzhi000-sys | Version `dsh-desktop-pet 0.1.1` | — |
 
 ---
 
 ## Summary
+
+This repository ships two product plugins that can be enabled independently:
+
+| Plugin | One line | What you configure |
+| --- | --- | --- |
+| **dsh-file-edit** | A file workspace inside the session: change review, Explorer, file browser, file and selection references | Nothing |
+| **dsh-desktop-pet** | A desktop companion: built-in character library, pointer lock, speech mouth, **text read-out** | The companion's own Ark endpoint plus model/TTS/ASR keys; read-out also needs a **voice ID** (cloned voices supported) |
+
+### dsh-file-edit: file changes you can see
 
 To make file changes inside a Harness session **visible, editable and referenceable**, the plugin builds one file workspace per session.
 
@@ -27,7 +37,7 @@ To make file changes inside a Harness session **visible, editable and referencea
 
 ---
 
-## Features
+## Features · dsh-file-edit
 
 ### 1. Agent-change review
 
@@ -94,16 +104,86 @@ To make file changes inside a Harness session **visible, editable and referencea
 - **Shell recording**: foreground Shell commands in a writable workspace are captured by a pre-execution snapshot plus recursive watching, and a failed snapshot never blocks the command while the session keeps an explicit partial-coverage conclusion;
 - **Unknown pre-modification content**: when `write` overwrites a file and the tool returns no prior content, the row says so and offers accept or manual handling only.
 
+## Features · dsh-desktop-pet (desktop companion)
+
+**A companion living in a transparent desktop window**: the built-in library holds **19 companions and 23 outfits**, and the default, flagship character is **Mengmei**. She follows your pointer, moves her mouth while she speaks, and reads text aloud — **the read-out capability itself comes from this plugin**; the Harness kernel does not read text by itself.
+
+### Built-in companion library
+
+![Built-in companion library and character switching](docs/images/pet-library.webp)
+
+- **19 companions, 23 outfits**: the selector lives in the sidebar's 桌宠 panel, searches by name, and switches and saves on a single click;
+- **The flagship character, Mengmei**: selected by default and listed first, she is the face of this product; her **material is provided by 苍月动漫** and we built the Live2D / DragonBones drive, pointer following, mouth and speech chain on top of it (the material remains its owner's; see Origin and credits);
+- **One companion, several outfits**: different costumes of the same character collapse into one entry (Mori's four, Toyama Kasumi's two) and switch inside the character's own detail;
+- **Each character drives itself**: Live2D (Cubism 3/4) and DragonBones companions each use their own animation and interaction profile without affecting the others.
+
+### Pointer lock: gaze and body follow together
+
+![Following pose after locking the pointer (one)](docs/images/pet-gaze-1.webp)
+
+![Following pose after locking the pointer (two)](docs/images/pet-gaze-2.webp)
+
+- **The eyes lock onto the pointer**: an eye offset of 18 keeps the gaze on the cursor;
+- **The body follows too**: an additive offset on the official runtime's `zhuan` bone moves the body inside an ellipse of radius 350 horizontally and 300 vertically in skeleton units, with sensitivity 2 and 0.18 s smoothing, so it follows without twitching;
+- **It keeps working outside the window**: native pointer events still reach the pet while the cursor is elsewhere on screen;
+- **It recentres when it should**: dragging the character, previewing an action, speaking, or focusing the compact input below the character returns her to neutral; turning animation off resets and holds still.
+
+### The mouth moves while she speaks
+
+![Mengmei in her resting state](docs/images/pet-mengmei.webp)
+
+- **Mouth shapes driven by the timeline**: Live2D companions drive `ParamMouthOpenY` / `PARAM_MOUTH_OPEN_Y`, while DragonBones companions use hand-made a/o/i/m shapes;
+- **Reading rules come first**: Arabic digits read as spoken numerals, Latin letters by letter name, common symbols by their reading (`%` → percent, `@` → at), while typographic punctuation is only a pause and closes the mouth;
+- **Untrustworthy word timings are replaced**: the speech service returns a flat 30 ms span for tokens containing digits or symbols, so the timeline is reflowed against the audio's own voiced segments and the mouth closes only where the audio really pauses;
+- **Approximate mouth shapes**, with no claim of phoneme-level alignment.
+
+### Reading text aloud
+
+**Speaking text is provided by this plugin**, through three entry points:
+
+- **A read-out button under every reply** in the official assistant action strip, beside copy and share; pressing it again while it plays stops all reading;
+- **Read a selection aloud**: selecting text in the conversation panel floats a 朗读 pill above it, and the file browser — which already floats its own reference bubble — receives the same action inside that bubble;
+- **Broadcast the main conversation** (a switch on the partner page): reads the part of the main agent's prose addressed to you;
+- **Only words a person would say**: reasoning, tool calls, fenced code, tables and markdown decoration are never read, and a read-out never writes into the pet's bubble — **the bubble only shows the companion's own reply**.
+
+### The voice and its key are yours to configure
+
+The pet keeps its own speech configuration (settings → 对话 / 声音) and **does not inherit Harness model settings**:
+
+- **Endpoint and keys**: fill in the Ark endpoint and model, then the model / TTS / ASR keys separately;
+- **Reading voice**: read-out needs a **TTS key and a voice ID**; we use the **Doubao voice** (Volcengine Ark) speech synthesis API;
+- **Cloned voices supported**: a speaker ID starting with `S_` is synthesised as a clone, and cloned voices take the same read-out path as the official ones;
+- **Missing pieces are named**: without a TTS key, without a voice, or without the pet on screen, the control states the reason instead of failing silently;
+- **Read-out is optional**: the character library, pointer following and text chat all work without TTS.
+
+### Behaviour and boundaries
+
+- **The companion has its own conversation**: open the input from the right-click menu, or use settings → 聊天记录; both share the latest conversation and a bounded context, and one reply keeps the configuration it started with;
+- **The bubble belongs to the character**: neither the main conversation's prose nor a read-out is written into it;
+- **Model assets are not distributed here**: the Live2D models come from `desktop-pet/assets/`, which `.gitignore` excludes, so a fresh clone restores them by the steps in [MAINTAINING.md](MAINTAINING.md);
+- **Asset rights stay with their owners**: character artwork, models and the Live2D Core are not covered by this repository and need their own permission before public redistribution.
+
 ---
 
 ## Origin and credits
 
-**This plugin is a derivative of the original `dsh-file-edit` plugin**, reworked with extensive optimisation and many added features. Thanks to the original author for the foundation.
+### File workspace (dsh-file-edit)
+
+**dsh-file-edit is a derivative of the original `dsh-file-edit` plugin**, reworked with extensive optimisation and many added features. Thanks to the original author for the foundation.
 
 - Original project: [justarook1e/dsh-file-edit](https://github.com/justarook1e/dsh-file-edit), released under MIT with copyright held by `justarook1e`; that repository is no longer maintained and has moved to [justarook1e/dsh-ide-lite](https://github.com/justarook1e/dsh-ide-lite).
 - **Inherited**: workspace file browsing and editing, accept/reject of agent changes, rejection undo, deletion quarantine, and the runtime state-directory and route conventions.
 - **Added or reworked here**: review listing attributed by session and workspace, subagent change attribution, directory deletion batches, named disclosure of uncaptured changes, deletion tombstones, official glyphs and labelled tabs, on-demand hiding with persisted preferences, line-level references from the rendered view, change targeting with line-accurate highlight, and the review bar's width and ink aligned with the official composer card.
 - **License obligation**: as MIT requires, [LICENSE](LICENSE) keeps the original author's copyright notice; embedded third-party components are listed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+
+### Desktop companion (dsh-desktop-pet)
+
+**The companion is our own product plugin, maintained in this repository**, and the product profile assembles it into the runtime.
+
+- **The flagship character Mengmei is built on material provided by 苍月动漫**: we use that material and built the Live2D / DragonBones drive, pointer following, mouth, speech and read-out chain on top of it; the character and its model remain entirely their owner's.
+- **The built-in Live2D models** come from the third-party collection [Eikanya/Live2d-model](https://github.com/Eikanya/Live2d-model); provenance and boundaries are recorded in `desktop-pet/assets/NOTICE.txt`, and **the model files are not distributed here**.
+- **Speech** uses the **Doubao voice** (Volcengine Ark) synthesis API, so every user brings their own key and voice; cloned voices are used through the same Ark speaker ID.
+- **Mouth, following and read-out rules** rest on this plugin's own implementation and measurements, documented in [desktop-pet/README.md](desktop-pet/README.md) ([中文](desktop-pet/README.zh.md)).
 
 ---
 
@@ -111,15 +191,17 @@ To make file changes inside a Harness session **visible, editable and referencea
 
 The plugin is assembled by the Harness product profile and ships with the runtime; it needs no separate install script.
 
-- **Product manifest**: the app tree's `distribution/profile-manifest.json` points `dsh-file-edit` at `plugins/file-edit`;
-- **Session assembly**: the app tree's `distribution/cordis.patch.yml` inserts the `dsh-file-edit` entry;
-- **Sync**: the app tree takes the plugin sources from this repository with `npm run sync:plugins`, which the packaging chain runs automatically.
+- **Product manifest**: the app tree's `distribution/profile-manifest.json` points `dsh-file-edit` and `dsh-desktop-pet` at `plugins/file-edit` and `plugins/desktop-pet`;
+- **Session assembly**: the app tree's `distribution/cordis.patch.yml` inserts both plugin entries;
+- **Sync**: the app tree takes the plugin sources from this repository with `npm run sync:plugins`, which the packaging chain runs automatically;
+- **The pet needs local configuration too**: show the companion in the sidebar's 桌宠 panel first, then fill in the endpoint, keys and voice as described above.
 
 ## Repository layout
 
 ```
-file-edit/              plugin sources and its own README pair
-docs/                   cover source and feature screenshots
+file-edit/              file-workspace plugin: sources and its own README pair
+desktop-pet/            desktop-companion plugin: sources, build output and its README pair (Live2D models are not committed)
+docs/                   cover source and feature screenshots for both plugins
 scripts/                generator and verifier for the third-party notices
 MAINTAINING.md / .zh.md maintenance rules: layout, build, sync, release flow, naming contracts
 LICENSE                 license
@@ -132,4 +214,4 @@ Plugin sources are maintained only in this repository; the app-tree copy is gene
 
 ## License
 
-Released under the **MIT License** — see [LICENSE](LICENSE). You may use, modify and redistribute these plugins, including inside another product, as long as the copyright notice and the permission notice stay with the code. Embedded third-party components: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+Released under the **MIT License** — see [LICENSE](LICENSE). You may use, modify and redistribute these plugins, including inside another product, as long as the copyright notice and the permission notice stay with the code. Embedded third-party components: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). **MIT covers the code only**: the characters and Live2D models under `desktop-pet/assets/` are covered by their own notices and are not distributed here (see [MAINTAINING.md](MAINTAINING.md)).
