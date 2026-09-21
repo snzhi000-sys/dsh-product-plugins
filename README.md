@@ -130,7 +130,7 @@ To make file changes inside a Harness session **visible, editable and referencea
 
 ### The mouth moves while she speaks
 
-![Mengmei in her resting state](docs/images/pet-mengmei.webp)
+![Mengmei with her mouth open while she speaks](docs/images/pet-mengmei.webp)
 
 - **Mouth shapes driven by the timeline**: Live2D companions drive `ParamMouthOpenY` / `PARAM_MOUTH_OPEN_Y`, while DragonBones companions use hand-made a/o/i/m shapes;
 - **Reading rules come first**: Arabic digits read as spoken numerals, Latin letters by letter name, common symbols by their reading (`%` → percent, `@` → at), while typographic punctuation is only a pause and closes the mouth;
@@ -160,7 +160,7 @@ The pet keeps its own speech configuration (settings → 对话 / 声音) and **
 
 - **The companion has its own conversation**: open the input from the right-click menu, or use settings → 聊天记录; both share the latest conversation and a bounded context, and one reply keeps the configuration it started with;
 - **The bubble belongs to the character**: neither the main conversation's prose nor a read-out is written into it;
-- **Model assets are not distributed here**: the Live2D models come from `desktop-pet/assets/`, which `.gitignore` excludes, so a fresh clone restores them by the steps in [MAINTAINING.md](MAINTAINING.md);
+- **Model assets are not committed here**: `.gitignore` excludes `desktop-pet/assets/*` and only `NOTICE.txt` is tracked (the 781 model files live on disk, not in git), so a fresh clone has the code but no models and restores them by the steps in [MAINTAINING.md](MAINTAINING.md); those assets **do ship with the plugin package and the product profile**, and redistributing them needs each owner's permission;
 - **Asset rights stay with their owners**: character artwork, models and the Live2D Core are not covered by this repository and need their own permission before public redistribution.
 
 ---
@@ -181,7 +181,7 @@ The pet keeps its own speech configuration (settings → 对话 / 声音) and **
 **The companion is our own product plugin, maintained in this repository**, and the product profile assembles it into the runtime.
 
 - **The flagship character Mengmei is built on material provided by 苍月动漫**: we use that material and built the Live2D / DragonBones drive, pointer following, mouth, speech and read-out chain on top of it; the character and its model remain entirely their owner's.
-- **The built-in Live2D models** come from the third-party collection [Eikanya/Live2d-model](https://github.com/Eikanya/Live2d-model); provenance and boundaries are recorded in `desktop-pet/assets/NOTICE.txt`, and **the model files are not distributed here**.
+- **The built-in Live2D models** come from the third-party collection [Eikanya/Live2d-model](https://github.com/Eikanya/Live2d-model); provenance and boundaries are recorded in `desktop-pet/assets/NOTICE.txt`, and **the model files are not committed here** (only `NOTICE.txt` is tracked) while the plugin package and the product profile do ship them, so redistributing them needs the owners' permission.
 - **Speech** uses the **Doubao voice** (Volcengine Ark) synthesis API, so every user brings their own key and voice; cloned voices are used through the same Ark speaker ID.
 - **Mouth, following and read-out rules** rest on this plugin's own implementation and measurements, documented in [desktop-pet/README.md](desktop-pet/README.md) ([中文](desktop-pet/README.zh.md)).
 
@@ -189,12 +189,13 @@ The pet keeps its own speech configuration (settings → 对话 / 声音) and **
 
 ## Install and enable
 
-The plugin is assembled by the Harness product profile and ships with the runtime; it needs no separate install script.
+Both plugins are assembled by the Harness product profile and ship with the runtime: **installing Harness installs the plugins**, and no separate install script exists.
 
 - **Product manifest**: the app tree's `distribution/profile-manifest.json` points `dsh-file-edit` and `dsh-desktop-pet` at `plugins/file-edit` and `plugins/desktop-pet`;
 - **Session assembly**: the app tree's `distribution/cordis.patch.yml` inserts both plugin entries;
 - **Sync**: the app tree takes the plugin sources from this repository with `npm run sync:plugins`, which the packaging chain runs automatically;
-- **The pet needs local configuration too**: show the companion in the sidebar's 桌宠 panel first, then fill in the endpoint, keys and voice as described above.
+- **The companion works out of the box**: the character library, switching characters, touch and drag interaction and pointer following need no configuration at all. Its window starts hidden — turn on 显示伙伴 in the sidebar's 桌宠 panel, and that choice is remembered;
+- **Only the speech chain needs credentials of your own**: talking to the companion needs its own model endpoint and key, and reading text aloud additionally needs a TTS key and a voice ID (Doubao / Volcengine Ark, cloned voices included); the mouth, the captions and the action keywords are all driven by that speech chain. These are account credentials for the feature, not installation steps — see *The voice and its key are yours to configure* above.
 
 ## Repository layout
 
@@ -214,4 +215,4 @@ Plugin sources are maintained only in this repository; the app-tree copy is gene
 
 ## License
 
-Released under the **MIT License** — see [LICENSE](LICENSE). You may use, modify and redistribute these plugins, including inside another product, as long as the copyright notice and the permission notice stay with the code. Embedded third-party components: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). **MIT covers the code only**: the characters and Live2D models under `desktop-pet/assets/` are covered by their own notices and are not distributed here (see [MAINTAINING.md](MAINTAINING.md)).
+Released under the **MIT License** — see [LICENSE](LICENSE). You may use, modify and redistribute these plugins, including inside another product, as long as the copyright notice and the permission notice stay with the code. Embedded third-party components: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). **MIT covers the code only**: the characters and Live2D models under `desktop-pet/assets/` are covered by their own notices and stay outside this repository's licence (they are **not committed here**, but the plugin package and the product profile do ship them; see [MAINTAINING.md](MAINTAINING.md)).

@@ -130,7 +130,7 @@
 
 ### 说话时张嘴
 
-![萌妹的常驻状态](docs/images/pet-mengmei.webp)
+![萌妹说话时张嘴](docs/images/pet-mengmei.webp)
 
 - **按时间轴驱动口型**：Live2D 角色驱动 `ParamMouthOpenY`／`PARAM_MOUTH_OPEN_Y`；龙骨角色使用手工制作的 a／o／i／m 四个口型；
 - **先转「读法」再取元音**：阿拉伯数字按中文数字、拉丁字母按字母名、常见符号按读法转写（`%`→百分号、`@`→艾特…），排版类标点只当停顿、闭嘴；
@@ -160,7 +160,7 @@
 
 - **伙伴有自己的对话**：右键菜单打开输入框，或使用设置 →「聊天记录」页；两者共用最近一次对话与有上限的上下文，一轮回复固定使用开始时的配置；
 - **气泡只属于角色**：主对话正文与朗读内容都不会写进桌宠气泡；
-- **模型素材不随本仓库分发**：Live2D 模型由 `desktop-pet/assets/` 提供并被 `.gitignore` 排除，全新克隆需要按 [MAINTAINING.zh.md](MAINTAINING.zh.md) 的步骤恢复；
+- **模型素材不提交进本仓库**：`desktop-pet/assets/*` 被 `.gitignore` 排除，仓库里只跟踪 `NOTICE.txt`（781 个模型文件在磁盘上、不在 git 里），所以全新克隆有代码但没有模型，需要按 [MAINTAINING.zh.md](MAINTAINING.zh.md) 的步骤恢复；这些素材**会随插件包与产品 Profile 一起交付**，再分发它们需要素材方各自的许可；
 - **素材权利归各自所有者**：角色形象、模型与 Live2D Core 的权利不属于本仓库，公开分发前需要各自的许可。
 
 ---
@@ -181,7 +181,7 @@
 **桌宠是我们自己的产品插件，源码就维护在本仓库**，随产品 Profile 装配进运行时。
 
 - **主推形象「萌妹」的素材由「苍月动漫」提供**：我们使用该素材，并在此基础上完成了 Live2D／龙骨驱动、鼠标跟随、口型、语音与朗读链路；角色形象与模型的全部权利归素材方所有。
-- **内置 Live2D 模型**取自第三方合集 [Eikanya/Live2d-model](https://github.com/Eikanya/Live2d-model)，来源与边界见 `desktop-pet/assets/NOTICE.txt`；**模型文件不随本仓库分发**。
+- **内置 Live2D 模型**取自第三方合集 [Eikanya/Live2d-model](https://github.com/Eikanya/Live2d-model)，来源与边界见 `desktop-pet/assets/NOTICE.txt`；**模型文件不提交进本仓库**（只跟踪 `NOTICE.txt`），但会随插件包与产品 Profile 一起交付，再分发需素材方许可。
 - **语音能力**使用**豆包语音**（火山方舟）的语音合成接口，需要使用者自备 Key 与音色；复刻音色同样通过方舟的 speaker ID 使用。
 - **口型、跟随与朗读规则**的依据是插件自己的实现与实测数据，详见 [desktop-pet/README.md](desktop-pet/README.md)（[中文](desktop-pet/README.zh.md)）。
 
@@ -189,12 +189,13 @@
 
 ## 安装与启用
 
-本插件由 Harness 产品 Profile 装配，随发行包进入运行时，不需要单独的安装脚本。
+两个插件都由 Harness 产品 Profile 装配、随发行包进入运行时：**装好 Harness 就装好了插件，不需要单独的安装脚本**。
 
 - **产品清单**：App 树的 `distribution/profile-manifest.json` 把 `dsh-file-edit` 与 `dsh-desktop-pet` 分别指向 `plugins/file-edit` 与 `plugins/desktop-pet`；
 - **会话装配**：App 树的 `distribution/cordis.patch.yml` 插入这两个插件条目；
 - **同步**：App 树通过 `npm run sync:plugins` 从本仓库取得插件源码，打包前自动执行；
-- **桌宠额外需要本机配置**：先在左侧栏「桌宠」里显示伙伴，再按上文《音色与 Key 需要你自己配置》填好接口、Key 与音色。
+- **桌宠开箱即用**：角色库、切换角色、摸头与拖动等互动、鼠标跟随都不需要任何配置。桌宠窗口默认不显示，在左侧栏「桌宠」里打开「显示伙伴」即可，这个选择会被记住；
+- **需要你自备凭据的只有语音链路**：和角色对话需要桌宠自己的模型接入点与 Key，朗读还需要 TTS Key 与音色 ID（豆包／火山方舟，支持复刻音色）；说话时的口型、字幕与动作关键词都由这条语音链路驱动。这是功能的账号凭据，不是安装步骤，详见上文《音色与 Key 需要你自己配置》。
 
 ## 仓库结构
 
@@ -214,4 +215,4 @@ THIRD-PARTY-NOTICES.md  内嵌第三方与二次开发声明
 
 ## 许可证
 
-本仓库以 **MIT License** 发布，见 [LICENSE](LICENSE)。在保留版权声明与许可声明的前提下，可以使用、修改、再分发这些插件，包括打包进其它产品。内嵌第三方组件见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。**MIT 只覆盖代码**：`desktop-pet/assets/` 下的角色与 Live2D 模型素材由各自的声明覆盖，且不随本仓库分发（见 [MAINTAINING.zh.md](MAINTAINING.zh.md)）。
+本仓库以 **MIT License** 发布，见 [LICENSE](LICENSE)。在保留版权声明与许可声明的前提下，可以使用、修改、再分发这些插件，包括打包进其它产品。内嵌第三方组件见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。**MIT 只覆盖代码**：`desktop-pet/assets/` 下的角色与 Live2D 模型素材由各自的声明覆盖，不在本仓库的许可范围内（它们**不提交进本仓库**，但会随插件包与产品 Profile 一起交付；见 [MAINTAINING.zh.md](MAINTAINING.zh.md)）。
