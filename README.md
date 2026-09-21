@@ -12,6 +12,7 @@ Product plugins for DeepSeek Harness. The repository currently ships two plugins
 | --- | --- | --- | --- | --- |
 | 2026-09-18 | First release of this page as a product introduction: feature demos, origin and credits, cover; maintenance rules moved to Maintaining and iterating | snzhi000-sys | Version `1.13.44-local` | — |
 | 2026-09-21 | Added the desktop-pet plugin introduction: flagship character and asset credit, built-in companion library, pointer lock, speech mouth, text read-out and voice configuration; four new screenshots | snzhi000-sys | Version `dsh-desktop-pet 0.1.1` | — |
+| 2026-09-21 | Read-out decoupled from the pet being on screen (the Harness window plays while it is hidden, and hiding it never interrupts a clip); the broadcast switch moved to the conversation header's right side; stated the one-stream-per-window rule and the portrait-preview watchdog | snzhi000-sys | Version `dsh-desktop-pet 0.1.2` | — |
 
 ---
 
