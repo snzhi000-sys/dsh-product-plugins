@@ -21,11 +21,12 @@ var MouthCues = class {
     this.active = true;
     this.update();
   }
+  // The weight is committed before `apply`, so a driver can scale by the weight of the cue it is applying.
   set(shape, weight = 1) {
     if (this.current !== shape || this.weight !== weight) {
-      this.apply(shape);
-      this.current = shape;
       this.weight = weight;
+      this.apply(shape, weight);
+      this.current = shape;
     }
   }
   update() {

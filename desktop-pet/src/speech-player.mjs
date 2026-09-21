@@ -8,6 +8,8 @@ export function mountSpeechPlayer(renderer, notice, actions) {
   const play = async () => {
     if (active || disposed || paused || !queue.length) return
     active = true; const item = queue.shift(), token = generation, signal = controller.signal
+    // What this clip's playback did, reported back so a "no mouth" report can name its layer.
+    let silentFrames = 0, actionHits = 0, wasSilent = false
     try {
       const response = await fetch(`/desktop-pet/api/conversation/audio?id=${encodeURIComponent(item.id)}`, { signal })
       if (!response.ok) throw new Error('音频已过期')
@@ -20,10 +22,10 @@ export function mountSpeechPlayer(renderer, notice, actions) {
       source = context.createBufferSource(); source.buffer = buffer; source.connect(context.destination)
       let lastSound = 0
       const started = context.currentTime
-      renderer.speech?.start(weightedTimeline(item.timeline, item.mouthRecipes?.[renderer.info.id]), () => context ? context.currentTime - started : -1)
+      renderer.speech?.start(weightedTimeline(item.timeline, item.mouthRecipes?.[renderer.info.id], renderer.info.kind), () => context ? context.currentTime - started : -1)
       actions?.beginSpeech()
       source.start()
-      actions?.play((item.asides ?? []).join('\n'), item.actionKeywords, item.actionPresets)
+      if (actions?.play((item.asides ?? []).join('\n'), item.actionKeywords, item.actionPresets) === true) actionHits++
       const tick = () => {
         if (token !== generation || disposed) return
         // Silence gating also applies when timing had to be estimated from text.
@@ -31,14 +33,18 @@ export function mountSpeechPlayer(renderer, notice, actions) {
         for (let i = at; i < Math.min(channel.length, at + 240); i++) peak = Math.max(peak, Math.abs(channel[i]))
         const audioTime = context.currentTime - started
         if (peak >= .008) lastSound = audioTime
-        if (renderer.speech?.silence) renderer.speech.silence(peak < .008 && audioTime - lastSound > .09)
+        // Only a real pause closes the mouth: a 90ms gap is ordinary speech rhythm and was closing it mid-word.
+        const silent = peak < .008 && audioTime - lastSound > .25
+        if (silent && !wasSilent) silentFrames++
+        wasSilent = silent
+        if (renderer.speech?.silence) renderer.speech.silence(silent)
         frame = requestAnimationFrame(tick)
       }; tick()
       await new Promise(resolve => { source.onended = resolve; signal.addEventListener('abort', resolve, { once: true }) })
       if (token !== generation) return
       cancelAnimationFrame(frame); renderer.speech?.cancel(); actions?.endSpeech(); source.disconnect(); source = null
-      await api('/ack', { id: item.id, epoch: item.epoch, played: true })
-    } catch (error) { if (!signal.aborted && !disposed) { notice(error.message); await api('/ack', { id: item.id, epoch: item.epoch, played: false }).catch(() => {}) } }
+      await api('/ack', { id: item.id, epoch: item.epoch, played: true, diagnosticsId: item.diagnosticsId, silentFrames, actionHits })
+    } catch (error) { if (!signal.aborted && !disposed) { notice(error.message); await api('/ack', { id: item.id, epoch: item.epoch, played: false, diagnosticsId: item.diagnosticsId, silentFrames, actionHits }).catch(() => {}) } }
     finally { if (token === generation) { cancelAnimationFrame(frame); renderer.speech?.cancel(); actions?.endSpeech(); source?.disconnect(); source = null; active = false; if (queue.length) void play(); else { void context?.close(); context = null } } }
   }
   events.addEventListener('speech', e => { if (!disposed) { queue.push(JSON.parse(e.data)); void play() } })

@@ -6,9 +6,9 @@ import { join } from 'node:path'
 import { createServer } from 'node:http'
 import { once } from 'node:events'
 import { conversationStore, conversationDefaults, validateConversation } from '../src/conversation-store.mjs'
-import { createConversationHost } from '../src/conversation-host.mjs'
+import { createConversationHost, turnExpired, TURN_GRACE_MS } from '../src/conversation-host.mjs'
 import { asrPacket, decodeVoicePacket } from '../src/voice-protocol.mjs'
-import { speechCues } from '../src/speech-cues.mjs'
+import { pronouncable, speechCues } from '../src/speech-cues.mjs'
 import { createSpeechTextFilter, speechSegmentLength } from '../src/speech-text.mjs'
 import { fixtureEmotion } from './fixtures/emotion.mjs'
 
@@ -57,6 +57,45 @@ test('compressed PCM packets retain signed sequence and reject truncated data', 
   assert.equal(decoded.sequence, -4); assert.equal(decoded.last, true); assert.deepEqual(decoded.payload, source)
   assert.throws(() => decodeVoicePacket(packet.subarray(0, packet.length - 2)))
 })
+test('Arabic digits are read as spoken numerals and open the mouth', () => {
+  // Digits have no pinyin of their own; before this they produced no vowel and closed the mouth for the whole
+  // span, so a read-out of "1, 2, 3" moved nothing (reported 2026-09-19).
+  const shapes = cues => [...new Set(cues.filter(cue => cue.shape !== 'm').map(cue => cue.shape))]
+  for (const text of ['1234567890', '4839201756483920175648392017564839201756', '138 0042 7765', '数字 42 与中文混排']) {
+    const result = speechCues(text, 4)
+    assert.equal(shapes(result.cues).length > 0, true, `"${text.slice(0, 16)}" must open the mouth, got ${JSON.stringify(result.cues)}`)
+  }
+  // A digit's own span carries its vowel: the reading of "1" is open somewhere inside the first tenth.
+  const digits = speechCues('1234567890', 5)
+  assert.equal(digits.cues.some(cue => cue.time < .5 && cue.shape !== 'm'), true, 'the first digit opens the mouth')
+  assert.equal(digits.cues.some(cue => cue.time > 4.4 && cue.shape !== 'm'), true, 'so does the last one')
+  // Letters are read by name and symbols by their reading, so spelled-out acronyms and symbol-heavy text move
+  // the mouth too: "GDP" has no vowel letter of its own and used to close it for the whole span.
+  for (const text of ['GDP', 'USB', 'AI', 'hello world', '增长 5%', 'A+B=C → 100%', '单位 µΩ']) {
+    assert.equal(shapes(speechCues(text, 4).cues).length > 0, true, `"${text}" must open the mouth`)
+  }
+  // Greek letters are letters and were never seen by the symbol pass; symbols that are read aloud get their
+  // reading, while typographic punctuation stays the pause it is.
+  assert.equal(pronouncable('Δ = β × π'), '德尔塔等于贝塔乘派', 'Greek letters, arithmetic, and the equals sign are read')
+  // Digits are read one at a time, which is what a phone number, an id, and a long string all need.
+  assert.equal(pronouncable('20℃ ± 2‰'), '二零摄氏度正负二千分号', 'measures and units are read where they stand')
+  assert.equal(pronouncable('《活着》是一本“好书”（推荐）'), '活着是一本好书推荐', '书名号、引号与括号不产生读音')
+  assert.equal(pronouncable('A → B ≈ 100%'), '诶到比约等于一零零百分号', 'arrows, approximate equality, and percent are read')
+  for (const text of ['Δ = β', '增长 5% @someone', '1 + 2 - 3 × 4 ÷ 5 = 0', 'A → B ≈ C ≥ D', '$100 £50 ¥200']) {
+    assert.equal(shapes(speechCues(text, 4).cues).length > 0, true, `"${text}" must open the mouth`)
+  }
+  assert.deepEqual(shapes(speechCues('《》「」“”（）【】，。', 2).cues), [], 'typographic punctuation alone never opens the mouth')
+
+  // Punctuation is a pause, not a syllable, so a line of it still closes the mouth.
+  assert.deepEqual(shapes(speechCues(',,, 。。。', 2).cues), [])
+  assert.equal(pronouncable('GDP'), '基迪皮', 'a spelled-out acronym is read letter by letter')
+  assert.equal(pronouncable('5%'), '五百分号', 'a symbol is read where it stands')
+
+  // Letters are read by name, so even "hmm" carries vowels now; what still closes the mouth is text that is
+  // only punctuation, asserted just above.
+  assert.equal(pronouncable('a1b2'), '诶一比二', 'letters are read by name and digits as numerals')
+})
+
 test('word timing leaves silence closed and produces authored a/o/i/m shapes', () => {
   const result = speechCues('阿哦衣妈', 4, [{ words: ['阿', '哦', '衣', '妈'].map((word, i) => ({ word, startTime: i + .2, endTime: i + .7 })) }])
   assert.equal(result.alignment, 'word-pinyin'); assert.deepEqual(new Set(result.cues.map(c => c.shape)), new Set(['m', 'a', 'o', 'i']))
@@ -90,4 +129,102 @@ test('Host cancels obsolete speech, records actual model input, and leaves text 
     assert.equal(readFileSync(join(dir, 'conversation-session.json'), 'utf8').includes('private-test-value'), false)
     await post('/new', {}); assert.equal(host.store.session.messages.length, 0)
   } finally { playerController.abort(); await host.dispose(); server.closeAllConnections(); await new Promise(r => server.close(r)); rmSync(dir, { recursive: true, force: true }) }
+})
+
+test('symbols, spaces, and unit mismatches never leave the mouth still for long', () => {
+  // The reported failure: `+5.7%` was matched through its symbol-stripped form `57`, so the readings of `+`, `.`
+  // and `%` never reached the mouth for that span while the timeline still claimed to be usable (2026-09-20).
+  const texts = [
+    '工业是最亮的：规上工业增加值 +5.7%，比上半年还在提速。电子 +11.5%、汽车 +11.0%、专用设备 +12.0%。',
+    '高技术制造业 +11.1%，其中工业机器人产量 +36.6%、集成电路 +34.3%、新能源汽车 +49.0%。',
+    '节奏上是明显走弱的：2025 年四个季度 5.4% → 5.2% → 4.8% → 4.5%。',
+    '+49.0%',
+    '4839201756483920175648392017564839201756',
+    '138 0042 7765',
+    'Δ = β × π，GDP +5%',
+  ]
+  const longestClosedRun = cues => {
+    const times = cues.filter(cue => cue.shape !== 'm').map(cue => cue.time)
+    if (!times.length) return Infinity
+    let worst = times[0]
+    for (let index = 1; index < times.length; index++) worst = Math.max(worst, times[index] - times[index - 1])
+    return worst
+  }
+  for (const text of texts) {
+    for (const label of ['estimated', 'with subtitles']) {
+      // Both paths the host can take: the provider's subtitles, or the uniform fallback when they do not line up.
+      const duration = Math.max(1, pronouncable(text).length * .22)
+      const subtitles = label === 'with subtitles'
+        ? text.split(/(?<=[，。、%])|\s+/u).filter(Boolean).reduce((list, word, _index, all) => {
+          const total = all.reduce((n, item) => n + item.length, 0)
+          const before = all.slice(0, list.length).reduce((n, item) => n + item.length, 0)
+          list.push({ word, startTime: before / total * duration, endTime: (before + word.length) / total * duration })
+          return list
+        }, [])
+        : []
+      const result = speechCues(text, duration, subtitles)
+      assert.equal(longestClosedRun(result.cues) < .8, true, `"${text.slice(0, 18)}" (${label}) must not fall silent for long: cues ${JSON.stringify(result.cues.slice(0, 8))}`)
+    }
+  }
+})
+
+test('non-ASCII digits, letters, and symbols are read instead of closing the mouth', () => {
+  // These are letters and numbers to Unicode, so the symbol pass never saw them and pinyin found no vowel: each
+  // closed the mouth for its whole span while the audio read it out (measured 2026-09-20).
+  const forms = {
+    '＋１１.５％': '加一一点五百分号',
+    '２０２５': '二零二五',
+    'ＧＤＰ': '基迪皮',
+    '①②③': '一二三',
+    '5² + 3³': '五二加三三',
+    '½ ⅓': '二分之一三分之一',
+  }
+  for (const [raw, reading] of Object.entries(forms)) {
+    assert.equal(pronouncable(raw), reading, `${raw} reads as ${reading}`)
+    assert.equal(speechCues(raw, 3).cues.some(cue => cue.shape !== 'm'), true, `${raw} must open the mouth`)
+  }
+  // Roman numerals become the letters they are read as.
+  assert.equal(pronouncable('Ⅻ'), pronouncable('XII'), 'a Roman numeral reads like its letters')
+  // A character that is spoken but has no reading we know fails OPEN: the mouth stays visibly spoken.
+  const exotic = speechCues('\u13A0', 1)
+  assert.equal(exotic.cues.some(cue => cue.shape !== 'm'), true, 'an unreadable letter is not silence')
+  // Punctuation is still a pause, and that is the one case that closes the mouth.
+  assert.deepEqual(speechCues('，。；：', 2).cues.filter(cue => cue.shape !== 'm'), [])
+})
+
+test('only a turn that outlived its own model bound is abandoned', () => {
+  const now = 1_000_000
+  // A model call is bounded by `config.timeoutMs`, so a turn inside that bound is simply still working.
+  assert.equal(turnExpired(undefined, now), false, 'no turn means nothing to abandon')
+  assert.equal(turnExpired({ startedAt: now - 60_000, budget: 60_000 }, now), false, 'a turn inside its bound still owns the conversation')
+  assert.equal(turnExpired({ startedAt: now - 60_000 - TURN_GRACE_MS, budget: 60_000 }, now), false, 'the grace covers a slow finally')
+  assert.equal(turnExpired({ startedAt: now - 60_000 - TURN_GRACE_MS - 1, budget: 60_000 }, now), true, 'past the bound plus grace the turn is not making progress')
+})
+
+test('a message is accepted again once the previous turn outlived its model bound', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'pet-stale-turn-'))
+  // A model call that only settles when it is aborted: the turn can end only if something abandons it, which is
+  // exactly the state that used to leave the person with a send button that never answered again.
+  const services = {
+    async converse(_c, _k, _m, _delta, signal) { await new Promise(resolve => signal.addEventListener('abort', resolve, { once: true })); throw new DOMException('cancelled', 'AbortError') },
+    async synthesize() { throw new Error('never used') },
+  }
+  const host = createConversationHost(dir, {}, services)
+  const server = createServer((req, res) => host.handle(req, res, new URL(req.url, 'http://localhost')))
+  server.listen(0, '127.0.0.1'); await once(server, 'listening'); const base = `http://127.0.0.1:${server.address().port}/desktop-pet/api/conversation`
+  const post = async (path, body) => { const r = await fetch(base + path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }); return { status: r.status, value: await r.json() } }
+  const realNow = Date.now
+  try {
+    await post('/config', { config: { ...conversationDefaults, model: 'test', timeoutMs: 5000 }, keys: { llm: 'test' } })
+    assert.equal((await post('/send', { text: '第一句' })).status, 200)
+    assert.equal((await post('/send', { text: '重复' })).status, 400, 'a live turn still refuses the next message')
+    // The clock moves past the five-second bound this turn was given, plus the grace, without the test sleeping.
+    Date.now = () => realNow() + 7000
+    const again = await post('/send', { text: '再来一句' })
+    assert.equal(again.status, 200, 'the abandoned turn is taken over instead of keeping the input dead')
+    assert.equal(host.store.session.messages.at(-2).content, '再来一句')
+  } finally {
+    Date.now = realNow
+    await host.dispose(); server.closeAllConnections(); await new Promise(r => server.close(r)); rmSync(dir, { recursive: true, force: true })
+  }
 })

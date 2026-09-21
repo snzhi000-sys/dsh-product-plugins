@@ -3,9 +3,37 @@ import { randomUUID } from 'node:crypto'
 import { conversationStore } from './conversation-store.mjs'
 import { converse, synthesize, recognize } from './voice-services.mjs'
 import { speechCues } from './speech-cues.mjs'
+import { speechMask } from './speech-mask.mjs'
+import { createProseReader } from './broadcast.mjs'
+import { createMouthDiagnostics, cueStatistics, poseStatistics, subtitleCoverage } from './mouth-diagnostics.mjs'
 import { createSpeechTextFilter, speechSegmentLength } from './speech-text.mjs'
 import { dialoguePrompt, recentTurns, recentEmotionMessages, emotionHistoryText, expandEmotionPrompt, normalizeEmotionOutput } from './satellites.mjs'
 import { intimacyState, intimacyPrompt } from './intimacy.mjs'
+
+/**
+ * The read-out owner that stands for text the person selected in the interface.
+ *
+ * A read-out is owned by one control at a time — a message id, or this — so starting either one cancels the
+ * other, and the client's single read-out store keys both from the same event.
+ */
+const SELECTION_OWNER = 'selection'
+
+/**
+ * How long past its own model bound a turn may keep the next message out.
+ *
+ * `converse` bounds every call with `config.timeoutMs`, so a turn older than that plus this slack is not making
+ * progress. Refusing on such a turn left the person with an input that never worked again — the button answered
+ * nothing, because the host still believed a reply was in flight (reported 2026-09-21).
+ */
+export const TURN_GRACE_MS = 1000
+
+/**
+ * Whether an in-flight turn has outlived every bound its model call had.
+ * @param turn - the in-flight turn record, or undefined when nothing is generating.
+ * @param now - the clock to judge against.
+ * @returns true when the turn may be abandoned in favour of a new message.
+ */
+export const turnExpired = (turn, now = Date.now()) => Boolean(turn) && now - turn.startedAt > turn.budget + TURN_GRACE_MS
 
 function inputQueue() {
   const queue = []; let waiter, ended = false, bytes = 0
@@ -17,8 +45,21 @@ function inputQueue() {
 }
 export function createConversationHost(root, defaults = {}, services = { converse, synthesize, recognize }) {
   const store = conversationStore(root, defaults), clients = new Set(), audio = new Map(), tasks = new Set(), checks = new Set()
+  // What each read-out actually handed the mouth, and what the player then reported back.
+  const diagnostics = createMouthDiagnostics(root)
   let reply, turn, recording, speechController = new AbortController(), speechEpoch = randomUUID(), disposed = false, playback, speechTail = Promise.resolve(), queued = 0
-  let emotionJob, emotionError = ''
+  // The subset of `queued` that belongs to the pet's own conversation, which is the only speech that may drive
+  // the pet chat's bubble (`reply.speaking` / `reply.voiced`).
+  let chatQueued = 0
+  let emotionJob, emotionError = '', broadcastSaturated = false
+  // The per-message and selection read-out control: which control asked for a read-out. `undefined` means nothing
+  // is being read out by hand.
+  let readoutId
+  // Playback backpressure: a synthesis job waits for a free slot, and an acknowledgement frees one. The queue
+  // therefore holds at most `speechLookahead` clips of audio, however long the answer is.
+  let slotWaiters = []
+  const awaitSlot = limit => (audio.size < limit ? Promise.resolve() : new Promise(resolve => slotWaiters.push(resolve)))
+  const releaseSlot = () => { slotWaiters.shift()?.() }
   const emotionState = () => ({ ...store.session.emotion, generating: Boolean(emotionJob), error: emotionError })
   const snapshot = () => ({ session: { id: store.session.id, messages: store.session.messages }, intimacy: intimacyState(store.session, store.config.intimacyLevels), emotion: emotionState(), generating: Boolean(turn), recording: recording?.id ?? null, ttsEnabled: store.config.ttsEnabled, reply })
   const emit = (type, value, role) => { if (disposed) return; const frame = `event: ${type}\ndata: ${JSON.stringify(value)}\n\n`; for (const client of clients) if (!role || client.role === role) { if (client.res.writableLength > 1024 * 1024) client.res.destroy(); else client.res.write(frame) } }
@@ -50,26 +91,79 @@ export function createConversationHost(root, defaults = {}, services = { convers
       }
     })())
   }
-  const publishReply = () => { if (reply) { reply.generating = Boolean(turn && turn.id === reply.id); reply.speaking = queued > 0; emit('reply', reply) } }
-  const stopSpeech = () => { speechController.abort(); speechController = new AbortController(); speechEpoch = randomUUID(); audio.clear(); queued = 0; speechTail = Promise.resolve(); emit('speech-stop', { epoch: speechEpoch }); publishReply() }
+  const publishReply = () => {
+    if (!reply) return
+    reply.generating = Boolean(turn && turn.id === reply.id)
+    // Only the pet's own conversation may claim the bubble. `queued` counts every clip in the queue — broadcast and
+    // read-outs included — so using it here resurrected the last private reply whenever anything else was spoken,
+    // and left it on screen for as long as that speech lasted (reported 2026-09-20).
+    reply.speaking = chatQueued > 0
+    emit('reply', reply)
+  }
+  const stopSpeech = () => {
+    speechController.abort(); speechController = new AbortController(); speechEpoch = randomUUID(); audio.clear(); queued = 0; chatQueued = 0
+    broadcastSaturated = false; speechTail = Promise.resolve()
+    const waiting = slotWaiters; slotWaiters = []
+    for (const release of waiting) release()
+    emit('speech-stop', { epoch: speechEpoch })
+    // Stopping is also the end of a manual read-out, whatever stopped it.
+    if (readoutId !== undefined) { readoutId = undefined; emit('readout', { messageId: null, state: 'idle' }) }
+    publishReply()
+  }
   const stop = () => { turn?.controller.abort(); emotionJob?.controller.abort(); recording?.controller.abort(); recording?.queue.end(); for (const controller of checks) controller.abort(); stopSpeech() }
-  const enqueue = (text, config, key, epoch, asides = []) => {
-    if (!/[\p{L}\p{N}]/u.test(text) || epoch !== speechEpoch || !store.config.ttsEnabled || !playback) return
-    if (++queued > config.queueSegments) { stopSpeech(); emit('notice', { message: '回复较长，已停止朗读，文字继续显示。' }); return }
+  const enqueue = (text, config, key, epoch, asides = [], options = {}) => {
+    let accepted = false
+    // `allowed` is the caller's own gate: the pet's chat passes its auto-read switch, broadcast passes its own.
+    const source = options.source ?? 'chat'
+    const allowed = options.allowed ?? store.config.ttsEnabled
+    if (!allowed || !/[\p{L}\p{N}]/u.test(text) || epoch !== speechEpoch || !playback) return false
+    if (options.saturate && broadcastSaturated) return false
+    if (++queued > (options.cap ?? config.queueSegments)) {
+      // A chat reply that outruns its budget stops, which the person sees as "text continues". Broadcast reads
+      // whole answers, so it stops ACCEPTING instead and lets what is already queued play out: cancelling it
+      // is what silently dropped the middle of a long answer (2026-09-19).
+      if (options.saturate) { queued = options.cap ?? config.queueSegments; broadcastSaturated = true; emit('notice', { message: '播报内容较长，已停止接收新的段落；已排队的会继续播放。' }); return false }
+      stopSpeech(); emit('notice', { message: '回复较长，已停止朗读，文字继续显示。' }); return false
+    }
+    // Counted after the gate, so only a clip that really entered the queue can hold the bubble.
+    if (source === 'chat') chatQueued++
     const signal = speechController.signal
     publishReply()
+    accepted = true
     const job = speechTail.then(async () => {
+      if (signal.aborted || epoch !== speechEpoch) return
+      await awaitSlot(Math.max(1, config.speechLookahead ?? 3))
       if (signal.aborted || epoch !== speechEpoch) return
       const result = await services.synthesize(config, key, text, signal)
       if (signal.aborted || epoch !== speechEpoch || !playback) return
       if ([...audio.values()].reduce((n, a) => n + a.pcm.length, 0) + result.pcm.length > 16 * 1024 * 1024) throw new Error('语音播放缓冲已满，请缩短回复')
-      const id = randomUUID(), cues = speechCues(text, result.duration, result.subtitles)
-      audio.set(id, { ...result, epoch }); emit('speech', { id, epoch, sampleRate: result.sampleRate, timeline: cues, asides, actionKeywords: config.actionKeywords, actionPresets: config.actionPresets, mouthRecipes: config.mouthRecipes }, 'player')
-    }).catch(error => { if (!signal.aborted && epoch === speechEpoch) { queued = Math.max(0, queued - 1); publishReply(); emit('notice', { message: error.message }) } })
+      const id = randomUUID(), mask = speechMask(result.pcm, result.sampleRate)
+      const cues = speechCues(text, result.duration, result.subtitles, mask)
+      const statistics = cueStatistics(cues.cues), subtitles = subtitleCoverage(result.subtitles, result.duration)
+      const diagnosticsId = diagnostics.record({
+        source, messageId: options.messageId ?? null, text,
+        duration: Number(result.duration.toFixed(3)), alignment: cues.alignment,
+        sentenceChars: config.sentenceChars, subtitleWords: subtitles.words, subtitleCoverage: subtitles.coverage,
+        // What the payload proved and what the timeline ended up doing: a rejected numeric span, and the seconds
+        // each pose holds. The cue count alone could not tell a moving mouth from a still one.
+        collapsedTokens: cues.collapsed, minMsPerSyllable: cues.minMsPerSyllable, unlabelledSeconds: cues.unlabelledSeconds, repaired: cues.repaired,
+        speechSeconds: mask.last === null ? null : Number((mask.segments.reduce((sum, [from, to]) => sum + (to - from), 0)).toFixed(3)),
+        ...statistics, ...poseStatistics(cues.cues, result.duration, mask),
+      })
+      audio.set(id, { ...result, epoch, source }); emit('speech', { id, epoch, sampleRate: result.sampleRate, timeline: cues, asides, diagnosticsId, actionKeywords: config.actionKeywords, actionPresets: config.actionPresets, mouthRecipes: config.mouthRecipes }, 'player')
+    }).catch(error => { if (!signal.aborted && epoch === speechEpoch) { queued = Math.max(0, queued - 1); if (source === 'chat') chatQueued = Math.max(0, chatQueued - 1); publishReply(); emit('notice', { message: error.message }) } })
     speechTail = track(job)
+    return accepted
   }
   const start = text => {
-    if (turn || recording) throw new Error('请先停止当前回复或结束录音')
+    if (recording) throw new Error('请先停止当前回复或结束录音')
+    // A turn that outlived its own model bound is abandoned rather than honoured: refusing the next message on it
+    // would leave the person pressing a button that can never answer.
+    if (turn) {
+      if (!turnExpired(turn)) throw new Error('请先停止当前回复或结束录音')
+      turn.controller.abort()
+      turn = undefined
+    }
     if (typeof text !== 'string' || !text.trim() || text.length > 8000) throw new Error('请输入 1–8000 字的消息')
     const config = { ...store.config }, key = store.keys.llm, ttsKey = store.keys.tts
     if (!key || !config.model) throw new Error('请先设置对话 API Key 和模型接入点')
@@ -83,13 +177,13 @@ export function createConversationHost(root, defaults = {}, services = { convers
     store.session.messages.push({ id: randomUUID(), role: 'user', content: text.trim(), status: 'complete' }, answer)
     store.persist()
     reply = { id, text: '', generating: true, speaking: false, voiced: false }
-    turn = { id, controller }; publishReply(); emit('state', snapshot())
+    turn = { id, controller, startedAt: Date.now(), budget: config.timeoutMs }; publishReply(); emit('state', snapshot())
     const work = (async () => {
       let sentence = '', asides = []
       const speechText = createSpeechTextFilter(text => {
         if (/(?:…|\.{3})$/.test(sentence)) {
           const length = speechSegmentLength(sentence + ' ', config.sentenceChars)
-          if (length && length <= sentence.length) { if (config.ttsEnabled) enqueue(sentence.slice(0,length),config,ttsKey,epoch,asides.splice(0)); sentence = sentence.slice(length) }
+          if (length && length <= sentence.length) { if (config.ttsEnabled) enqueue(sentence.slice(0,length),config,ttsKey,epoch,asides.splice(0),{ source: 'chat' }); sentence = sentence.slice(length) }
         }
         if (config.ttsEnabled && store.config.ttsEnabled && playback) asides.push(text)
         else emit('action-aside', { text, actionKeywords: config.actionKeywords, actionPresets: config.actionPresets, mouthRecipes: config.mouthRecipes }, 'player')
@@ -105,12 +199,12 @@ export function createConversationHost(root, defaults = {}, services = { convers
           for (const ch of delta) {
             const spoken = speechText(ch)
             sentence += spoken
-            for (;;) { const length = speechSegmentLength(sentence, config.sentenceChars); if (!length) break; if (config.ttsEnabled) enqueue(sentence.slice(0, length), config, ttsKey, epoch, asides.splice(0)); sentence = sentence.slice(length) }
+            for (;;) { const length = speechSegmentLength(sentence, config.sentenceChars); if (!length) break; if (config.ttsEnabled) enqueue(sentence.slice(0, length), config, ttsKey, epoch, asides.splice(0), { source: 'chat' }); sentence = sentence.slice(length) }
           }
         }, controller.signal)
         answer.status = controller.signal.aborted ? 'interrupted' : 'complete'
         if (!controller.signal.aborted && config.ttsEnabled) {
-          if (/[\p{L}\p{N}]/u.test(sentence)) enqueue(sentence, config, ttsKey, epoch, asides)
+          if (/[\p{L}\p{N}]/u.test(sentence)) enqueue(sentence, config, ttsKey, epoch, asides, { source: 'chat' })
           else for (const text of asides) emit('action-aside', { text, actionKeywords: config.actionKeywords, actionPresets: config.actionPresets, mouthRecipes: config.mouthRecipes }, 'player')
         }
       } catch (error) { answer.status = controller.signal.aborted ? 'interrupted' : 'failed'; if (!controller.signal.aborted) emit('notice', { message: error.message }) }
@@ -124,7 +218,92 @@ export function createConversationHost(root, defaults = {}, services = { convers
     track(work); return { id }
   }
   const readJson = async req => { let size = 0; const chunks = []; for await (const b of req) { size += b.length; if (size > 8 * 1024 * 1024) throw new Error('请求过大'); chunks.push(b) } return JSON.parse(Buffer.concat(chunks).toString()) }
+  /**
+   * Read one piece of text through the pet's own voice and prose rules.
+   *
+   * Both read-outs — a message the person pointed at, and text they selected — go through here, so they share the
+   * same sentence splitting, prose filter, voice, queue and mouth timing. The reader is fed the whole text and
+   * closed immediately: a finished passage needs no stream.
+   *
+   * A read-out deliberately does not caption the bubble. The bubble belongs to the pet's own reply and to the main
+   * agent's prose while the pet broadcasts it, so text someone asked to hear never overwrites what the character
+   * is saying. The reader still calls these handlers, so they stay as no-ops.
+   * @param owner - the control this read-out belongs to, so the client can show its own playing state.
+   * @param text - the prose to speak.
+   * @param source - the diagnostics source this read-out is recorded as.
+   * @returns how many clips entered the queue; zero means there was nothing speakable.
+   */
+  const readAloud = (owner, text, source) => {
+    readoutId = owner
+    let clips = 0
+    const sink = {
+      sentenceChars: store.config.sentenceChars,
+      sentence: value => { if (enqueue(value, { ...store.config }, store.keys.tts, speechEpoch, [value], { allowed: true, cap: store.config.broadcastQueueSegments, saturate: true, source, messageId: owner })) clips++ },
+      bubble: () => {},
+      done: () => {},
+    }
+    const reader = createProseReader(sink)
+    reader.push(text)
+    reader.end()
+    // Announcing "playing" for a clip that was never queued would leave the control waiting on a state change
+    // that never comes, so the state follows what actually entered the queue.
+    emit('readout', { messageId: owner, state: clips ? 'playing' : 'idle' })
+    return clips
+  }
   return {
+    /**
+     * Speak one finished sentence of the main agent's prose through the pet's own voice configuration. The
+     * sentence doubles as the action-keyword text, so the character's speaking actions follow its words.
+     * @param text - the sentence to synthesize.
+     * @returns whether the sentence entered the speech queue.
+     */
+    speak(text) {
+      if (disposed || !store.keys.tts) return false
+      return enqueue(text, { ...store.config }, store.keys.tts, speechEpoch, [text], { allowed: true, cap: store.config.broadcastQueueSegments, saturate: true, source: 'broadcast' })
+    },
+    /**
+     * One assistant message, read out on demand: the same voice, queue, caption and prose rules as the
+     * automatic broadcast, but owned by the control the person pressed. Pressing it again while it plays
+     * cancels; pressing it after that speaks the message from its start.
+     * @param messageId - the message being read out.
+     * @param text - the message's prose.
+     * @returns the state the control should show.
+     */
+    readout(messageId, text) {
+      // `stopSpeech` owns clearing the read-out, so it also publishes the idle state exactly once.
+      if (readoutId === messageId) { stopSpeech(); return { state: 'idle' } }
+      stopSpeech()
+      readAloud(messageId, text, 'readout')
+      return { state: 'playing' }
+    },
+    /**
+     * Speak text the person selected in the interface, whatever it came from.
+     *
+     * This is the read-out path without a message behind it: the selection is not session content, so nothing here
+     * touches the log or the model. The pet window owns the audio, so a hidden pet or a missing voice key is
+     * reported to the caller rather than swallowed — the person pressed a button and deserves to know why nothing
+     * happened.
+     * @param text - the selected prose.
+     * @returns the state the selection control should show, and how many clips were queued.
+     */
+    selection(text) {
+      if (!store.keys.tts) throw new Error('请先在桌宠设置里配置 TTS Key')
+      if (!playback) throw new Error('请先显示伙伴，声音由桌宠窗口播放')
+      stopSpeech()
+      const clips = readAloud(SELECTION_OWNER, text, 'selection')
+      if (!clips) throw new Error('这段文字没有可朗读的内容')
+      return { state: 'playing', clips }
+    },
+    /**
+     * The recent read-outs, newest last, as the diagnostics route serves them.
+     *
+     * Every layer of the mouth path was verified in isolation while a report could still say the audio played and
+     * the mouth did not move, so the record is the deliverable: it is what a person reads to find out which layer
+     * failed. This accessor was missing when the route was first published — the route called a method the host
+     * never returned, so `GET /desktop-pet/api/broadcast/diagnostics` threw instead of answering (2026-09-20).
+     * @returns the bounded list of recent records.
+     */
+    diagnostics() { return diagnostics.list() },
     store,
     async handle(req, res, url) {
       if (!url.pathname.startsWith('/desktop-pet/api/conversation')) return false
@@ -151,7 +330,22 @@ export function createConversationHost(root, defaults = {}, services = { convers
         else if (action === '/stop') { if (body.speechOnly) stopSpeech(); else stop(); json(200, { ok: true }) }
         else if (action === '/pause') { if (typeof body.paused !== 'boolean') throw new Error('暂停状态无效'); emit('speech-pause', { paused: body.paused }, 'player'); json(200, { ok: true }) }
         else if (action === '/new') { stop(); await Promise.allSettled([...tasks]); store.reset(); reply = undefined; emit('state', snapshot()); json(200, snapshot()) }
-        else if (action === '/ack') { const item = audio.get(body.id); if (item?.epoch === body.epoch) { audio.delete(body.id); queued = Math.max(0, queued - 1); if (reply && body.played !== false) reply.voiced = true; publishReply() } json(200, { ok: true }) }
+        else if (action === '/ack') {
+          if (body.diagnosticsId !== undefined) diagnostics.playback(body.diagnosticsId, { played: body.played !== false, silentFrames: Number(body.silentFrames) || 0, actionHits: Number(body.actionHits) || 0 })
+          const item = audio.get(body.id)
+          if (item?.epoch === body.epoch) {
+            audio.delete(body.id); queued = Math.max(0, queued - 1); releaseSlot()
+            // `voiced` means "the pet's own reply was really spoken", so a broadcast or read-out clip must not set
+            // it: that would clear the chat bubble the moment anything else finished playing.
+            if (item.source === 'chat') {
+              chatQueued = Math.max(0, chatQueued - 1)
+              if (reply && body.played !== false) reply.voiced = true
+            }
+            publishReply()
+            if (readoutId !== undefined && queued === 0) { readoutId = undefined; emit('readout', { messageId: null, state: 'idle' }) }
+          }
+          json(200, { ok: true })
+        }
         else if (action === '/test') {
           let result = ''; const c = { ...store.config, maxTokens: 64 }, controller = new AbortController(); checks.add(controller)
           const messages = [{ role: 'system', content: dialoguePrompt(c.prompt, store.session.emotion?.text) }, { role: 'user', content: '请用一句话打个招呼。' }]
@@ -162,7 +356,7 @@ export function createConversationHost(root, defaults = {}, services = { convers
         else if (action === '/sample') {
           if (!playback) throw new Error('请先显示桌宠再试听')
           stopSpeech(); const config = { ...store.config }, epoch = speechEpoch, signal = speechController.signal
-          const job = services.synthesize(config, store.keys.tts, '你好，我是你的桌面伙伴。今天过得怎么样？', signal).then(result => { if (signal.aborted || epoch !== speechEpoch) return; const id = randomUUID(); audio.set(id, { ...result, epoch }); emit('speech', { id, epoch, sampleRate: result.sampleRate, timeline: speechCues('你好，我是你的桌面伙伴。今天过得怎么样？', result.duration, result.subtitles) }, 'player') })
+          const job = services.synthesize(config, store.keys.tts, '你好，我是你的桌面伙伴。今天过得怎么样？', signal).then(result => { if (signal.aborted || epoch !== speechEpoch) return; const id = randomUUID(); audio.set(id, { ...result, epoch }); emit('speech', { id, epoch, sampleRate: result.sampleRate, timeline: speechCues('你好，我是你的桌面伙伴。今天过得怎么样？', result.duration, result.subtitles, speechMask(result.pcm, result.sampleRate)) }, 'player') })
           await track(job); json(200, { ok: true })
         }
         else if (action === '/record/start') {

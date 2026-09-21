@@ -1,5 +1,7 @@
 /** Shared model-space interaction and authored action playback for both Cubism generations. */
 import * as PIXI from 'pixi.js'
+import { MouthCues } from './mouth-cues.mjs'
+import { MOUTH_PARAMETER, mouthOpening } from './mouth-shapes.mjs'
 
 export async function createModelRenderer(Model, stage, settings, onError, descriptor) {
   const info = descriptor ?? await (await fetch('/desktop-pet/api/model')).json()
@@ -29,6 +31,25 @@ export async function createModelRenderer(Model, stage, settings, onError, descr
   let disposed = false, initialized = false, sequence = 0, previous = performance.now(), until = 0, nextIdle = 0
   let active = 'idle', lastMotion = null, activeExpression = null, pending = false, gazeWeight = 1
   let speaking = false, inputFocused = false
+  // Lip sync for engines that ship no authored mouth animation: the cue timeline drives the mouth-open
+  // parameter itself. The library emits `beforeModelUpdate` right before the core model evaluates, which is the
+  // one moment where a written parameter survives the motion, expression, physics, and pose passes.
+  const mouthId = MOUTH_PARAMETER[legacy ? 'cubism2' : 'cubism4']
+  const readMouth = () => { try { return legacy ? core.getParamFloat(mouthId) : core.getParameterValueById(mouthId) } catch { return undefined } }
+  const writeMouth = value => { if (legacy) core.setParamFloat(mouthId, value); else core.setParameterValueById(mouthId, value) }
+  let mouth, spokenMouth
+  if (Number.isFinite(readMouth())) {
+    let driver
+    // Writing and reading back in the same hook is also the honest check for the smoke: the value has to reach
+    // the core model's own parameter store, which is what `coreModel.update()` evaluates from.
+    driver = new MouthCues((shape, weight) => {
+      const value = mouthOpening(shape, weight)
+      writeMouth(value)
+      spokenMouth = { shape, weight, value, readBack: readMouth() }
+    }, ['a', 'o', 'i', 'm'], 'm')
+    mouth = driver
+    internal.on('beforeModelUpdate', () => { if (driver.active) driver.update() })
+  }
   let lastPixelKey = '', pixelAt = 0, opaque = false, fitFrames = 3, visibleBounds
   const pixel = new Uint8Array(4)
   // Focus remains additive, at reduced weight when an authored reaction owns head and body parameters.
@@ -124,6 +145,14 @@ export async function createModelRenderer(Model, stage, settings, onError, descr
   return {
     profile, info,
     setSpeaking(value) { speaking = value },
+    // Present only when the model has a mouth parameter: without one the audio simply plays, as before.
+    ...mouth === undefined ? {} : {
+      speech: {
+        silence(value) { mouth.silent = value },
+        start(timeline, clock) { if (disposed || !settings.animated) return false; mouth.start(timeline, clock); return true },
+        cancel() { if (!disposed) mouth.cancel() },
+      },
+    },
     setInputFocused(value) { inputFocused = value },
     playSpeaking(selection) { return play('speaking', { motions: selection.motion ? [selection.motion] : [], expression: selection.expression ?? null, maxMs: Infinity }).catch(failure) },
     cancelSpeaking() { if (active === 'speaking') restore() },
@@ -174,9 +203,9 @@ export async function createModelRenderer(Model, stage, settings, onError, descr
     },
     inspect() {
       const ids = info.kind === 'cubism2' ? ['PARAM_ANGLE_X', 'PARAM_ANGLE_Y', 'PARAM_EYE_L_OPEN', 'PARAM_EYE_R_OPEN', 'PARAM_BODY_ANGLE_X', 'PARAM_MOUTH_OPEN_Y'] : ['ParamAngleX', 'ParamAngleY', 'ParamEyeLOpen', 'ParamEyeROpen', 'ParamBodyAngleX', 'ParamMouthOpenY']
-      return { state: active, motion: lastMotion, expression: activeExpression, poseParameters: baseParameters.map((_,i)=>legacy ? core.getParamFloat(legacyIds[i]) : core.getParameterValueByIndex(i)), partOpacities: baseParts.map((_,i)=>core.getPartOpacityByIndex(i)), parameters: Object.fromEntries(ids.map(id => [id, info.kind === 'cubism2' ? core.getParamFloat(id) : core.getParameterValueById(id)])), bounds: model.getBounds(), hitAreas: Object.keys(internal.hitAreas), physics: Boolean(internal.physics), pending }
+      return { spokenMouth, state: active, motion: lastMotion, expression: activeExpression, poseParameters: baseParameters.map((_,i)=>legacy ? core.getParamFloat(legacyIds[i]) : core.getParameterValueByIndex(i)), partOpacities: baseParts.map((_,i)=>core.getPartOpacityByIndex(i)), parameters: Object.fromEntries(ids.map(id => [id, info.kind === 'cubism2' ? core.getParamFloat(id) : core.getParameterValueById(id)])), bounds: model.getBounds(), hitAreas: Object.keys(internal.hitAreas), physics: Boolean(internal.physics), pending }
     },
     inspectParts() { return legacy ? {} : Object.fromEntries(core.getModel().parts.ids.map((id,i)=>[id,core.getPartOpacityByIndex(i)])) },
-    dispose() { if (disposed) return; disposed = true; ++sequence; app.destroy(true, { children: true, texture: true, baseTexture: true }) },
+    dispose() { if (disposed) return; disposed = true; ++sequence; mouth?.dispose(); app.destroy(true, { children: true, texture: true, baseTexture: true }) },
   }
 }

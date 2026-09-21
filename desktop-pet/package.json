@@ -1,6 +1,6 @@
 {
   "name": "dsh-desktop-pet",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "description": "Built-in Live2D desktop companions",
@@ -29,10 +29,11 @@
   },
   "scripts": {
     "build": "node scripts/prepare-dependencies.mjs && node scripts/build.mjs",
-    "test": "node --test tests/*.test.mjs",
+    "test": "node --test --test-concurrency=1 tests/*.test.mjs",
     "test:browser": "node scripts/browser-smoke.mjs",
     "test:electron": "node scripts/electron-smoke.mjs",
-    "test:conversation": "node scripts/conversation-smoke.mjs"
+    "test:conversation": "node scripts/conversation-smoke.mjs",
+    "test:mouth": "node scripts/live2d-mouth-smoke.mjs"
   },
   "dependencies": {
     "json5": "2.2.3",
@@ -46,5 +47,9 @@
     "@deepseek-ai/dsh-host-webserver": "^0.1.0-rc.5",
     "@deepseek-ai/schemastery": "^3.18.1"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "jsdom": "^29.1.1"
+  }
 }

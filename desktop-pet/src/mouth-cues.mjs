@@ -10,7 +10,8 @@ export class MouthCues {
     }
     this.cancel(); this.cues = cues.map(cue => ({ ...cue })); this.duration = duration; this.clock = clock; this.active = true; this.update()
   }
-  set(shape, weight = 1) { if (this.current !== shape || this.weight !== weight) { this.apply(shape); this.current = shape; this.weight = weight } }
+  // The weight is committed before `apply`, so a driver can scale by the weight of the cue it is applying.
+  set(shape, weight = 1) { if (this.current !== shape || this.weight !== weight) { this.weight = weight; this.apply(shape, weight); this.current = shape } }
   update() {
     if (!this.active) return
     const time = this.clock()

@@ -3,12 +3,17 @@ import { conversationApi as api } from './conversation-api.mjs'
 const find = id => document.getElementById(id), events = new EventSource('/desktop-pet/api/conversation/events')
 let state, disposed = false, recorder, opening = false, recordingGeneration = 0, sending = false
 const status = text => { if (!disposed) find('status').textContent = text }
+// `aria-disabled`, never `disabled`: a disabled button swallows the press, so a person cannot tell "the pet is
+// busy" from "this button is broken". The control stays clickable and every press writes its answer to #status.
+const busy = () => Boolean(state?.generating || recorder || opening || sending)
 const render = () => {
   const list = find('messages'), bottom = list.scrollHeight - list.scrollTop - list.clientHeight < 60
   list.replaceChildren()
   if (!state?.session.messages.length) { const empty = document.createElement('p'); empty.className = 'empty'; empty.textContent = '我在这里，随时可以聊聊。'; list.append(empty) }
   for (const message of state?.session.messages ?? []) { const node = document.createElement('div'); node.className = `message ${message.role}`; node.textContent = message.content || '…'; if (['failed', 'interrupted'].includes(message.status)) { const note = document.createElement('small'); note.textContent = message.status === 'failed' ? '回复未完成' : '已停止'; node.append(note) } node.dataset.id = message.id; list.append(node) }
-  find('send').disabled = Boolean(state?.generating || recorder || opening || sending)
+  const send = find('send')
+  send.setAttribute('aria-disabled', String(busy()))
+  send.textContent = sending ? '发送中…' : '发送'
   if (bottom) list.scrollTop = list.scrollHeight
 }
 const run = fn => async () => { try { await fn() } catch (e) { status(e.message) } }
@@ -55,7 +60,28 @@ find('record').onclick = run(async () => {
   } catch (e) { if (rec) await cancelRecording(); throw e }
   finally { opening = false; render() }
 })
-const send = async () => { if (sending || state?.generating || recorder || opening) return; const text = find('input').value.trim(); if (!text) return; sending = true; render(); try { await api('/send', { text }); find('input').value = ''; status('正在回复…') } finally { sending = false; render() } }
+/**
+ * Send the draft, answering every press.
+ *
+ * The busy flags here can outlive the Host's turn, and refusing on a stale one left the button looking dead. A
+ * refusal therefore asks the Host what it is really doing first, and a stalled request is bounded so the button
+ * cannot stay in 发送中… forever (reported 2026-09-21).
+ */
+const send = async () => {
+  const text = find('input').value.trim(); if (!text || sending) return
+  sending = true; render(); status('正在发送…')
+  try {
+    // The busy flags here can outlive the Host's turn, so the Host itself is asked before the message is refused.
+    if (state?.generating || recorder || opening) {
+      const live = await api().catch(() => null)
+      if (live) { state = live; render() }
+      if (state?.generating || recorder || opening) { status(state?.generating ? '上一条还在回复，等它说完或先按停止。' : recorder ? '正在录音，先结束录音再发。' : '正在准备录音，请稍候。'); return }
+    }
+    await api('/send', { text }, { signal: AbortSignal.timeout(30_000) })
+    find('input').value = ''; status('正在回复…')
+  } catch (e) { status(e?.name === 'TimeoutError' ? '发送超时了，请再试一次。' : e?.message || '发送失败') }
+  finally { sending = false; render() }
+}
 find('send').onclick = run(send)
 find('input').onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); void send().catch(e => status(e.message)) } }
 find('stop').onclick = run(async () => { await cancelRecording(); status('已停止。') })

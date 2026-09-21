@@ -34299,6 +34299,79 @@ extensions.add(
   AppLoaderPlugin
 );
 
+// src/mouth-cues.mjs
+var MouthCues = class {
+  constructor(apply, shapes, neutral) {
+    this.apply = apply;
+    this.shapes = shapes;
+    this.neutral = neutral;
+    this.active = false;
+    this.current = null;
+  }
+  start({ cues, duration }, clock) {
+    if (!Array.isArray(cues) || cues.length > 1e4 || !Number.isFinite(duration) || duration <= 0 || typeof clock !== "function") throw new Error("\u53E3\u578B\u65F6\u95F4\u8F74\u65E0\u6548");
+    let previous = -1;
+    for (const cue of cues) {
+      if (!Number.isFinite(cue.time) || cue.time < 0 || cue.time < previous || cue.time >= duration || !this.shapes.includes(cue.shape) || cue.weight !== void 0 && (!Number.isFinite(cue.weight) || cue.weight < 0 || cue.weight > 1)) throw new Error("\u53E3\u578B\u65F6\u95F4\u6216\u59FF\u6001\u65E0\u6548");
+      previous = cue.time;
+    }
+    this.cancel();
+    this.cues = cues.map((cue) => ({ ...cue }));
+    this.duration = duration;
+    this.clock = clock;
+    this.active = true;
+    this.update();
+  }
+  // The weight is committed before `apply`, so a driver can scale by the weight of the cue it is applying.
+  set(shape, weight = 1) {
+    if (this.current !== shape || this.weight !== weight) {
+      this.weight = weight;
+      this.apply(shape, weight);
+      this.current = shape;
+    }
+  }
+  update() {
+    if (!this.active) return;
+    const time = this.clock();
+    if (!Number.isFinite(time) || time < 0 || time >= this.duration) {
+      this.cancel();
+      return;
+    }
+    let low = 0, high = this.cues.length;
+    while (low < high) {
+      const mid = low + high >>> 1;
+      if (this.cues[mid].time <= time) low = mid + 1;
+      else high = mid;
+    }
+    const cue = low ? this.cues[low - 1] : { shape: this.neutral, weight: 1 };
+    this.remaining = (this.cues.slice(low).find((c) => c.shape !== cue.shape || (c.weight ?? 1) !== (cue.weight ?? 1))?.time ?? this.duration) - time;
+    this.set(this.silent ? this.neutral : cue.shape, this.silent ? 1 : cue.weight ?? 1);
+  }
+  cancel() {
+    this.active = false;
+    this.silent = false;
+    this.clock = null;
+    this.cues = [];
+    this.set(this.neutral);
+  }
+  dispose() {
+    this.active = false;
+    this.clock = null;
+    this.cues = [];
+    this.apply = () => {
+    };
+  }
+};
+
+// src/mouth-shapes.mjs
+var MOUTH_OPENING = Object.freeze({ a: 1, o: 0.72, i: 0.34, m: 0.02 });
+function mouthOpening(shape, weight = 1) {
+  const base = MOUTH_OPENING[shape] ?? MOUTH_OPENING.m;
+  const scaled = Number.isFinite(weight) ? Math.max(0, Math.min(1, weight)) : 1;
+  return base * scaled;
+}
+var MOUTH_PARAMETER = Object.freeze({ cubism2: "PARAM_MOUTH_OPEN_Y", cubism4: "ParamMouthOpenY" });
+
 // src/model-renderer.mjs
 async function createModelRenderer(Model, stage, settings2, onError, descriptor) {
   const info = descriptor ?? await (await fetch("/desktop-pet/api/model")).json();
@@ -34336,6 +34409,31 @@ async function createModelRenderer(Model, stage, settings2, onError, descriptor)
   let disposed = false, initialized = false, sequence = 0, previous = performance.now(), until = 0, nextIdle = 0;
   let active = "idle", lastMotion = null, activeExpression = null, pending = false, gazeWeight = 1;
   let speaking = false, inputFocused = false;
+  const mouthId = MOUTH_PARAMETER[legacy ? "cubism2" : "cubism4"];
+  const readMouth = () => {
+    try {
+      return legacy ? core.getParamFloat(mouthId) : core.getParameterValueById(mouthId);
+    } catch {
+      return void 0;
+    }
+  };
+  const writeMouth = (value) => {
+    if (legacy) core.setParamFloat(mouthId, value);
+    else core.setParameterValueById(mouthId, value);
+  };
+  let mouth, spokenMouth;
+  if (Number.isFinite(readMouth())) {
+    let driver;
+    driver = new MouthCues((shape, weight) => {
+      const value = mouthOpening(shape, weight);
+      writeMouth(value);
+      spokenMouth = { shape, weight, value, readBack: readMouth() };
+    }, ["a", "o", "i", "m"], "m");
+    mouth = driver;
+    internal.on("beforeModelUpdate", () => {
+      if (driver.active) driver.update();
+    });
+  }
   let lastPixelKey = "", pixelAt = 0, opaque = false, fitFrames = 3, visibleBounds;
   const pixel = new Uint8Array(4);
   internal.updateFocus = () => {
@@ -34457,6 +34555,22 @@ async function createModelRenderer(Model, stage, settings2, onError, descriptor)
     setSpeaking(value) {
       speaking = value;
     },
+    // Present only when the model has a mouth parameter: without one the audio simply plays, as before.
+    ...mouth === void 0 ? {} : {
+      speech: {
+        silence(value) {
+          mouth.silent = value;
+        },
+        start(timeline, clock) {
+          if (disposed || !settings2.animated) return false;
+          mouth.start(timeline, clock);
+          return true;
+        },
+        cancel() {
+          if (!disposed) mouth.cancel();
+        }
+      }
+    },
     setInputFocused(value) {
       inputFocused = value;
     },
@@ -34532,7 +34646,7 @@ async function createModelRenderer(Model, stage, settings2, onError, descriptor)
     },
     inspect() {
       const ids = info.kind === "cubism2" ? ["PARAM_ANGLE_X", "PARAM_ANGLE_Y", "PARAM_EYE_L_OPEN", "PARAM_EYE_R_OPEN", "PARAM_BODY_ANGLE_X", "PARAM_MOUTH_OPEN_Y"] : ["ParamAngleX", "ParamAngleY", "ParamEyeLOpen", "ParamEyeROpen", "ParamBodyAngleX", "ParamMouthOpenY"];
-      return { state: active, motion: lastMotion, expression: activeExpression, poseParameters: baseParameters.map((_, i) => legacy ? core.getParamFloat(legacyIds[i]) : core.getParameterValueByIndex(i)), partOpacities: baseParts.map((_, i) => core.getPartOpacityByIndex(i)), parameters: Object.fromEntries(ids.map((id) => [id, info.kind === "cubism2" ? core.getParamFloat(id) : core.getParameterValueById(id)])), bounds: model.getBounds(), hitAreas: Object.keys(internal.hitAreas), physics: Boolean(internal.physics), pending };
+      return { spokenMouth, state: active, motion: lastMotion, expression: activeExpression, poseParameters: baseParameters.map((_, i) => legacy ? core.getParamFloat(legacyIds[i]) : core.getParameterValueByIndex(i)), partOpacities: baseParts.map((_, i) => core.getPartOpacityByIndex(i)), parameters: Object.fromEntries(ids.map((id) => [id, info.kind === "cubism2" ? core.getParamFloat(id) : core.getParameterValueById(id)])), bounds: model.getBounds(), hitAreas: Object.keys(internal.hitAreas), physics: Boolean(internal.physics), pending };
     },
     inspectParts() {
       return legacy ? {} : Object.fromEntries(core.getModel().parts.ids.map((id, i) => [id, core.getPartOpacityByIndex(i)]));
@@ -34541,6 +34655,7 @@ async function createModelRenderer(Model, stage, settings2, onError, descriptor)
       if (disposed) return;
       disposed = true;
       ++sequence;
+      mouth?.dispose();
       app.destroy(true, { children: true, texture: true, baseTexture: true });
     }
   };

@@ -38,10 +38,13 @@ function mountPetChat(bubble2, command2, onInputFocus) {
     renderBubbleText(bubble2, text);
     bubble2.scrollTop = bubble2.scrollHeight;
   };
+  const busy = () => sending || generating || recording;
   const render = () => {
-    send.disabled = sending || generating || recording;
-    input.placeholder = generating ? "\u6B63\u5728\u56DE\u590D\u2026" : "\u60F3\u804A\u4E9B\u4EC0\u4E48\uFF1F";
+    send.setAttribute("aria-disabled", String(busy()));
+    send.textContent = sending ? "\u53D1\u9001\u4E2D\u2026" : "\u53D1\u9001";
+    input.placeholder = sending ? "\u6B63\u5728\u53D1\u9001\u2026" : generating ? "\u6B63\u5728\u56DE\u590D\u2026" : "\u60F3\u804A\u4E9B\u4EC0\u4E48\uFF1F";
   };
+  render();
   const reply = (value) => {
     clearTimeout(timer);
     held = true;
@@ -79,22 +82,35 @@ function mountPetChat(bubble2, command2, onInputFocus) {
     held = false;
     local("\u8FDE\u63A5\u4E2D\u65AD\uFF0C\u6B63\u5728\u91CD\u8FDE\u2026");
   };
-  function local(text) {
-    if (held || disposed2) return;
+  function local(text, force = false) {
+    if (held && !force || disposed2) return;
     clearTimeout(timer);
     show(text);
     timer = setTimeout(() => show(""), 2800);
   }
+  const blocked = async () => {
+    if (!generating && !recording) return false;
+    const live = await conversationApi().catch(() => null);
+    if (live) {
+      generating = Boolean(live.generating);
+      recording = Boolean(live.recording);
+      render();
+    }
+    if (!generating && !recording) return false;
+    local(generating ? "\u4E0A\u4E00\u6761\u8FD8\u5728\u56DE\u590D\uFF0C\u7B49\u5B83\u8BF4\u5B8C\u6216\u5148\u6309\u505C\u6B62\u3002" : "\u6B63\u5728\u5F55\u97F3\uFF0C\u5148\u7ED3\u675F\u5F55\u97F3\u518D\u53D1\u3002", true);
+    return true;
+  };
   const submit = async () => {
     const text = input.value.trim();
-    if (!text || sending || generating || recording) return;
+    if (!text || sending) return;
     sending = true;
     render();
     try {
-      await conversationApi("/send", { text });
+      if (await blocked()) return;
+      await conversationApi("/send", { text }, { signal: AbortSignal.timeout(3e4) });
       if (!disposed2) input.value = "";
     } catch (error) {
-      local(error.message);
+      local(error?.name === "TimeoutError" ? "\u53D1\u9001\u8D85\u65F6\u4E86\uFF0C\u8BF7\u518D\u8BD5\u4E00\u6B21\u3002" : error?.message || "\u53D1\u9001\u5931\u8D25", true);
     } finally {
       sending = false;
       if (!disposed2) render();
@@ -155,12 +171,13 @@ var defaultMouthRecipes = Object.freeze([
   { phoneme: "y", base: "i", weight: 0.7 }
 ]);
 var validWeight = (value) => Number.isFinite(value) && value >= 0 && value <= 1;
-function weightedTimeline(timeline, recipes) {
-  if (!recipes) return timeline;
-  const byPhoneme = new Map(recipes.map((r) => [r.phoneme, r]));
+function weightedTimeline(timeline, recipes, engine) {
+  const byPhoneme = new Map((recipes ?? []).map((r) => [r.phoneme, r]));
   return { ...timeline, cues: timeline.cues.map((cue) => {
     const recipe = byPhoneme.get(cue.phoneme ?? cue.shape) ?? byPhoneme.get(cue.shape);
-    return recipe ? { ...cue, shape: recipe.base, weight: recipe.weight } : cue;
+    const shaped = recipe ? { ...cue, shape: recipe.base, weight: recipe.weight } : cue;
+    if (engine === "dragonbones" && shaped.shape === "i") return { ...shaped, shape: "a", weight: (shaped.weight ?? 1) * 0.7 };
+    return shaped;
   }) };
 }
 
@@ -263,6 +280,7 @@ function mountSpeechPlayer(renderer2, notice, actions) {
     if (active || disposed2 || paused || !queue.length) return;
     active = true;
     const item = queue.shift(), token = generation, signal = controller.signal;
+    let silentFrames = 0, actionHits = 0, wasSilent = false;
     try {
       const response = await fetch(`/desktop-pet/api/conversation/audio?id=${encodeURIComponent(item.id)}`, { signal });
       if (!response.ok) throw new Error("\u97F3\u9891\u5DF2\u8FC7\u671F");
@@ -279,10 +297,10 @@ function mountSpeechPlayer(renderer2, notice, actions) {
       source.connect(context.destination);
       let lastSound = 0;
       const started = context.currentTime;
-      renderer2.speech?.start(weightedTimeline(item.timeline, item.mouthRecipes?.[renderer2.info.id]), () => context ? context.currentTime - started : -1);
+      renderer2.speech?.start(weightedTimeline(item.timeline, item.mouthRecipes?.[renderer2.info.id], renderer2.info.kind), () => context ? context.currentTime - started : -1);
       actions?.beginSpeech();
       source.start();
-      actions?.play((item.asides ?? []).join("\n"), item.actionKeywords, item.actionPresets);
+      if (actions?.play((item.asides ?? []).join("\n"), item.actionKeywords, item.actionPresets) === true) actionHits++;
       const tick = () => {
         if (token !== generation || disposed2) return;
         const at = Math.floor((context.currentTime - started) * item.sampleRate);
@@ -290,7 +308,10 @@ function mountSpeechPlayer(renderer2, notice, actions) {
         for (let i = at; i < Math.min(channel.length, at + 240); i++) peak = Math.max(peak, Math.abs(channel[i]));
         const audioTime = context.currentTime - started;
         if (peak >= 8e-3) lastSound = audioTime;
-        if (renderer2.speech?.silence) renderer2.speech.silence(peak < 8e-3 && audioTime - lastSound > 0.09);
+        const silent = peak < 8e-3 && audioTime - lastSound > 0.25;
+        if (silent && !wasSilent) silentFrames++;
+        wasSilent = silent;
+        if (renderer2.speech?.silence) renderer2.speech.silence(silent);
         frame2 = requestAnimationFrame(tick);
       };
       tick();
@@ -304,11 +325,11 @@ function mountSpeechPlayer(renderer2, notice, actions) {
       actions?.endSpeech();
       source.disconnect();
       source = null;
-      await conversationApi("/ack", { id: item.id, epoch: item.epoch, played: true });
+      await conversationApi("/ack", { id: item.id, epoch: item.epoch, played: true, diagnosticsId: item.diagnosticsId, silentFrames, actionHits });
     } catch (error) {
       if (!signal.aborted && !disposed2) {
         notice(error.message);
-        await conversationApi("/ack", { id: item.id, epoch: item.epoch, played: false }).catch(() => {
+        await conversationApi("/ack", { id: item.id, epoch: item.epoch, played: false, diagnosticsId: item.diagnosticsId, silentFrames, actionHits }).catch(() => {
         });
       }
     } finally {
@@ -449,14 +470,21 @@ function conversationActions(renderer2, available, onError) {
       speaking = false;
       renderer2.setSpeaking(false);
     },
+    /**
+     * @param text - the words being spoken, matched against the configured keywords.
+     * @param keywords - legacy per-model keywords.
+     * @param presets - saved variants per model.
+     * @returns whether an action took over the character, which the player reports as a mouth-diagnostics fact.
+     */
     play(text, keywords, presets) {
-      if (interrupted || !available() || !["idle", "automatic", "speaking"].includes(renderer2.state)) return;
+      if (interrupted || !available() || !["idle", "automatic", "speaking"].includes(renderer2.state)) return false;
       const action = matchAction(text, renderer2.info.actionModules, keywords?.[renderer2.info.id], presets?.[renderer2.info.id]);
-      if (!action) return;
+      if (!action) return false;
       stop();
       renderer2.cancelAutomatic();
       owned = true;
       Promise.resolve(speaking ? renderer2.playSpeaking(action) : renderer2.playAutomatic(action)).catch(onError);
+      return true;
     },
     interrupt() {
       interrupted = true;

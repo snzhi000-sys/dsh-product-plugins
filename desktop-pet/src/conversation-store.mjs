@@ -5,7 +5,14 @@ import { randomUUID } from 'node:crypto'
 import { emotionPrompt, intimacyEmotionPrompt, previousEmotionPrompt, legacyEmotionPrompt, validateActionKeywords } from './satellites.mjs'
 import { defaultIntimacyLevels, normalizeIntimacyLevels, validateIntimacyLevels } from './intimacy.mjs'
 import { defaultMouthRecipes, migrateActionPresets, validateActionPresets, validateMouthRecipes } from './action-presets.mjs'
-export const conversationDefaults = Object.freeze({ version: 1, baseUrl: 'https://ark.cn-beijing.volces.com/api/v3', model: '', prompt: '你是我的桌面伙伴萌妹。用自然、亲切的中文与我聊天，优先简短回应，必要时再详细解释。\n当前情绪参考：{{情绪模拟}}', emotionPrompt, emotionHistoryMessages: 8, emotionCharacterName: '糖糖', actionKeywords: {}, ttsEnabled: false, voiceKind: 'default', speaker: 'zh_female_gaolengyujie_uranus_bigtts', voiceName: '高冷御姐', speechRate: 0, asrResource: 'volc.seedasr.sauc.duration', historyTurns: 20, maxTokens: 800, timeoutMs: 60000, recordingSeconds: 60, sentenceChars: 100, queueSegments: 24 })
+export const conversationDefaults = Object.freeze({ version: 1, baseUrl: 'https://ark.cn-beijing.volces.com/api/v3', model: '', prompt: '你是我的桌面伙伴萌妹。用自然、亲切的中文与我聊天，优先简短回应，必要时再详细解释。\n当前情绪参考：{{情绪模拟}}', emotionPrompt, emotionHistoryMessages: 8, emotionCharacterName: '糖糖', actionKeywords: {}, ttsEnabled: false, voiceKind: 'default', speaker: 'zh_female_gaolengyujie_uranus_bigtts', voiceName: '高冷御姐', speechRate: 0, asrResource: 'volc.seedasr.sauc.duration', historyTurns: 20, maxTokens: 800, timeoutMs: 60000, recordingSeconds: 60, sentenceChars: 100, queueSegments: 24,
+  // Broadcast reads whole answers aloud, and an answer is far longer than a chat reply: its own budget keeps a
+  // long list from cancelling the speech that was already queued (2026-09-19).
+  broadcastQueueSegments: 400,
+  // How many synthesized clips may wait ahead of playback. A longer answer is spoken as a stream of short clips
+  // instead of one growing buffer, which keeps memory bounded and the mouth timeline tight against the audio
+  // (2026-09-19: unbounded look-ahead filled the playback buffer on a long answer).
+  speechLookahead: 3 })
 export function validateConversation(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('对话设置格式无效')
   if (Object.hasOwn(value, 'emotionHistoryTurns')) {
@@ -31,7 +38,7 @@ export function validateConversation(value) {
   if (url.protocol !== 'https:' || url.hostname !== 'ark.cn-beijing.volces.com' || url.username || url.password || url.search || url.hash || url.pathname.replace(/\/$/, '') !== '/api/v3') throw new Error('当前支持北京方舟 HTTPS /api/v3 地址')
   c.baseUrl = c.baseUrl.replace(/\/$/, '')
   if (!['volc.seedasr.sauc.duration', 'volc.seedasr.sauc.concurrent', 'volc.bigasr.sauc.duration', 'volc.bigasr.sauc.concurrent'].includes(c.asrResource)) throw new Error('ASR 资源无效')
-  for (const [key, min, max] of [['speechRate', -50, 100], ['historyTurns', 1, 50], ['maxTokens', 32, 4096], ['timeoutMs', 5000, 180000], ['recordingSeconds', 5, 120], ['sentenceChars', 20, 250], ['queueSegments', 1, 50]]) if (!Number.isInteger(c[key]) || c[key] < min || c[key] > max) throw new Error(`${key} 超出范围`)
+  for (const [key, min, max] of [['speechRate', -50, 100], ['historyTurns', 1, 50], ['maxTokens', 32, 4096], ['timeoutMs', 5000, 180000], ['recordingSeconds', 5, 120], ['sentenceChars', 20, 250], ['queueSegments', 1, 50], ['broadcastQueueSegments', 1, 2000], ['speechLookahead', 1, 8]]) if (!Number.isInteger(c[key]) || c[key] < min || c[key] > max) throw new Error(`${key} 超出范围`)
   return c
 }
 export function conversationStore(root, defaults = {}) {

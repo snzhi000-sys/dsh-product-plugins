@@ -6,6 +6,8 @@ import z from '@deepseek-ai/schemastery'
 import { defaultSettings, readSettings, writeSettings } from './settings.mjs'
 import { builtinLibrary, assetRoot } from './builtin-library.mjs'
 import { createConversationHost } from './conversation-host.mjs'
+import { installBroadcast } from './broadcast-observer.mjs'
+import { assistantProse } from './broadcast.mjs'
 export { containedAsset } from './model-library.mjs'
 
 export const name = 'desktop-pet'
@@ -27,10 +29,25 @@ export function apply(ctx, config = {}) {
   let settings = readSettings(path, config.defaults)
   const library = builtinLibrary()
   settings.modelId = library.resolveSaved(settings.modelId, dirname(path))
+  // Only the conversation the person is looking at is read aloud. The UI knows which one that is, so the
+  // client reports it here; until it does, nothing is broadcast rather than everything.
+  let focusSessionId
   // Persist only the new schema; private legacy model files remain untouched.
   settings = writeSettings(path, settings)
   ctx.effect(() => {
     const conversation = createConversationHost(dirname(path))
+    // The pet reads the main agent's own prose: its settings decide whether anything is spoken, and the
+    // conversation host owns the voice, the queue, and the bubble it shares with the pet's private chat.
+    const broadcast = installBroadcast(ctx, { settings: () => settings, focus: () => focusSessionId, conversation })
+    // A message from a session this run has not seen settles nowhere in the cache, so fall back to the live
+    // session's own event log; a message older than the session itself stays unspeakable and says so.
+    const messageText = (sessionId, messageId) => {
+      const cached = broadcast.messageText(messageId)
+      if (cached) return cached
+      const events = ctx.get('sessions')?.get(sessionId)?.ownEvents() ?? []
+      const event = events.find(candidate => candidate?.type === 'assistant/message' && candidate.data?.message?.id === messageId)
+      return event === undefined ? undefined : assistantProse(event.data.message.content)
+    }
     const unregister = ctx.webServer.register({ kind: 'prefix', path: base, handler: async (req, res) => {
     const json = (status, value) => { res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store' }); res.end(JSON.stringify(value)) }
     try {
@@ -41,6 +58,50 @@ export function apply(ctx, config = {}) {
       if (req.headers.origin && req.headers.origin !== origin) return json(403, { error: 'Origin mismatch' })
       if (req.headers['sec-fetch-site'] === 'cross-site') return json(403, { error: 'Cross-site access denied' })
       if (await conversation.handle(req, res, url)) return
+      if (url.pathname === `${base}/api/broadcast/focus`) {
+        if (req.method !== 'POST') return json(405, { error: 'Method not allowed' })
+        if (!req.headers['content-type']?.startsWith('application/json')) return json(415, { error: 'JSON required' })
+        let size = 0
+        const chunks = []
+        for await (const chunk of req) { size += chunk.length; if (size > 4096) return json(413, { error: 'Focus report too large' }); chunks.push(chunk) }
+        const value = JSON.parse(Buffer.concat(chunks).toString('utf8'))
+        if (value?.sessionId !== null && (typeof value?.sessionId !== 'string' || value.sessionId === '' || value.sessionId.length > 200)) throw new Error('会话标识无效')
+        focusSessionId = value.sessionId ?? undefined
+        return json(200, { sessionId: focusSessionId ?? null })
+      }
+      if (url.pathname === `${base}/api/broadcast/message`) {
+        if (req.method !== 'POST') return json(405, { error: 'Method not allowed' })
+        if (!req.headers['content-type']?.startsWith('application/json')) return json(415, { error: 'JSON required' })
+        let size = 0
+        const chunks = []
+        for await (const chunk of req) { size += chunk.length; if (size > 4096) return json(413, { error: 'Read-out request too large' }); chunks.push(chunk) }
+        const value = JSON.parse(Buffer.concat(chunks).toString('utf8'))
+        for (const key of ['sessionId', 'messageId']) if (typeof value?.[key] !== 'string' || !value[key] || value[key].length > 200) throw new Error('消息标识无效')
+        const text = messageText(value.sessionId, value.messageId)
+        if (!text) return json(404, { error: '这条消息没有可播报的正文' })
+        return json(200, conversation.readout(value.messageId, text))
+      }
+      if (url.pathname === `${base}/api/broadcast/diagnostics`) {
+        if (req.method !== 'GET') return json(405, { error: 'Method not allowed' })
+        return json(200, { records: conversation.diagnostics() })
+      }
+      // Text the person selected in the interface: the caller supplies it, so the pet speaks exactly what was
+      // selected rather than session content. The voice, queue, caption and mouth all belong to the conversation
+      // host, which is why this route only validates the caller's input and hands it over.
+      if (url.pathname === `${base}/api/selection/speak`) {
+        if (req.method !== 'POST') return json(405, { error: 'Method not allowed' })
+        if (!req.headers['content-type']?.startsWith('application/json')) return json(415, { error: 'JSON required' })
+        let size = 0
+        const chunks = []
+        for await (const chunk of req) { size += chunk.length; if (size > 32768) return json(413, { error: 'Selection too large' }); chunks.push(chunk) }
+        const value = JSON.parse(Buffer.concat(chunks).toString('utf8'))
+        const text = typeof value?.text === 'string' ? value.text.trim() : ''
+        if (!text) throw new Error('没有可朗读的选中文本')
+        // Five thousand characters is several minutes of speech; longer than that is a copy-paste accident, not a
+        // selection, and the caller is told rather than left with a queue that never ends.
+        if (text.length > 5000) throw new Error(`选中文本最多 5000 字，当前 ${text.length} 字`)
+        return json(200, conversation.selection(text))
+      }
       if (url.pathname === `${base}/api/models` && req.method === 'GET') return json(200, library.list())
       if (url.pathname === `${base}/api/model` && req.method === 'GET') return json(200, {...await library.describe(url.searchParams.get('id') || settings.modelId),automaticActionIntervalMs:config.automaticActionIntervalMs ?? 60000})
       if (url.pathname === `${base}/api/settings`) {
@@ -77,6 +138,6 @@ export function apply(ctx, config = {}) {
       res.end(data)
     } catch (error) { json(400, { error: error.message }) }
     } })
-    return () => { unregister(); return conversation.dispose() }
+    return () => { broadcast.dispose(); unregister(); return conversation.dispose() }
   }, 'desktop-pet: local routes')
 }

@@ -37,11 +37,16 @@ export function validateMouthRecipes(value) {
   }
   return value
 }
-export function weightedTimeline(timeline, recipes) {
-  if (!recipes) return timeline
-  const byPhoneme = new Map(recipes.map(r => [r.phoneme, r]))
+export function weightedTimeline(timeline, recipes, engine) {
+  const byPhoneme = new Map((recipes ?? []).map(r => [r.phoneme, r]))
   return { ...timeline, cues: timeline.cues.map(cue => {
     const recipe = byPhoneme.get(cue.phoneme ?? cue.shape) ?? byPhoneme.get(cue.shape)
-    return recipe ? { ...cue, shape: recipe.base, weight: recipe.weight } : cue
+    const shaped = recipe ? { ...cue, shape: recipe.base, weight: recipe.weight } : cue
+    // DragonBones characters carry an authored pose per shape, and their `i` pose is barely wider than the closed
+    // one — measured 8.7px of mouth movement against 17.1px for `a` on the shipped character (2026-09-20). A vowel
+    // that ends on `i` therefore narrows `a` instead, whether the shape came from a recipe or from the cue itself,
+    // which keeps every spoken syllable visible while preserving the recipe's relative weight.
+    if (engine === 'dragonbones' && shaped.shape === 'i') return { ...shaped, shape: 'a', weight: (shaped.weight ?? 1) * .7 }
+    return shaped
   }) }
 }

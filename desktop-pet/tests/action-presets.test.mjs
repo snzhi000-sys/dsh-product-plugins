@@ -49,3 +49,30 @@ test('saved variants and recipes survive store reopen and new conversation; inva
     assert.deepEqual(conversationStore(path).config,config)
   }finally{rmSync(path,{recursive:true,force:true})}
 })
+
+test('a DragonBones mouth keeps every vowel visible while another engine keeps its poses', () => {
+  // Measured on the shipped DragonBones character: its authored `i` pose moves the mouth 8.7px, barely more than
+  // the closed pose at 8.7px, while `a` moves 17.1px. Digit and letter readings are almost all `i` vowels, so
+  // that pose is what made a read-out of "2025 年 5.4%" look like a still mouth (75 of 164 cues, 2026-09-20).
+  const timeline = { duration: 2, cues: [{ time: 0, shape: 'm' }, { time: .5, shape: 'i' }, { time: 1, shape: 'o' }, { time: 1.5, shape: 'a', weight: .5 }] }
+  const dragon = weightedTimeline(timeline, undefined, 'dragonbones')
+  assert.deepEqual(dragon.cues.map(cue => cue.shape), ['m', 'a', 'o', 'a'], 'a narrow vowel becomes a visible `a`')
+  assert.equal(dragon.cues[1].weight, .7, 'and it is narrower than a full `a`')
+  assert.equal(dragon.cues[3].weight, .5, 'a cue that already carried a weight keeps it')
+  const cubism = weightedTimeline(timeline, undefined, 'cubism4')
+  assert.deepEqual(cubism.cues.map(cue => cue.shape), ['m', 'i', 'o', 'a'], 'Live2D keeps its own four poses')
+  // A configured recipe still wins over the engine default.
+  const recipe = weightedTimeline(timeline, [{ phoneme: 'i', base: 'o', weight: .4 }], 'dragonbones')
+  assert.deepEqual(recipe.cues.map(cue => cue.shape), ['m', 'o', 'o', 'a'])
+  assert.equal(recipe.cues[1].weight, .4)
+  // A recipe whose result is the weak `i` pose is narrowed on DragonBones as well, keeping its relative weight;
+  // another engine keeps the recipe exactly as configured.
+  const withPhoneme = { duration: 2, cues: [{ time: 0, shape: 'm' }, { time: .5, shape: 'a', phoneme: 'e' }] }
+  const narrowed = weightedTimeline(withPhoneme, [{ phoneme: 'e', base: 'i', weight: .5 }], 'dragonbones')
+  assert.deepEqual(narrowed.cues.map(cue => cue.shape), ['m', 'a'], 'a recipe landing on `i` is narrowed on DragonBones')
+  assert.equal(narrowed.cues[1].weight, .35, 'the recipe weight is kept as a multiplier')
+  const kept = weightedTimeline(withPhoneme, [{ phoneme: 'e', base: 'i', weight: .5 }], 'cubism4')
+  assert.deepEqual(kept.cues.map(cue => cue.shape), ['m', 'i'], 'Cubism keeps the configured recipe')
+  // The timeline itself is never mutated.
+  assert.deepEqual(timeline.cues.map(cue => cue.shape), ['m', 'i', 'o', 'a'])
+})

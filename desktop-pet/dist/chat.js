@@ -18,6 +18,7 @@ var sending = false;
 var status = (text) => {
   if (!disposed) find("status").textContent = text;
 };
+var busy = () => Boolean(state?.generating || recorder || opening || sending);
 var render = () => {
   const list = find("messages"), bottom = list.scrollHeight - list.scrollTop - list.clientHeight < 60;
   list.replaceChildren();
@@ -39,7 +40,9 @@ var render = () => {
     node.dataset.id = message.id;
     list.append(node);
   }
-  find("send").disabled = Boolean(state?.generating || recorder || opening || sending);
+  const send2 = find("send");
+  send2.setAttribute("aria-disabled", String(busy()));
+  send2.textContent = sending ? "\u53D1\u9001\u4E2D\u2026" : "\u53D1\u9001";
   if (bottom) list.scrollTop = list.scrollHeight;
 };
 var run = (fn) => async () => {
@@ -190,15 +193,28 @@ find("record").onclick = run(async () => {
   }
 });
 var send = async () => {
-  if (sending || state?.generating || recorder || opening) return;
   const text = find("input").value.trim();
-  if (!text) return;
+  if (!text || sending) return;
   sending = true;
   render();
+  status("\u6B63\u5728\u53D1\u9001\u2026");
   try {
-    await conversationApi("/send", { text });
+    if (state?.generating || recorder || opening) {
+      const live = await conversationApi().catch(() => null);
+      if (live) {
+        state = live;
+        render();
+      }
+      if (state?.generating || recorder || opening) {
+        status(state?.generating ? "\u4E0A\u4E00\u6761\u8FD8\u5728\u56DE\u590D\uFF0C\u7B49\u5B83\u8BF4\u5B8C\u6216\u5148\u6309\u505C\u6B62\u3002" : recorder ? "\u6B63\u5728\u5F55\u97F3\uFF0C\u5148\u7ED3\u675F\u5F55\u97F3\u518D\u53D1\u3002" : "\u6B63\u5728\u51C6\u5907\u5F55\u97F3\uFF0C\u8BF7\u7A0D\u5019\u3002");
+        return;
+      }
+    }
+    await conversationApi("/send", { text }, { signal: AbortSignal.timeout(3e4) });
     find("input").value = "";
     status("\u6B63\u5728\u56DE\u590D\u2026");
+  } catch (e) {
+    status(e?.name === "TimeoutError" ? "\u53D1\u9001\u8D85\u65F6\u4E86\uFF0C\u8BF7\u518D\u8BD5\u4E00\u6B21\u3002" : e?.message || "\u53D1\u9001\u5931\u8D25");
   } finally {
     sending = false;
     render();
