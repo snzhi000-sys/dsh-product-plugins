@@ -1,3 +1,3 @@
 Local Dev research collection. Models: https://github.com/Eikanya/Live2d-model/tree/94ae3e5628226726af96c6b4bf0e1ce5c728e28e
 Flagship character "Mengmei" (萌妹) is built on material provided by 苍月动漫; the character and its model remain entirely theirs.
-Characters and Live2D Core retain their respective owners and licenses. This local bundle is not a public redistribution grant.
+Characters and Live2D Core retain their respective owners and licenses. These files ship with this repository and its plugin packages with the owners' permission; they are not covered by this repository's MIT license.

@@ -1,0 +1,54 @@
+{
+  "commit": "94ae3e5628226726af96c6b4bf0e1ce5c728e28e",
+  "entry": "崩坏学园2/himeko/model.json",
+  "blobs": [
+    {
+      "path": "himeko/model.json",
+      "sha": "d04a90fec79aa0ea9bea4fb3a7727fd61c2b5c78"
+    },
+    {
+      "path": "himeko/model.moc",
+      "sha": "b096af8a096263eda650fb0b0cf57a5533f429c7"
+    },
+    {
+      "path": "himeko/himeko.2048/texture_00.png",
+      "sha": "0fb9e8c400742ef9b79525bf5d214851f01cc2e9"
+    },
+    {
+      "path": "himeko/physics.json",
+      "sha": "2c033c433429a6574eea5d821073ec2e007fdb64"
+    },
+    {
+      "path": "himeko/motions/7.mtn",
+      "sha": "a73afaa43bbf7e3e6f72bc8419301da612cb1d5d"
+    },
+    {
+      "path": "himeko/motions/1.mtn",
+      "sha": "eed5e212b869276bfa41a42e658db2fec36acb68"
+    },
+    {
+      "path": "himeko/motions/3.mtn",
+      "sha": "ad2eb644b069c17876bfd52bf2125c30fdcf5f1e"
+    },
+    {
+      "path": "himeko/motions/2.mtn",
+      "sha": "f62d365ecf6bd09f5b931c4cfe3f384061565f27"
+    },
+    {
+      "path": "himeko/motions/4.mtn",
+      "sha": "27767ab394c074e46b7556ca46ddadef7b745086"
+    },
+    {
+      "path": "himeko/motions/idle.mtn",
+      "sha": "8346d1d546941b6f0ab8d8a827d78404ada23540"
+    },
+    {
+      "path": "himeko/motions/5.mtn",
+      "sha": "330502e2466568da09e21226b1f20b2ebcb51c73"
+    },
+    {
+      "path": "himeko/motions/6.mtn",
+      "sha": "5f80448407fa54582fc846e2e3b1a3053f5e58d9"
+    }
+  ]
+}

@@ -107,17 +107,15 @@ The package name, the `productPlugins` key in the app tree's `distribution/profi
 
 ## Third-party assets
 
-`desktop-pet/assets/` carries Live2D models curated from a third-party collection and ships its own `assets/NOTICE.txt`. They are covered by that notice, not by this repository's MIT license, so **the model files are not committed here** (`.gitignore` keeps `desktop-pet/assets/*` out and tracks `NOTICE.txt` alone).
+`desktop-pet/assets/` carries Live2D models curated from a third-party collection and ships its own `assets/NOTICE.txt`. **They are committed here**: a fresh clone has the pet's code and its 781 model files across 23 model directories, plus the Cubism Core. They are covered by that notice and by their owners' terms, not by this repository's MIT license.
 
-A fresh clone therefore has the pet's code but no models. Restore them from the upstream collection recorded in `desktop-pet/assets/NOTICE.txt` (`desktop-pet/assets/catalog.json` lists every model directory and entry):
+The notice records the upstream collection (`Eikanya/Live2d-model`) and the provenance of the flagship character, and `desktop-pet/assets/catalog.json` lists every model directory and entry. Adding or refreshing a model means curating it with `scripts/prepare-builtin-assets.mjs`, which copies model dependencies and approved animation profiles but never user settings, credentials, library indexes or absolute-path provenance files; the same 781-file count is the check that the curation stayed clean:
 
 ```bash
-ARCHIVE=/path/to/Live2d-model/94ae3e5628226726af96c6b4bf0e1ce5c728e28e
-cp -R "$ARCHIVE/." desktop-pet/assets/
 test "$(find desktop-pet/assets -type f | wc -l | tr -d ' ')" = 781   # 781 files, 23 model directories
 ```
 
-Republishing the models anywhere requires reviewing the collection's terms first.
+Keep the owners' terms with the material: they travel in `assets/NOTICE.txt`, and any further redistribution beyond this repository still follows those terms.
 
 ## License
 

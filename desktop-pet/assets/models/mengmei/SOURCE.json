@@ -1,0 +1,30 @@
+{
+  "character": "用户提供的萌妹骨骼资源；本地 Dev 使用",
+  "hashes": {
+    "mengmei_ske.json": "a98d03e7159a09f1e556d6c4b23b76cc6f127354ed1068107b02f421400f354d",
+    "mengmei_tex.json": "d1d6b378cd04bea310bb17dcfa639b7bb34c99bc4f41dc3d652c8e87e4185b6e",
+    "mengmei_tex.png": "a8b483a6056fa6d0a7442adeab6485e8e29fa8dd5475e16acb7902c160a3f938"
+  },
+  "runtimes": [
+    {
+      "name": "dragonbones.js",
+      "url": "https://raw.githubusercontent.com/DragonBones/DragonBonesJS/7b2d9f700d1719db2c5d89a6fa36c85d7f092501/Pixi/8.x/out/dragonBones.js",
+      "sha256": "6e8e95ab23f3c50edaf4c64ee0e4596368358239a5a083e2a768557b5a9f3790"
+    },
+    {
+      "name": "dragonbones-LICENSE.txt",
+      "url": "https://raw.githubusercontent.com/DragonBones/DragonBonesJS/7b2d9f700d1719db2c5d89a6fa36c85d7f092501/LICENSE",
+      "sha256": "d5f5fe14b9408affee70580ce3ff0f690ac4a69f8ae68b4f90f8aa8bae5b77d3"
+    },
+    {
+      "name": "pixi8.js",
+      "url": "https://raw.githubusercontent.com/DragonBones/DragonBonesJS/64b6c69ae35777c2404be68c9192e2c56906079e/Pixi/Demos/8.x/libs/pixi/8.9.2/pixi.js",
+      "sha256": "e451658352880e9dd575f53f9fd14db16b022175370c0413269f13c234712485"
+    }
+  ],
+  "retainedDirections": [
+    "左右",
+    "上下"
+  ],
+  "preparation": "Physics constraint namespace; preserve supplier animation keys, meshes and bones; clear default actions; append missing app pointer-control tracks."
+}

@@ -1,0 +1,130 @@
+{
+  "commit": "94ae3e5628226726af96c6b4bf0e1ce5c728e28e",
+  "entry": "少女前线 girls Frontline/live2dnew/gelina/normal/normal.model3.json",
+  "blobs": [
+    {
+      "path": "live2dnew/gelina/normal/normal.model3.json",
+      "sha": "dd37a8d1bd23b4b836fee36778a5567b9648ed1e"
+    },
+    {
+      "path": "live2dnew/gelina/normal/normal.moc3",
+      "sha": "334fda07256d77a726536016623fd15cdfacff0a"
+    },
+    {
+      "path": "live2dnew/gelina/normal/textures/texture_00.png",
+      "sha": "7be02a5fa0570845510aa12db8160efb52f6cbd8"
+    },
+    {
+      "path": "live2dnew/gelina/normal/normal.physics3.json",
+      "sha": "9a5e33a0dbeeabba48d04a7fbf0b30335a633d10"
+    },
+    {
+      "path": "live2dnew/gelina/normal/motions/buy_1.motion3.json",
+      "sha": "219d91823deff1898a3eb269c0231f4de4293df0"
+    },
+    {
+      "path": "live2dnew/gelina/normal/motions/buy_2.motion3.json",
+      "sha": "8df5d31048494b0ba35e6f565161a0019a405336"
+    },
+    {
+      "path": "live2dnew/gelina/normal/motions/daiji_idle_01.motion3.json",
+      "sha": "a520fea0b30dd07015c5748cf7f53a1be6bca2b9"
+    },
+    {
+      "path": "live2dnew/gelina/normal/motions/daiji_idle_02.motion3.json",
+      "sha": "e1dad6d587d5adab62a4cc871fdae0fded0d2b87"
+    },
+    {
+      "path": "live2dnew/gelina/normal/motions/enter_shop.motion3.json",
+      "sha": "4deb3a2e4af170960377026abc7fd0a77b535170"
+    },
+    {
+      "path": "live2dnew/gelina/normal/motions/kalina_004.motion3.json",
+      "sha": "f98c77490948ee89b317a3fe52316a6a8afb2a24"
+    },
+    {
+      "path": "live2dnew/gelina/normal/motions/kalina_014.motion3.json",
+      "sha": "cc213f252f610b304ecf4daf331808ced2b26681"
+    },
+    {
+      "path": "live2dnew/gelina/normal/motions/kalina_024.motion3.json",
+      "sha": "186a007615e6b59755aff81e8fb4cf7fd508e9b9"
+    },
+    {
+      "path": "live2dnew/gelina/normal/motions/kalina_025.motion3.json",
+      "sha": "1d96ee814e520a49c0bd0c116e93505ae05d1cd9"
+    },
+    {
+      "path": "live2dnew/gelina/normal/motions/kalina_027.motion3.json",
+      "sha": "627687b503addd89641f98abfbe10282bde679cf"
+    },
+    {
+      "path": "live2dnew/gelina/normal/motions/kalina_030.motion3.json",
+      "sha": "e6fa96af37c7e6740bc76a369f201691e3465254"
+    },
+    {
+      "path": "live2dnew/gelina/normal/motions/kalina_035.motion3.json",
+      "sha": "a9fad788fbfe5f74edb846cb74618883348d7df1"
+    },
+    {
+      "path": "live2dnew/gelina/normal/motions/kalina_037.motion3.json",
+      "sha": "33561000d68f344801d4fad7eb7a904870185e01"
+    },
+    {
+      "path": "live2dnew/gelina/normal/motions/kalina_043.motion3.json",
+      "sha": "a3cd24842fc1afa9da85edf72de10cc5c63775b0"
+    },
+    {
+      "path": "live2dnew/gelina/normal/motions/kalina_054.motion3.json",
+      "sha": "741ad82832532152e17b3ecfb08f330a3ca22c03"
+    },
+    {
+      "path": "live2dnew/gelina/normal/motions/levelup.motion3.json",
+      "sha": "61e822e0f95af7090e375c3e9035625a404d1937"
+    },
+    {
+      "path": "live2dnew/gelina/normal/motions/mall_01.motion3.json",
+      "sha": "12671b4c77ea0a896734bd11be67ad7055348ec4"
+    },
+    {
+      "path": "live2dnew/gelina/normal/motions/mall_02.motion3.json",
+      "sha": "b659e5548f1120b6e52f36f1840c942a041ee2bc"
+    },
+    {
+      "path": "live2dnew/gelina/normal/motions/mall_03.motion3.json",
+      "sha": "f45007cef88bab36998533db232c1cd3b97e0a2c"
+    },
+    {
+      "path": "live2dnew/gelina/normal/motions/mall_04.motion3.json",
+      "sha": "9b938a0846c45f9cf4eed9f2b9fbacead83764c6"
+    },
+    {
+      "path": "live2dnew/gelina/normal/motions/shake.motion3.json",
+      "sha": "87d48f1e117ac111c9f760d333034b57e62baaac"
+    },
+    {
+      "path": "live2dnew/gelina/normal/motions/touch_arm.motion3.json",
+      "sha": "e03709c92ff76cbb1ac7fa1413b49cceccaec47a"
+    },
+    {
+      "path": "live2dnew/gelina/normal/motions/touch_breast.motion3.json",
+      "sha": "aed20c40f2c108e8aea9aa25fb229d29171d2370"
+    },
+    {
+      "path": "live2dnew/gelina/normal/motions/touch_head.motion3.json",
+      "sha": "48f58d1498595d2e1bce0c30203ce5df150bddbc"
+    },
+    {
+      "path": "live2dnew/gelina/normal/motions/wait_1_idle_02.motion3.json",
+      "sha": "206316fdefc4ee0973f2d592734cf83c26528a7c"
+    },
+    {
+      "path": "live2dnew/gelina/normal/motions/wait_2.motion3.json",
+      "sha": "77a47d9c893d681e86fd90d217aec3a7d5bf9bdd"
+    },
+    {
+      "path": "live2dnew/gelina/normal/motions/wait_3.motion3.json",
+      "sha": "e77adf2fb6bc78ed3a421f68c4cbbcdd56063c23"
+    }
+  ]
+}

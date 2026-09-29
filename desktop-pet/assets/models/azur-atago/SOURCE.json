@@ -1,0 +1,74 @@
+{
+  "commit": "94ae3e5628226726af96c6b4bf0e1ce5c728e28e",
+  "entry": "碧蓝航线 Azue Lane/Azue Lane(JP)/aidang_2/aidang_2.model3.json",
+  "blobs": [
+    {
+      "path": "Azue Lane(JP)/aidang_2/aidang_2.model3.json",
+      "sha": "fededab45e171386d26dacffcf23e0b76e5c6c58"
+    },
+    {
+      "path": "Azue Lane(JP)/aidang_2/aidang_2.moc3",
+      "sha": "7ddcf1914896dc3fd573d59e79ca74537d1ecfb1"
+    },
+    {
+      "path": "Azue Lane(JP)/aidang_2/textures/texture_00.png",
+      "sha": "164948768c24585853aab136af66ac7f903cab83"
+    },
+    {
+      "path": "Azue Lane(JP)/aidang_2/aidang_2.physics3.json",
+      "sha": "9688be65c509c105dfbc5369adea50aaaef7d248"
+    },
+    {
+      "path": "Azue Lane(JP)/aidang_2/motions/mission.motion3.json",
+      "sha": "0f45b16a758c8d55fde178f53be66783ea5103b3"
+    },
+    {
+      "path": "Azue Lane(JP)/aidang_2/motions/main_2.motion3.json",
+      "sha": "e7a4ff58af3a75175010f36a3ed22e307780685f"
+    },
+    {
+      "path": "Azue Lane(JP)/aidang_2/motions/mail.motion3.json",
+      "sha": "0f45b16a758c8d55fde178f53be66783ea5103b3"
+    },
+    {
+      "path": "Azue Lane(JP)/aidang_2/motions/touch_special.motion3.json",
+      "sha": "133b3d45d428eb034e200c52dfde4e7039e212d0"
+    },
+    {
+      "path": "Azue Lane(JP)/aidang_2/motions/login.motion3.json",
+      "sha": "0f45b16a758c8d55fde178f53be66783ea5103b3"
+    },
+    {
+      "path": "Azue Lane(JP)/aidang_2/motions/touch_body.motion3.json",
+      "sha": "19b0880a4840965a902145b41ab5ba5ea1b7f393"
+    },
+    {
+      "path": "Azue Lane(JP)/aidang_2/motions/wedding.motion3.json",
+      "sha": "cae81eb91e87d52bb628525d73c9d2c9205aaa9e"
+    },
+    {
+      "path": "Azue Lane(JP)/aidang_2/motions/main_3.motion3.json",
+      "sha": "6ad1082b0bc6d35646a296070425efcbf008ab15"
+    },
+    {
+      "path": "Azue Lane(JP)/aidang_2/motions/mission_complete.motion3.json",
+      "sha": "0f45b16a758c8d55fde178f53be66783ea5103b3"
+    },
+    {
+      "path": "Azue Lane(JP)/aidang_2/motions/complete.motion3.json",
+      "sha": "0f45b16a758c8d55fde178f53be66783ea5103b3"
+    },
+    {
+      "path": "Azue Lane(JP)/aidang_2/motions/home.motion3.json",
+      "sha": "0f45b16a758c8d55fde178f53be66783ea5103b3"
+    },
+    {
+      "path": "Azue Lane(JP)/aidang_2/motions/main_1.motion3.json",
+      "sha": "729d5c8bfdfbe796658b8b72f601cf213f966a2c"
+    },
+    {
+      "path": "Azue Lane(JP)/aidang_2/motions/touch_head.motion3.json",
+      "sha": "f4151d28ba3f4d5ff19c061c50b4e21d24d1b4fc"
+    }
+  ]
+}

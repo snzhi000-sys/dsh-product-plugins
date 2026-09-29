@@ -1,0 +1,62 @@
+{
+  "commit": "94ae3e5628226726af96c6b4bf0e1ce5c728e28e",
+  "entry": "战舰少女/209_2/model.model.json",
+  "blobs": [
+    {
+      "path": "209_2/model.model.json",
+      "sha": "18974f8ce9bf699f69e8d57ffc4484a1f4b7f3b5"
+    },
+    {
+      "path": "209_2/model.moc",
+      "sha": "f77766b76bb5b6d8469daf9d3cd7d781659a0716"
+    },
+    {
+      "path": "209_2/model.2048/texture_00.png",
+      "sha": "49685b9f2e30edb661b942ef0eed88697169dd00"
+    },
+    {
+      "path": "209_2/physics.json",
+      "sha": "b45ae169a35c7ebbadf77b55a3e2526f289bae00"
+    },
+    {
+      "path": "209_2/daiji_idle_01.mtn",
+      "sha": "e8d9ac74aa701d5c7b5c0c745acf521d36ab9513"
+    },
+    {
+      "path": "209_2/daiji_idle_02.mtn",
+      "sha": "168f652a0be91eee24e58b4b3ca4f3420614e149"
+    },
+    {
+      "path": "209_2/MISULI.mtn",
+      "sha": "944a3afb1b0b3b9ee7d917260e0d634e28ed3675"
+    },
+    {
+      "path": "209_2/KISS.mtn",
+      "sha": "d29ab95e04dec25e30cb5b896b1c58a87922f1cb"
+    },
+    {
+      "path": "209_2/moxiong_01.mtn",
+      "sha": "99f16f75ec7ea527770fbc2394c37edb1d33e6b9"
+    },
+    {
+      "path": "209_2/moxiong_02.mtn",
+      "sha": "5958252aaf55d6912162b7b8023025b5182f1e2f"
+    },
+    {
+      "path": "209_2/TUR_OPEN.mtn",
+      "sha": "79c5cdb9e05a79b30d30f504b236fcca47ef9ed3"
+    },
+    {
+      "path": "209_2/TUR_CLOSE.mtn",
+      "sha": "2752f3ea743c0fe4947355aec04f3c5a381d422b"
+    },
+    {
+      "path": "209_2/GLASS_On.mtn",
+      "sha": "a01a6bb8b2d96f8fa4fd535c9e8314ad248cfb49"
+    },
+    {
+      "path": "209_2/GLASS_Off.mtn",
+      "sha": "eb09ccecb53a97c03b25377632f53f49a6e212a1"
+    }
+  ]
+}

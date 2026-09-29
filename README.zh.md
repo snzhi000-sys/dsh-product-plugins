@@ -15,6 +15,7 @@
 | 2026-09-21 | 朗读与「显示伙伴」解耦（隐藏时改由 Harness 窗口出声，隐藏不再打断正在念的内容）；播报主对话开关移到对话标题栏右侧；补上「每个窗口只留一条流」与立绘预览看门狗的行为说明 | snzhi000-sys | 对应版本 `dsh-desktop-pet 0.1.2` | — |
 | 2026-09-23 | 播报开关同时成为「停止」开关：关闭它会立刻结束正在念的那一句（那段朗读正是该设置开着时启动的），想再听一次走已有的朗读入口，而不是把开关重新打开 | snzhi000-sys | 对应版本 `dsh-desktop-pet 0.1.3` | — |
 | 2026-09-23 | 朗读按钮改为跟随「桌宠是否在出声」而不是它自己那次请求：主对话自动播报现在也声明为朗读，于是播报期间按钮就显示播放波形，且只要有声音在放就始终可按 | snzhi000-sys | 对应版本 `dsh-desktop-pet 0.1.4` | — |
+| 2026-09-24 | 桌宠的模型素材改为随本仓库提交：`desktop-pet/assets/` 入库（781 个模型文件、23 个目录，外加 Cubism Core），全新克隆即有模型；`NOTICE.txt`、两份插件 README、两份 MAINTAINING 与本页改为陈述素材方条款，不再声明"不提交进本仓库" | snzhi000-sys | 对应版本 `dsh-desktop-pet 0.1.4` | — |
 
 ---
 
@@ -169,8 +170,8 @@
 
 - **伙伴有自己的对话**：右键菜单打开输入框，或使用设置 →「聊天记录」页；两者共用最近一次对话与有上限的上下文，一轮回复固定使用开始时的配置；
 - **气泡只属于角色**：主对话正文与朗读内容都不会写进桌宠气泡；
-- **模型素材不提交进本仓库**：`desktop-pet/assets/*` 被 `.gitignore` 排除，仓库里只跟踪 `NOTICE.txt`（781 个模型文件在磁盘上、不在 git 里），所以全新克隆有代码但没有模型，需要按 [MAINTAINING.zh.md](MAINTAINING.zh.md) 的步骤恢复；这些素材**会随插件包与产品 Profile 一起交付**，再分发它们需要素材方各自的许可；
-- **素材权利归各自所有者**：角色形象、模型与 Live2D Core 的权利不属于本仓库，公开分发前需要各自的许可。
+- **模型素材随本仓库一起提交**：`desktop-pet/assets/` 已入库 —— 781 个模型文件、23 个模型目录，外加 Cubism Core —— 所以全新克隆即有桌宠代码也有模型；它们遵循素材方各自的条款（见 `desktop-pet/assets/NOTICE.txt`），不在本仓库 MIT 许可的覆盖范围内；
+- **素材权利归各自所有者**：角色形象、模型与 Live2D Core 的权利仍属其所有者、遵循各自条款，不在本仓库 MIT 许可的覆盖范围内。
 
 ---
 
@@ -190,7 +191,7 @@
 **桌宠是我们自己的产品插件，源码就维护在本仓库**，随产品 Profile 装配进运行时。
 
 - **主推形象「萌妹」的素材由「苍月动漫」提供**：我们使用该素材，并在此基础上完成了 Live2D／龙骨驱动、鼠标跟随、口型、语音与朗读链路；角色形象与模型的全部权利归素材方所有。
-- **内置 Live2D 模型**取自第三方合集 [Eikanya/Live2d-model](https://github.com/Eikanya/Live2d-model)，来源与边界见 `desktop-pet/assets/NOTICE.txt`；**模型文件不提交进本仓库**（只跟踪 `NOTICE.txt`），但会随插件包与产品 Profile 一起交付，再分发需素材方许可。
+- **内置 Live2D 模型**取自第三方合集 [Eikanya/Live2d-model](https://github.com/Eikanya/Live2d-model)，来源与边界见 `desktop-pet/assets/NOTICE.txt`；**模型文件随本仓库、插件包与产品 Profile 一起交付**，遵循素材方条款，不在本仓库 MIT 许可的覆盖范围内。
 - **语音能力**使用**豆包语音**（火山方舟）的语音合成接口，需要使用者自备 Key 与音色；复刻音色同样通过方舟的 speaker ID 使用。
 - **口型、跟随与朗读规则**的依据是插件自己的实现与实测数据，详见 [desktop-pet/README.md](desktop-pet/README.md)（[中文](desktop-pet/README.zh.md)）。
 
@@ -224,4 +225,4 @@ THIRD-PARTY-NOTICES.md  内嵌第三方与二次开发声明
 
 ## 许可证
 
-本仓库以 **MIT License** 发布，见 [LICENSE](LICENSE)。在保留版权声明与许可声明的前提下，可以使用、修改、再分发这些插件，包括打包进其它产品。内嵌第三方组件见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。**MIT 只覆盖代码**：`desktop-pet/assets/` 下的角色与 Live2D 模型素材由各自的声明覆盖，不在本仓库的许可范围内（它们**不提交进本仓库**，但会随插件包与产品 Profile 一起交付；见 [MAINTAINING.zh.md](MAINTAINING.zh.md)）。
+本仓库以 **MIT License** 发布，见 [LICENSE](LICENSE)。在保留版权声明与许可声明的前提下，可以使用、修改、再分发这些插件，包括打包进其它产品。内嵌第三方组件见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)。**MIT 只覆盖代码**：`desktop-pet/assets/` 下的角色与 Live2D 模型素材由各自的声明覆盖，不在本仓库的许可范围内（它们随本仓库、插件包与产品 Profile 一起交付；见 [MAINTAINING.zh.md](MAINTAINING.zh.md)）。

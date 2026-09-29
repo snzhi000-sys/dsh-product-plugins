@@ -1,0 +1,54 @@
+{
+  "commit": "94ae3e5628226726af96c6b4bf0e1ce5c728e28e",
+  "entry": "崩坏学园2/bronya/model.json",
+  "blobs": [
+    {
+      "path": "bronya/model.json",
+      "sha": "5669d25ac862bf222ad2fb0ff0bd6003a9e90137"
+    },
+    {
+      "path": "bronya/bronya.moc",
+      "sha": "f61f56410c75a9151811181355061edac2a39b87"
+    },
+    {
+      "path": "bronya/bronya.2048/texture_00.png",
+      "sha": "e6999280c2d0e798fac69bf9b8fe55e18709e3ab"
+    },
+    {
+      "path": "bronya/physics.json",
+      "sha": "4b158f74ff9cf2ffc378e347750d8fdb68a67069"
+    },
+    {
+      "path": "bronya/motions/5.mtn",
+      "sha": "d7e2c06c3ec6a59a575b6443668b6f34c522e90b"
+    },
+    {
+      "path": "bronya/motions/2.mtn",
+      "sha": "170da9a7d69edc847a274f59bf67b3cdc78bba44"
+    },
+    {
+      "path": "bronya/motions/1.mtn",
+      "sha": "7ea9c4310690752b6ede8f347fb0e126fd44b5fd"
+    },
+    {
+      "path": "bronya/motions/7.mtn",
+      "sha": "fe1b7645e1086d56c2c79955cb2f8d654ffe6195"
+    },
+    {
+      "path": "bronya/motions/3.mtn",
+      "sha": "0ec0bbf57f6aea59dec33fd49655eeb8a796f246"
+    },
+    {
+      "path": "bronya/motions/4.mtn",
+      "sha": "608ddae32078594e1c76dab0c2450682e01e75e7"
+    },
+    {
+      "path": "bronya/motions/idle.mtn",
+      "sha": "84e54fba5a87cd9ac8c6ccd43501c0c1f95750e9"
+    },
+    {
+      "path": "bronya/motions/6.mtn",
+      "sha": "7f62c09ec421a991588c7dada91b48c89d8f4995"
+    }
+  ]
+}

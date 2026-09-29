@@ -1,0 +1,46 @@
+{
+  "commit": "94ae3e5628226726af96c6b4bf0e1ce5c728e28e",
+  "entry": "战舰少女/325_1/model.model.json",
+  "blobs": [
+    {
+      "path": "325_1/model.model.json",
+      "sha": "e2c240a69946970a526eac0f7c6a1aca479bd38d"
+    },
+    {
+      "path": "325_1/model.moc",
+      "sha": "6616aca8d60604c7fc70f35d4d79c636ec64c6e5"
+    },
+    {
+      "path": "325_1/model.1024/texture_00.png",
+      "sha": "de2f23751997062897738c56697e735db978d319"
+    },
+    {
+      "path": "325_1/physics.json",
+      "sha": "64a004b0617e33d3ef8307ad2aa10326b4ea4e95"
+    },
+    {
+      "path": "325_1/daiji_idle_01.mtn",
+      "sha": "ba1ef2aa116bb7e51881035814e20ed645164b0d"
+    },
+    {
+      "path": "325_1/motou.mtn",
+      "sha": "22b95c09ef5f180c8b63d2a6d6ae8a38a7ddceee"
+    },
+    {
+      "path": "325_1/moxiong.mtn",
+      "sha": "36e6d58c8baf51968d342e7a228ca4a29798263a"
+    },
+    {
+      "path": "325_1/nanguo.mtn",
+      "sha": "65bc344d9e3cc7c94f7a0caf69c2fc074f982eca"
+    },
+    {
+      "path": "325_1/yansu.mtn",
+      "sha": "65fa260d9412c4dbf5826069d31eff014ccd2961"
+    },
+    {
+      "path": "325_1/zixin.mtn",
+      "sha": "e1cd5819bcfe42b458f3d6a7b0f5c543967180fb"
+    }
+  ]
+}

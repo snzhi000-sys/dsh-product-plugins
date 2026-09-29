@@ -1,0 +1,82 @@
+{
+  "commit": "94ae3e5628226726af96c6b4bf0e1ce5c728e28e",
+  "entry": "碧蓝航线 Azue Lane/Azue Lane(JP)/beierfasite_2/beierfasite_2.model3.json",
+  "blobs": [
+    {
+      "path": "Azue Lane(JP)/beierfasite_2/beierfasite_2.model3.json",
+      "sha": "575b8ceb50fae3289062e7b8242c9bb832420bf1"
+    },
+    {
+      "path": "Azue Lane(JP)/beierfasite_2/beierfasite_2.moc3",
+      "sha": "fd3e9f7a4193ff322b0d3093063099da7e50e2ce"
+    },
+    {
+      "path": "Azue Lane(JP)/beierfasite_2/textures/texture_00.png",
+      "sha": "4c4212659098c4918a5ae195246acee99bff341a"
+    },
+    {
+      "path": "Azue Lane(JP)/beierfasite_2/beierfasite_2.physics3.json",
+      "sha": "32dceb26eeb9379df0a4c0bb33d64741af05cc54"
+    },
+    {
+      "path": "Azue Lane(JP)/beierfasite_2/motions/idle.motion3.json",
+      "sha": "43e317b8fb91c47950b11159301bb47d1a01fd99"
+    },
+    {
+      "path": "Azue Lane(JP)/beierfasite_2/motions/mission_complete.motion3.json",
+      "sha": "72527aa63531087ee44a23dacb2a736ad29f6c21"
+    },
+    {
+      "path": "Azue Lane(JP)/beierfasite_2/motions/main_3.motion3.json",
+      "sha": "b800c9ca1607da805020901bef07e97a5103b001"
+    },
+    {
+      "path": "Azue Lane(JP)/beierfasite_2/motions/mail.motion3.json",
+      "sha": "f4b76d62c362bb7b2db3141ead50c67ee7eb72e6"
+    },
+    {
+      "path": "Azue Lane(JP)/beierfasite_2/motions/main_2.motion3.json",
+      "sha": "549e9184e56e1a40362edf98dbf466c62c99185e"
+    },
+    {
+      "path": "Azue Lane(JP)/beierfasite_2/motions/main_1.motion3.json",
+      "sha": "b082489a51d00ff73ac4123c9d8ae46189209a8a"
+    },
+    {
+      "path": "Azue Lane(JP)/beierfasite_2/motions/complete.motion3.json",
+      "sha": "a9100497b82d1b6dfd8be8810868cc1811c433b6"
+    },
+    {
+      "path": "Azue Lane(JP)/beierfasite_2/motions/effect.motion3.json",
+      "sha": "22ce2b3405e352fe99b7b9260529b317063b4af6"
+    },
+    {
+      "path": "Azue Lane(JP)/beierfasite_2/motions/login.motion3.json",
+      "sha": "0f2acbe7a82c11513f568f7c39f1cbae8464a948"
+    },
+    {
+      "path": "Azue Lane(JP)/beierfasite_2/motions/touch_special.motion3.json",
+      "sha": "c450c4bcb521f4f606fc8ec0dca9b5dd1ac6da1a"
+    },
+    {
+      "path": "Azue Lane(JP)/beierfasite_2/motions/mission.motion3.json",
+      "sha": "451af6fb24cd9132f7a521d92e799623174b0d92"
+    },
+    {
+      "path": "Azue Lane(JP)/beierfasite_2/motions/home.motion3.json",
+      "sha": "f097c596788f31d69e1a50dbbd8b7dd76a71e9bc"
+    },
+    {
+      "path": "Azue Lane(JP)/beierfasite_2/motions/touch_head.motion3.json",
+      "sha": "11b12fa5e1d3309ff989e479adbae78afcf8c901"
+    },
+    {
+      "path": "Azue Lane(JP)/beierfasite_2/motions/wedding.motion3.json",
+      "sha": "7328338daaa73406368352561b8287a2f4ebeb76"
+    },
+    {
+      "path": "Azue Lane(JP)/beierfasite_2/motions/touch_body.motion3.json",
+      "sha": "baf6ef6f0c7c6a46a4045431ef5087d3eb8b37db"
+    }
+  ]
+}

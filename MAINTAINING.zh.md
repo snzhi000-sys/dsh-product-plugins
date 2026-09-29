@@ -107,17 +107,15 @@ npm run sync:plugins -- --check   # 只校验不写入；有漂移则非零退�
 
 ## 第三方资源
 
-`desktop-pet/assets/` 携带取自第三方模型集的 Live2D 模型，并自带 `assets/NOTICE.txt`。它们由那份声明覆盖、不属于本仓库的 MIT 许可，因此**模型文件不提交进本仓库**（`.gitignore` 排除 `desktop-pet/assets/*`，只跟踪 `NOTICE.txt`）。
+`desktop-pet/assets/` 携带取自第三方模型集的 Live2D 模型，并自带 `assets/NOTICE.txt`。**它们已随本仓库提交**：全新克隆即有桌宠代码，也有 23 个模型目录下的 781 个模型文件，以及 Cubism Core。它们由那份声明与素材方条款覆盖，不属于本仓库的 MIT 许可。
 
-所以全新克隆下来有桌宠代码但没有模型，需要按 `desktop-pet/assets/NOTICE.txt` 记录的上游合集恢复（`desktop-pet/assets/catalog.json` 列出每个模型的目录与入口）：
+声明里记录了上游合集（`Eikanya/Live2d-model`）与主推形象的来源，`desktop-pet/assets/catalog.json` 列出每个模型的目录与入口。新增或更新模型用 `scripts/prepare-builtin-assets.mjs` 整理：它只复制模型依赖与已确认的动画配置，绝不复制用户设置、凭据、模型库索引或含绝对路径的来源文件；781 这个文件数就是"整理是干净的"这条检查：
 
 ```bash
-ARCHIVE=/path/to/Live2d-model/94ae3e5628226726af96c6b4bf0e1ce5c728e28e
-cp -R "$ARCHIVE/." desktop-pet/assets/
 test "$(find desktop-pet/assets -type f | wc -l | tr -d ' ')" = 781   # 781 个文件、23 个模型目录
 ```
 
-把这些模型再发布到别处之前，先核对模型集条款。
+素材方的条款要跟着素材走：它们写在 `assets/NOTICE.txt` 里；超出本仓库范围的再分发仍按那些条款执行。
 
 ## 许可证
 

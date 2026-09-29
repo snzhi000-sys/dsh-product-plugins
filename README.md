@@ -15,6 +15,7 @@ Product plugins for DeepSeek Harness. The repository currently ships two plugins
 | 2026-09-21 | Read-out decoupled from the pet being on screen (the Harness window plays while it is hidden, and hiding it never interrupts a clip); the broadcast switch moved to the conversation header's right side; stated the one-stream-per-window rule and the portrait-preview watchdog | snzhi000-sys | Version `dsh-desktop-pet 0.1.2` | — |
 | 2026-09-23 | The broadcast switch also stops what is already playing: turning it off ends the read-out that setting started, and reading again goes through the read-out controls rather than the switch | snzhi000-sys | Version `dsh-desktop-pet 0.1.3` | — |
 | 2026-09-23 | The read-out button follows the pet's voice rather than its own request: the automatic broadcast announces itself as a read-out, so the strip control shows the playing waveform while it speaks and stays pressable whenever a voice is playing | snzhi000-sys | Version `dsh-desktop-pet 0.1.4` | — |
+| 2026-09-24 | The companion's model assets now ship in this repository: `desktop-pet/assets/` is committed (781 model files across 23 directories plus the Cubism Core), so a fresh clone has the models; `NOTICE.txt`, both plugin READMEs, both MAINTAINING pages and this page state the owners' terms instead of declaring the files excluded | snzhi000-sys | Version `dsh-desktop-pet 0.1.4` | — |
 
 ---
 
@@ -169,8 +170,8 @@ The pet keeps its own speech configuration (settings → 对话 / 声音) and **
 
 - **The companion has its own conversation**: open the input from the right-click menu, or use settings → 聊天记录; both share the latest conversation and a bounded context, and one reply keeps the configuration it started with;
 - **The bubble belongs to the character**: neither the main conversation's prose nor a read-out is written into it;
-- **Model assets are not committed here**: `.gitignore` excludes `desktop-pet/assets/*` and only `NOTICE.txt` is tracked (the 781 model files live on disk, not in git), so a fresh clone has the code but no models and restores them by the steps in [MAINTAINING.md](MAINTAINING.md); those assets **do ship with the plugin package and the product profile**, and redistributing them needs each owner's permission;
-- **Asset rights stay with their owners**: character artwork, models and the Live2D Core are not covered by this repository and need their own permission before public redistribution.
+- **Model assets ship with this repository**: `desktop-pet/assets/` is committed — 781 model files across 23 model directories plus the Cubism Core — so a fresh clone has the pet's code and its models; they keep their owners' terms (see `desktop-pet/assets/NOTICE.txt`) and stay outside this repository's MIT license;
+- **Asset rights stay with their owners**: character artwork, models and the Live2D Core remain their owners' property under their own terms and are not covered by this repository's MIT license.
 
 ---
 
@@ -224,4 +225,4 @@ Plugin sources are maintained only in this repository; the app-tree copy is gene
 
 ## License
 
-Released under the **MIT License** — see [LICENSE](LICENSE). You may use, modify and redistribute these plugins, including inside another product, as long as the copyright notice and the permission notice stay with the code. Embedded third-party components: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). **MIT covers the code only**: the characters and Live2D models under `desktop-pet/assets/` are covered by their own notices and stay outside this repository's licence (they are **not committed here**, but the plugin package and the product profile do ship them; see [MAINTAINING.md](MAINTAINING.md)).
+Released under the **MIT License** — see [LICENSE](LICENSE). You may use, modify and redistribute these plugins, including inside another product, as long as the copyright notice and the permission notice stay with the code. Embedded third-party components: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md). **MIT covers the code only**: the characters and Live2D models under `desktop-pet/assets/` are covered by their own notices and stay outside this repository's licence (they ship here, in the plugin package and in the product profile; see [MAINTAINING.md](MAINTAINING.md)).

@@ -1,0 +1,82 @@
+{
+  "commit": "94ae3e5628226726af96c6b4bf0e1ce5c728e28e",
+  "entry": "少女前线 girls Frontline/live2dnew/m950a_4302/normal/normal.model3.json",
+  "blobs": [
+    {
+      "path": "live2dnew/m950a_4302/normal/normal.model3.json",
+      "sha": "cf995fe19bb25ad5dc84361348c82f734699e7fb"
+    },
+    {
+      "path": "live2dnew/m950a_4302/normal/normal.moc3",
+      "sha": "672e02861f321a28f746cf315c5c1951920859d1"
+    },
+    {
+      "path": "live2dnew/m950a_4302/normal/textures/texture_00.png",
+      "sha": "c129c5eb9608973d86f3dedde46265593eb4cb57"
+    },
+    {
+      "path": "live2dnew/m950a_4302/normal/normal.physics3.json",
+      "sha": "158574be2304167de6e4b16020438fc8abc0eb8b"
+    },
+    {
+      "path": "live2dnew/m950a_4302/normal/motions/daiji_idle_01.motion3.json",
+      "sha": "a561fbf442fb3bba1e28114f28cfdb8c0bf59baf"
+    },
+    {
+      "path": "live2dnew/m950a_4302/normal/motions/login.motion3.json",
+      "sha": "b8c3d8f4f86fc5f3a52834a995ff74cb99fe509f"
+    },
+    {
+      "path": "live2dnew/m950a_4302/normal/motions/shake.motion3.json",
+      "sha": "12241ce2777f122015a4185b2d9ce5940119053d"
+    },
+    {
+      "path": "live2dnew/m950a_4302/normal/motions/touch_1.motion3.json",
+      "sha": "1cfab8592afe03b31875f7ff6ebdafdb0ec40b9e"
+    },
+    {
+      "path": "live2dnew/m950a_4302/normal/motions/touch_2.motion3.json",
+      "sha": "f0fa2274dfebd2060f77934f057a81c9dce00130"
+    },
+    {
+      "path": "live2dnew/m950a_4302/normal/motions/touch_3.motion3.json",
+      "sha": "4b32f68a8664539fa371ecd57f6e9f2e822b5306"
+    },
+    {
+      "path": "live2dnew/m950a_4302/normal/motions/touch_4.motion3.json",
+      "sha": "b012f786e14dd5dab18a14b72fdd537965bde733"
+    },
+    {
+      "path": "live2dnew/m950a_4302/normal/motions/touch_5.motion3.json",
+      "sha": "ca2986704c4392646108c8ebf7116924526d1f87"
+    },
+    {
+      "path": "live2dnew/m950a_4302/normal/motions/touch_6.motion3.json",
+      "sha": "95604a543a0b66f9543520c858239f26c78d4153"
+    },
+    {
+      "path": "live2dnew/m950a_4302/normal/motions/wait_1.motion3.json",
+      "sha": "d7c7d3ba562cd9d33e09c601edc85041d891edfe"
+    },
+    {
+      "path": "live2dnew/m950a_4302/normal/motions/wait_2.motion3.json",
+      "sha": "e2591d7730ce83172b61cb5fc81e6e5430209e36"
+    },
+    {
+      "path": "live2dnew/m950a_4302/normal/motions/wedding.motion3.json",
+      "sha": "e1cc965f15672736c007f7758b0959aa975b0e3c"
+    },
+    {
+      "path": "live2dnew/m950a_4302/normal/motions/wedding_touch.motion3.json",
+      "sha": "e3cf3da4d9ecbdc472cd2a6f7fef5ec0a14a58f3"
+    },
+    {
+      "path": "live2dnew/m950a_4302/normal/motions/绿毛.motion3.json",
+      "sha": "c03c7ae64d4f4a6728f18973e9eb4183efac875e"
+    },
+    {
+      "path": "live2dnew/m950a_4302/normal/motions/随机姿势.motion3.json",
+      "sha": "9b1a03b61e2ef72b78d4b76754bb8de23c743eb1"
+    }
+  ]
+}

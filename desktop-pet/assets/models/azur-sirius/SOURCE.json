@@ -1,0 +1,82 @@
+{
+  "commit": "94ae3e5628226726af96c6b4bf0e1ce5c728e28e",
+  "entry": "碧蓝航线 Azue Lane/Azue Lane(JP)/tianlangxing_3/tianlangxing_3.model3.json",
+  "blobs": [
+    {
+      "path": "Azue Lane(JP)/tianlangxing_3/tianlangxing_3.model3.json",
+      "sha": "ce09413d2e0ff33071413811d253eeaf0ffa62d3"
+    },
+    {
+      "path": "Azue Lane(JP)/tianlangxing_3/tianlangxing_3.moc3",
+      "sha": "224c7cf67dad046b7511d5e9964ebb848b154046"
+    },
+    {
+      "path": "Azue Lane(JP)/tianlangxing_3/textures/texture_00.png",
+      "sha": "96dadae6dc0250bcfc39350d91dc9afe4aa3f98e"
+    },
+    {
+      "path": "Azue Lane(JP)/tianlangxing_3/tianlangxing_3.physics3.json",
+      "sha": "83d1a01cf70ceae519512a6389e13917eec3f896"
+    },
+    {
+      "path": "Azue Lane(JP)/tianlangxing_3/motions/touch_special.motion3.json",
+      "sha": "3fe0f729d85cb5db944a89e5a4f6b4890a74dd00"
+    },
+    {
+      "path": "Azue Lane(JP)/tianlangxing_3/motions/mission_complete.motion3.json",
+      "sha": "d7e918376b299d5092a0c0fcd98f0347cb21b997"
+    },
+    {
+      "path": "Azue Lane(JP)/tianlangxing_3/motions/main_2.motion3.json",
+      "sha": "67c1ee8bca8e5abe024c0282e21c6fe4ddab59a6"
+    },
+    {
+      "path": "Azue Lane(JP)/tianlangxing_3/motions/touch_body.motion3.json",
+      "sha": "24f0ccbd6cb14d4521ba3c32cfe796b54b9a20a8"
+    },
+    {
+      "path": "Azue Lane(JP)/tianlangxing_3/motions/wedding.motion3.json",
+      "sha": "7a3d0897f0ca7b0990fe9d01eb30562515e0da4b"
+    },
+    {
+      "path": "Azue Lane(JP)/tianlangxing_3/motions/main_3.motion3.json",
+      "sha": "2f1e39b593cd8d4801a6ebf1217cba3e4631b499"
+    },
+    {
+      "path": "Azue Lane(JP)/tianlangxing_3/motions/idle.motion3.json",
+      "sha": "0ac749b8db56f626e0827749d6ab9c68b4ddb6ce"
+    },
+    {
+      "path": "Azue Lane(JP)/tianlangxing_3/motions/effect.motion3.json",
+      "sha": "ee9742de73f201861bb05f0d81800f659490e26c"
+    },
+    {
+      "path": "Azue Lane(JP)/tianlangxing_3/motions/login.motion3.json",
+      "sha": "693810660c29f8934cdce33d4903ce3c43d0c60e"
+    },
+    {
+      "path": "Azue Lane(JP)/tianlangxing_3/motions/main_1.motion3.json",
+      "sha": "fe4001c16f3cbb0c579a597c47bc78b96ada57c6"
+    },
+    {
+      "path": "Azue Lane(JP)/tianlangxing_3/motions/mail.motion3.json",
+      "sha": "83649f0082369c533083a3a012cae99b7a99cd0c"
+    },
+    {
+      "path": "Azue Lane(JP)/tianlangxing_3/motions/mission.motion3.json",
+      "sha": "3f4732ebe31c203deb4d55ffefe5fa694cad4bdf"
+    },
+    {
+      "path": "Azue Lane(JP)/tianlangxing_3/motions/touch_head.motion3.json",
+      "sha": "f6231405098b268155dfdb322cbe37108d257177"
+    },
+    {
+      "path": "Azue Lane(JP)/tianlangxing_3/motions/complete.motion3.json",
+      "sha": "d7e918376b299d5092a0c0fcd98f0347cb21b997"
+    },
+    {
+      "path": "Azue Lane(JP)/tianlangxing_3/motions/home.motion3.json",
+      "sha": "a17ff1502b4440a5b0ff99b822d1e850e390c959"
+    }
+  ]
+}

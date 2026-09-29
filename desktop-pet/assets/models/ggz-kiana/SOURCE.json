@@ -1,0 +1,50 @@
+{
+  "commit": "94ae3e5628226726af96c6b4bf0e1ce5c728e28e",
+  "entry": "崩坏学园2/Kiana/model.json",
+  "blobs": [
+    {
+      "path": "Kiana/model.json",
+      "sha": "b21e86dabac8f3253ed9497e77a55d91ef53a2b6"
+    },
+    {
+      "path": "Kiana/model.moc",
+      "sha": "fad93ac9ded35c76211dd4f0653394a8e0ddcecc"
+    },
+    {
+      "path": "Kiana/Kiana.2048/texture_00.png",
+      "sha": "24a76d854cba03cc20494f096884ac5c82abcdfb"
+    },
+    {
+      "path": "Kiana/physics.json",
+      "sha": "acc56ed0d4b257ccbfe5585754c0aa54cbc9f719"
+    },
+    {
+      "path": "Kiana/motions/6.mtn",
+      "sha": "ebcb865823b6911f7c51bd0a52dd28ec0753ddc0"
+    },
+    {
+      "path": "Kiana/motions/4.mtn",
+      "sha": "cd84ba0e14f3342a70354e732189e759f2ec3d07"
+    },
+    {
+      "path": "Kiana/motions/3.mtn",
+      "sha": "217564a0019d979c2caa3e6e02d2f9f7e41802de"
+    },
+    {
+      "path": "Kiana/motions/1.mtn",
+      "sha": "3219499cb5c8956bd6e6464f1accadd468711de5"
+    },
+    {
+      "path": "Kiana/motions/2.mtn",
+      "sha": "17acf0224e9c2c14494ceb5a093045f569461d0a"
+    },
+    {
+      "path": "Kiana/motions/idle.mtn",
+      "sha": "b5718c9449d2ce6335930b673c4c1c025c79b5a9"
+    },
+    {
+      "path": "Kiana/motions/5.mtn",
+      "sha": "7386f41df8d571b65d275ba517247afb5ec946c5"
+    }
+  ]
+}

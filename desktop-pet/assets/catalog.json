@@ -1,0 +1,3226 @@
+{
+  "version": 1,
+  "models": [
+    {
+      "id": "mengmei",
+      "name": "萌妹",
+      "subtitle": "灵动伙伴",
+      "kind": "dragonbones",
+      "entry": "models/mengmei/mengmei_ske.json",
+      "atlas": "mengmei_tex.json",
+      "profile": {
+        "version": 1,
+        "cooldownMs": 650,
+        "dragThreshold": 28,
+        "strokeThreshold": 7,
+        "strokeMs": 220,
+        "headRegion": {
+          "x": 0.28,
+          "y": 0.03,
+          "width": 0.32,
+          "height": 0.32
+        },
+        "idle": "idle",
+        "neutralMouth": "m",
+        "mouths": [
+          "a",
+          "o",
+          "i",
+          "m"
+        ],
+        "expressions": [
+          "xi",
+          "nu",
+          "bei",
+          "jing",
+          "biyan"
+        ],
+        "mouthBlendSeconds": 0.2,
+        "gaze": {
+          "bone": "zhuan",
+          "anchor": "yan",
+          "horizontalRange": 350,
+          "verticalRange": 300,
+          "sensitivity": 2,
+          "eyeRange": 18,
+          "responseSeconds": 0.18
+        },
+        "actions": {
+          "touch": {
+            "expression": "xi",
+            "motion": "diantou"
+          },
+          "click": {
+            "motion": "wuxiong"
+          },
+          "annoyed": {
+            "expression": "nu",
+            "motion": "yaotou"
+          },
+          "drag": {
+            "expression": "jing"
+          },
+          "release": {
+            "motion": "wuxiong",
+            "expression": "xi"
+          }
+        }
+      }
+    },
+    {
+      "id": "companion-01",
+      "name": "加藤惠",
+      "subtitle": "经典伙伴",
+      "legacyName": "加藤惠",
+      "entry": "models/companion-01/entry.model.json",
+      "kind": "cubism2",
+      "profile": {
+        "version": 1,
+        "scale": 1,
+        "offsetX": 0,
+        "offsetY": 0,
+        "idleMinMs": 9000,
+        "idleMaxMs": 18000,
+        "cooldownMs": 650,
+        "dragThreshold": 28,
+        "strokeThreshold": 7,
+        "strokeMs": 220,
+        "headRegion": {
+          "x": 0.12,
+          "y": 0.03,
+          "width": 0.76,
+          "height": 0.32
+        },
+        "defaultExpression": "F_NOMAL",
+        "parameters": {
+          "angleX": "PARAM_ANGLE_X",
+          "angleY": "PARAM_ANGLE_Y",
+          "eyeX": "PARAM_EYE_BALL_X",
+          "eyeY": "PARAM_EYE_BALL_Y"
+        },
+        "actions": {
+          "idle": {
+            "motions": [
+              {
+                "group": "",
+                "index": 12
+              },
+              {
+                "group": "",
+                "index": 13
+              },
+              {
+                "group": "",
+                "index": 14
+              },
+              {
+                "group": "idle",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "touch": {
+            "motions": [
+              {
+                "group": "",
+                "index": 3
+              },
+              {
+                "group": "",
+                "index": 4
+              }
+            ],
+            "expression": "F_FUN",
+            "maxMs": 8000
+          },
+          "click": {
+            "motions": [
+              {
+                "group": "",
+                "index": 10
+              }
+            ],
+            "expression": "F_SURPRISE",
+            "maxMs": 8000
+          },
+          "annoyed": {
+            "motions": [
+              {
+                "group": "",
+                "index": 1
+              }
+            ],
+            "expression": "F_ANGRY",
+            "maxMs": 4000
+          },
+          "drag": {
+            "motions": [],
+            "expression": "F_SURPRISE",
+            "maxMs": 8000
+          },
+          "release": {
+            "motions": [
+              {
+                "group": "",
+                "index": 3
+              },
+              {
+                "group": "",
+                "index": 4
+              }
+            ],
+            "expression": "F_FUN",
+            "maxMs": 3500
+          },
+          "thinking": {
+            "motions": [
+              {
+                "group": "",
+                "index": 12
+              },
+              {
+                "group": "",
+                "index": 13
+              },
+              {
+                "group": "",
+                "index": 14
+              },
+              {
+                "group": "idle",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "working": {
+            "motions": [
+              {
+                "group": "",
+                "index": 12
+              },
+              {
+                "group": "",
+                "index": 13
+              },
+              {
+                "group": "",
+                "index": 14
+              },
+              {
+                "group": "idle",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "replying": {
+            "motions": [
+              {
+                "group": "",
+                "index": 3
+              },
+              {
+                "group": "",
+                "index": 4
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "waiting": {
+            "motions": [],
+            "expression": "F_DOWN",
+            "maxMs": 8000
+          },
+          "complete": {
+            "motions": [
+              {
+                "group": "",
+                "index": 3
+              },
+              {
+                "group": "",
+                "index": 4
+              }
+            ],
+            "expression": "F_FUN",
+            "maxMs": 8000
+          },
+          "error": {
+            "motions": [
+              {
+                "group": "",
+                "index": 1
+              }
+            ],
+            "expression": "F_SAD",
+            "maxMs": 8000
+          }
+        }
+      },
+      "source": "https://github.com/Eikanya/Live2d-model/tree/94ae3e5628226726af96c6b4bf0e1ce5c728e28e"
+    },
+    {
+      "id": "companion-02",
+      "name": "蕾姆",
+      "subtitle": "经典伙伴",
+      "legacyName": "蕾姆",
+      "entry": "models/companion-02/entry.model.json",
+      "kind": "cubism2",
+      "profile": {
+        "version": 1,
+        "scale": 1,
+        "offsetX": 0,
+        "offsetY": 0,
+        "idleMinMs": 9000,
+        "idleMaxMs": 18000,
+        "cooldownMs": 650,
+        "dragThreshold": 28,
+        "strokeThreshold": 7,
+        "strokeMs": 220,
+        "headRegion": {
+          "x": 0.12,
+          "y": 0.03,
+          "width": 0.76,
+          "height": 0.32
+        },
+        "defaultExpression": null,
+        "parameters": {
+          "angleX": "PARAM_ANGLE_X",
+          "angleY": "PARAM_ANGLE_Y",
+          "eyeX": "PARAM_EYE_BALL_X",
+          "eyeY": "PARAM_EYE_BALL_Y"
+        },
+        "actions": {
+          "idle": {
+            "motions": [
+              {
+                "group": "idle",
+                "index": 0
+              },
+              {
+                "group": "sleepy",
+                "index": 0
+              },
+              {
+                "group": "rest",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "touch": {
+            "motions": [
+              {
+                "group": "flick_head",
+                "index": 0
+              },
+              {
+                "group": "flick_head",
+                "index": 1
+              },
+              {
+                "group": "flick_head",
+                "index": 2
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "click": {
+            "motions": [
+              {
+                "group": "tap_body",
+                "index": 0
+              },
+              {
+                "group": "tap_body",
+                "index": 1
+              },
+              {
+                "group": "tap_body",
+                "index": 2
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "annoyed": {
+            "motions": [
+              {
+                "group": "tap_body",
+                "index": 0
+              },
+              {
+                "group": "tap_body",
+                "index": 1
+              },
+              {
+                "group": "tap_body",
+                "index": 2
+              }
+            ],
+            "expression": null,
+            "maxMs": 4000
+          },
+          "drag": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "release": {
+            "motions": [
+              {
+                "group": "flick_head",
+                "index": 0
+              },
+              {
+                "group": "flick_head",
+                "index": 1
+              },
+              {
+                "group": "flick_head",
+                "index": 2
+              }
+            ],
+            "expression": null,
+            "maxMs": 3500
+          },
+          "thinking": {
+            "motions": [
+              {
+                "group": "idle",
+                "index": 0
+              },
+              {
+                "group": "sleepy",
+                "index": 0
+              },
+              {
+                "group": "rest",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "working": {
+            "motions": [
+              {
+                "group": "idle",
+                "index": 0
+              },
+              {
+                "group": "sleepy",
+                "index": 0
+              },
+              {
+                "group": "rest",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "replying": {
+            "motions": [
+              {
+                "group": "flick_head",
+                "index": 0
+              },
+              {
+                "group": "flick_head",
+                "index": 1
+              },
+              {
+                "group": "flick_head",
+                "index": 2
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "waiting": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "complete": {
+            "motions": [
+              {
+                "group": "flick_head",
+                "index": 0
+              },
+              {
+                "group": "flick_head",
+                "index": 1
+              },
+              {
+                "group": "flick_head",
+                "index": 2
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "error": {
+            "motions": [
+              {
+                "group": "tap_body",
+                "index": 0
+              },
+              {
+                "group": "tap_body",
+                "index": 1
+              },
+              {
+                "group": "tap_body",
+                "index": 2
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          }
+        }
+      },
+      "source": "https://github.com/Eikanya/Live2d-model/tree/94ae3e5628226726af96c6b4bf0e1ce5c728e28e"
+    },
+    {
+      "id": "companion-03",
+      "name": "Senko",
+      "subtitle": "经典伙伴",
+      "legacyName": "Senko",
+      "entry": "models/companion-03/entry.model3.json",
+      "kind": "cubism4",
+      "profile": {
+        "version": 1,
+        "scale": 1,
+        "offsetX": 0,
+        "offsetY": 0,
+        "idleMinMs": 9000,
+        "idleMaxMs": 18000,
+        "cooldownMs": 650,
+        "dragThreshold": 28,
+        "strokeThreshold": 7,
+        "strokeMs": 220,
+        "headRegion": {
+          "x": 0.12,
+          "y": 0.03,
+          "width": 0.76,
+          "height": 0.32
+        },
+        "defaultExpression": null,
+        "parameters": {
+          "angleX": "ParamAngleX",
+          "angleY": "ParamAngleY",
+          "eyeX": "ParamEyeBallX",
+          "eyeY": "ParamEyeBallY"
+        },
+        "actions": {
+          "idle": {
+            "motions": [
+              {
+                "group": "Idle",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "touch": {
+            "motions": [
+              {
+                "group": "Tap",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "click": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "annoyed": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 4000
+          },
+          "drag": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "release": {
+            "motions": [
+              {
+                "group": "Tap",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 3500
+          },
+          "thinking": {
+            "motions": [
+              {
+                "group": "Idle",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "working": {
+            "motions": [
+              {
+                "group": "Idle",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "replying": {
+            "motions": [
+              {
+                "group": "Tap",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "waiting": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "complete": {
+            "motions": [
+              {
+                "group": "Tap",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "error": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          }
+        }
+      },
+      "source": "https://github.com/Eikanya/Live2d-model/tree/94ae3e5628226726af96c6b4bf0e1ce5c728e28e"
+    },
+    {
+      "id": "companion-04",
+      "name": "户山香澄 · 新年",
+      "subtitle": "BanG Dream!",
+      "legacyName": "BanG Dream! · 001_2018_dog",
+      "entry": "models/companion-04/entry.model.json",
+      "kind": "cubism2",
+      "profile": {
+        "version": 1,
+        "scale": 1,
+        "offsetX": 0,
+        "offsetY": 0,
+        "idleMinMs": 9000,
+        "idleMaxMs": 18000,
+        "cooldownMs": 650,
+        "dragThreshold": 28,
+        "strokeThreshold": 7,
+        "strokeMs": 220,
+        "headRegion": {
+          "x": 0.12,
+          "y": 0.03,
+          "width": 0.76,
+          "height": 0.32
+        },
+        "defaultExpression": null,
+        "parameters": {
+          "angleX": "PARAM_ANGLE_X",
+          "angleY": "PARAM_ANGLE_Y",
+          "eyeX": "PARAM_EYE_BALL_X",
+          "eyeY": "PARAM_EYE_BALL_Y"
+        },
+        "actions": {
+          "idle": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "touch": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "click": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "annoyed": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 4000
+          },
+          "drag": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "release": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 3500
+          },
+          "thinking": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "working": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "replying": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "waiting": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "complete": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "error": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          }
+        }
+      },
+      "source": "https://github.com/Eikanya/Live2d-model/tree/94ae3e5628226726af96c6b4bf0e1ce5c728e28e"
+    },
+    {
+      "id": "companion-05",
+      "name": "户山香澄 · 联动装",
+      "subtitle": "BanG Dream!",
+      "legacyName": "BanG Dream! · 001_miku_romecin",
+      "entry": "models/companion-05/entry.model.json",
+      "kind": "cubism2",
+      "profile": {
+        "version": 1,
+        "scale": 1,
+        "offsetX": 0,
+        "offsetY": 0,
+        "idleMinMs": 9000,
+        "idleMaxMs": 18000,
+        "cooldownMs": 650,
+        "dragThreshold": 28,
+        "strokeThreshold": 7,
+        "strokeMs": 220,
+        "headRegion": {
+          "x": 0.12,
+          "y": 0.03,
+          "width": 0.76,
+          "height": 0.32
+        },
+        "defaultExpression": null,
+        "parameters": {
+          "angleX": "PARAM_ANGLE_X",
+          "angleY": "PARAM_ANGLE_Y",
+          "eyeX": "PARAM_EYE_BALL_X",
+          "eyeY": "PARAM_EYE_BALL_Y"
+        },
+        "actions": {
+          "idle": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "touch": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "click": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "annoyed": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 4000
+          },
+          "drag": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "release": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 3500
+          },
+          "thinking": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "working": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "replying": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "waiting": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "complete": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "error": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          }
+        }
+      },
+      "source": "https://github.com/Eikanya/Live2d-model/tree/94ae3e5628226726af96c6b4bf0e1ce5c728e28e"
+    },
+    {
+      "id": "companion-20",
+      "name": "Mori · 巫女装",
+      "subtitle": "Fox Hime Zero",
+      "legacyName": "galgame live2d · mori_miko",
+      "entry": "models/companion-20/entry.model3.json",
+      "kind": "cubism4",
+      "profile": {
+        "version": 1,
+        "scale": 1,
+        "offsetX": 0,
+        "offsetY": 0,
+        "idleMinMs": 9000,
+        "idleMaxMs": 18000,
+        "cooldownMs": 650,
+        "dragThreshold": 28,
+        "strokeThreshold": 7,
+        "strokeMs": 220,
+        "headRegion": {
+          "x": 0.12,
+          "y": 0.03,
+          "width": 0.76,
+          "height": 0.32
+        },
+        "defaultExpression": null,
+        "parameters": {
+          "angleX": "ParamAngleX",
+          "angleY": "ParamAngleY",
+          "eyeX": "ParamEyeBallX",
+          "eyeY": "ParamEyeBallY"
+        },
+        "actions": {
+          "idle": {
+            "motions": [
+              {
+                "group": "",
+                "index": 71
+              },
+              {
+                "group": "",
+                "index": 72
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "touch": {
+            "motions": [
+              {
+                "group": "",
+                "index": 49
+              },
+              {
+                "group": "",
+                "index": 51
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "click": {
+            "motions": [
+              {
+                "group": "",
+                "index": 54
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "annoyed": {
+            "motions": [
+              {
+                "group": "",
+                "index": 50
+              }
+            ],
+            "expression": null,
+            "maxMs": 4000
+          },
+          "drag": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "release": {
+            "motions": [
+              {
+                "group": "",
+                "index": 49
+              },
+              {
+                "group": "",
+                "index": 51
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "thinking": {
+            "motions": [
+              {
+                "group": "",
+                "index": 71
+              },
+              {
+                "group": "",
+                "index": 72
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "working": {
+            "motions": [
+              {
+                "group": "",
+                "index": 71
+              },
+              {
+                "group": "",
+                "index": 72
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "replying": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "waiting": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "complete": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "error": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          }
+        }
+      },
+      "source": "https://github.com/Eikanya/Live2d-model/tree/94ae3e5628226726af96c6b4bf0e1ce5c728e28e"
+    },
+    {
+      "id": "companion-21",
+      "name": "Mori · 巫女装 II",
+      "subtitle": "Fox Hime Zero",
+      "legacyName": "galgame live2d · mori_mikoc",
+      "entry": "models/companion-21/entry.model3.json",
+      "kind": "cubism4",
+      "profile": {
+        "version": 1,
+        "scale": 1,
+        "offsetX": 0,
+        "offsetY": 0,
+        "idleMinMs": 9000,
+        "idleMaxMs": 18000,
+        "cooldownMs": 650,
+        "dragThreshold": 28,
+        "strokeThreshold": 7,
+        "strokeMs": 220,
+        "headRegion": {
+          "x": 0.12,
+          "y": 0.03,
+          "width": 0.76,
+          "height": 0.32
+        },
+        "defaultExpression": null,
+        "parameters": {
+          "angleX": "ParamAngleX",
+          "angleY": "ParamAngleY",
+          "eyeX": "ParamEyeBallX",
+          "eyeY": "ParamEyeBallY"
+        },
+        "actions": {
+          "idle": {
+            "motions": [
+              {
+                "group": "",
+                "index": 71
+              },
+              {
+                "group": "",
+                "index": 72
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "touch": {
+            "motions": [
+              {
+                "group": "",
+                "index": 49
+              },
+              {
+                "group": "",
+                "index": 51
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "click": {
+            "motions": [
+              {
+                "group": "",
+                "index": 54
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "annoyed": {
+            "motions": [
+              {
+                "group": "",
+                "index": 50
+              }
+            ],
+            "expression": null,
+            "maxMs": 4000
+          },
+          "drag": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "release": {
+            "motions": [
+              {
+                "group": "",
+                "index": 49
+              },
+              {
+                "group": "",
+                "index": 51
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "thinking": {
+            "motions": [
+              {
+                "group": "",
+                "index": 71
+              },
+              {
+                "group": "",
+                "index": 72
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "working": {
+            "motions": [
+              {
+                "group": "",
+                "index": 71
+              },
+              {
+                "group": "",
+                "index": 72
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "replying": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "waiting": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "complete": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "error": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          }
+        }
+      },
+      "source": "https://github.com/Eikanya/Live2d-model/tree/94ae3e5628226726af96c6b4bf0e1ce5c728e28e"
+    },
+    {
+      "id": "companion-22",
+      "name": "Mori · 巫女装 III",
+      "subtitle": "Fox Hime Zero",
+      "legacyName": "galgame live2d · mori_mikocfs",
+      "entry": "models/companion-22/entry.model3.json",
+      "kind": "cubism4",
+      "profile": {
+        "version": 1,
+        "scale": 1,
+        "offsetX": 0,
+        "offsetY": 0,
+        "idleMinMs": 9000,
+        "idleMaxMs": 18000,
+        "cooldownMs": 650,
+        "dragThreshold": 28,
+        "strokeThreshold": 7,
+        "strokeMs": 220,
+        "headRegion": {
+          "x": 0.12,
+          "y": 0.03,
+          "width": 0.76,
+          "height": 0.32
+        },
+        "defaultExpression": null,
+        "parameters": {
+          "angleX": "ParamAngleX",
+          "angleY": "ParamAngleY",
+          "eyeX": "ParamEyeBallX",
+          "eyeY": "ParamEyeBallY"
+        },
+        "actions": {
+          "idle": {
+            "motions": [
+              {
+                "group": "",
+                "index": 71
+              },
+              {
+                "group": "",
+                "index": 72
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "touch": {
+            "motions": [
+              {
+                "group": "",
+                "index": 49
+              },
+              {
+                "group": "",
+                "index": 51
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "click": {
+            "motions": [
+              {
+                "group": "",
+                "index": 54
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "annoyed": {
+            "motions": [
+              {
+                "group": "",
+                "index": 50
+              }
+            ],
+            "expression": null,
+            "maxMs": 4000
+          },
+          "drag": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "release": {
+            "motions": [
+              {
+                "group": "",
+                "index": 49
+              },
+              {
+                "group": "",
+                "index": 51
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "thinking": {
+            "motions": [
+              {
+                "group": "",
+                "index": 71
+              },
+              {
+                "group": "",
+                "index": 72
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "working": {
+            "motions": [
+              {
+                "group": "",
+                "index": 71
+              },
+              {
+                "group": "",
+                "index": 72
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "replying": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "waiting": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "complete": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "error": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          }
+        }
+      },
+      "source": "https://github.com/Eikanya/Live2d-model/tree/94ae3e5628226726af96c6b4bf0e1ce5c728e28e"
+    },
+    {
+      "id": "companion-23",
+      "name": "Mori · 制服",
+      "subtitle": "Fox Hime Zero",
+      "legacyName": "galgame live2d · mori_suit",
+      "entry": "models/companion-23/entry.model3.json",
+      "kind": "cubism4",
+      "profile": {
+        "version": 1,
+        "scale": 1,
+        "offsetX": 0,
+        "offsetY": 0,
+        "idleMinMs": 9000,
+        "idleMaxMs": 18000,
+        "cooldownMs": 650,
+        "dragThreshold": 28,
+        "strokeThreshold": 7,
+        "strokeMs": 220,
+        "headRegion": {
+          "x": 0.12,
+          "y": 0.03,
+          "width": 0.76,
+          "height": 0.32
+        },
+        "defaultExpression": null,
+        "parameters": {
+          "angleX": "ParamAngleX",
+          "angleY": "ParamAngleY",
+          "eyeX": "ParamEyeBallX",
+          "eyeY": "ParamEyeBallY"
+        },
+        "actions": {
+          "idle": {
+            "motions": [
+              {
+                "group": "",
+                "index": 71
+              },
+              {
+                "group": "",
+                "index": 72
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "touch": {
+            "motions": [
+              {
+                "group": "",
+                "index": 49
+              },
+              {
+                "group": "",
+                "index": 51
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "click": {
+            "motions": [
+              {
+                "group": "",
+                "index": 54
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "annoyed": {
+            "motions": [
+              {
+                "group": "",
+                "index": 50
+              }
+            ],
+            "expression": null,
+            "maxMs": 4000
+          },
+          "drag": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "release": {
+            "motions": [
+              {
+                "group": "",
+                "index": 49
+              },
+              {
+                "group": "",
+                "index": 51
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "thinking": {
+            "motions": [
+              {
+                "group": "",
+                "index": 71
+              },
+              {
+                "group": "",
+                "index": 72
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "working": {
+            "motions": [
+              {
+                "group": "",
+                "index": 71
+              },
+              {
+                "group": "",
+                "index": 72
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "replying": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "waiting": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "complete": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "error": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          }
+        }
+      },
+      "source": "https://github.com/Eikanya/Live2d-model/tree/94ae3e5628226726af96c6b4bf0e1ce5c728e28e"
+    },
+    {
+      "id": "companion-24",
+      "name": "Ruri · 巫女装",
+      "subtitle": "Fox Hime Zero",
+      "legacyName": "galgame live2d · ruri_miko",
+      "entry": "models/companion-24/entry.model3.json",
+      "kind": "cubism4",
+      "profile": {
+        "version": 1,
+        "scale": 1,
+        "offsetX": 0,
+        "offsetY": 0,
+        "idleMinMs": 9000,
+        "idleMaxMs": 18000,
+        "cooldownMs": 650,
+        "dragThreshold": 28,
+        "strokeThreshold": 7,
+        "strokeMs": 220,
+        "headRegion": {
+          "x": 0.12,
+          "y": 0.03,
+          "width": 0.76,
+          "height": 0.32
+        },
+        "defaultExpression": null,
+        "parameters": {
+          "angleX": "ParamAngleX",
+          "angleY": "ParamAngleY",
+          "eyeX": "ParamEyeBallX",
+          "eyeY": "ParamEyeBallY"
+        },
+        "actions": {
+          "idle": {
+            "motions": [
+              {
+                "group": "",
+                "index": 71
+              },
+              {
+                "group": "",
+                "index": 72
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "touch": {
+            "motions": [
+              {
+                "group": "",
+                "index": 49
+              },
+              {
+                "group": "",
+                "index": 51
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "click": {
+            "motions": [
+              {
+                "group": "",
+                "index": 54
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "annoyed": {
+            "motions": [
+              {
+                "group": "",
+                "index": 50
+              }
+            ],
+            "expression": null,
+            "maxMs": 4000
+          },
+          "drag": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "release": {
+            "motions": [
+              {
+                "group": "",
+                "index": 49
+              },
+              {
+                "group": "",
+                "index": 51
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "thinking": {
+            "motions": [
+              {
+                "group": "",
+                "index": 71
+              },
+              {
+                "group": "",
+                "index": 72
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "working": {
+            "motions": [
+              {
+                "group": "",
+                "index": 71
+              },
+              {
+                "group": "",
+                "index": 72
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "replying": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "waiting": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "complete": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "error": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          }
+        }
+      },
+      "source": "https://github.com/Eikanya/Live2d-model/tree/94ae3e5628226726af96c6b4bf0e1ce5c728e28e"
+    },
+    {
+      "id": "ggz-kiana",
+      "name": "琪亚娜",
+      "subtitle": "崩坏学园2",
+      "kind": "cubism2",
+      "entry": "models/ggz-kiana/entry.model.json",
+      "profile": {
+        "version": 1,
+        "scale": 1,
+        "offsetX": 0,
+        "offsetY": 0,
+        "idleMinMs": 9000,
+        "idleMaxMs": 18000,
+        "cooldownMs": 650,
+        "dragThreshold": 28,
+        "strokeThreshold": 7,
+        "strokeMs": 220,
+        "headRegion": {
+          "x": 0.12,
+          "y": 0.03,
+          "width": 0.76,
+          "height": 0.32
+        },
+        "defaultExpression": null,
+        "parameters": {
+          "angleX": "PARAM_ANGLE_X",
+          "angleY": "PARAM_ANGLE_Y",
+          "eyeX": "PARAM_EYE_BALL_X",
+          "eyeY": "PARAM_EYE_BALL_Y"
+        },
+        "actions": {
+          "idle": {
+            "motions": [
+              {
+                "group": "mail",
+                "index": 0
+              },
+              {
+                "group": "morning",
+                "index": 0
+              },
+              {
+                "group": "activity",
+                "index": 0
+              },
+              {
+                "group": "friend",
+                "index": 0
+              },
+              {
+                "group": "afternoon",
+                "index": 0
+              },
+              {
+                "group": "evening",
+                "index": 0
+              },
+              {
+                "group": "special01",
+                "index": 0
+              },
+              {
+                "group": "birthday",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "touch": {
+            "motions": [
+              {
+                "group": "flick_head",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "click": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "annoyed": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 4000
+          },
+          "drag": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "release": {
+            "motions": [
+              {
+                "group": "flick_head",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 3500
+          },
+          "thinking": {
+            "motions": [
+              {
+                "group": "mail",
+                "index": 0
+              },
+              {
+                "group": "morning",
+                "index": 0
+              },
+              {
+                "group": "activity",
+                "index": 0
+              },
+              {
+                "group": "friend",
+                "index": 0
+              },
+              {
+                "group": "afternoon",
+                "index": 0
+              },
+              {
+                "group": "evening",
+                "index": 0
+              },
+              {
+                "group": "special01",
+                "index": 0
+              },
+              {
+                "group": "birthday",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "working": {
+            "motions": [
+              {
+                "group": "mail",
+                "index": 0
+              },
+              {
+                "group": "morning",
+                "index": 0
+              },
+              {
+                "group": "activity",
+                "index": 0
+              },
+              {
+                "group": "friend",
+                "index": 0
+              },
+              {
+                "group": "afternoon",
+                "index": 0
+              },
+              {
+                "group": "evening",
+                "index": 0
+              },
+              {
+                "group": "special01",
+                "index": 0
+              },
+              {
+                "group": "birthday",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "replying": {
+            "motions": [
+              {
+                "group": "flick_head",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "waiting": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "complete": {
+            "motions": [
+              {
+                "group": "flick_head",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "error": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          }
+        }
+      },
+      "source": "https://github.com/Eikanya/Live2d-model/tree/94ae3e5628226726af96c6b4bf0e1ce5c728e28e/%E5%B4%A9%E5%9D%8F%E5%AD%A6%E5%9B%AD2/Kiana",
+      "sourcePack": "2026-09-09"
+    },
+    {
+      "id": "ggz-bronya",
+      "name": "布洛妮娅",
+      "subtitle": "崩坏学园2",
+      "kind": "cubism2",
+      "entry": "models/ggz-bronya/entry.model.json",
+      "profile": {
+        "version": 1,
+        "scale": 1,
+        "offsetX": 0,
+        "offsetY": 0,
+        "idleMinMs": 9000,
+        "idleMaxMs": 18000,
+        "cooldownMs": 650,
+        "dragThreshold": 28,
+        "strokeThreshold": 7,
+        "strokeMs": 220,
+        "headRegion": {
+          "x": 0.12,
+          "y": 0.03,
+          "width": 0.76,
+          "height": 0.32
+        },
+        "defaultExpression": null,
+        "parameters": {
+          "angleX": "PARAM_ANGLE_X",
+          "angleY": "PARAM_ANGLE_Y",
+          "eyeX": "PARAM_EYE_BALL_X",
+          "eyeY": "PARAM_EYE_BALL_Y"
+        },
+        "actions": {
+          "idle": {
+            "motions": [
+              {
+                "group": "morning",
+                "index": 0
+              },
+              {
+                "group": "activity",
+                "index": 0
+              },
+              {
+                "group": "mail",
+                "index": 0
+              },
+              {
+                "group": "friend",
+                "index": 0
+              },
+              {
+                "group": "afternoon",
+                "index": 0
+              },
+              {
+                "group": "evening",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "touch": {
+            "motions": [
+              {
+                "group": "flick_head",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "click": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "annoyed": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 4000
+          },
+          "drag": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "release": {
+            "motions": [
+              {
+                "group": "flick_head",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 3500
+          },
+          "thinking": {
+            "motions": [
+              {
+                "group": "morning",
+                "index": 0
+              },
+              {
+                "group": "activity",
+                "index": 0
+              },
+              {
+                "group": "mail",
+                "index": 0
+              },
+              {
+                "group": "friend",
+                "index": 0
+              },
+              {
+                "group": "afternoon",
+                "index": 0
+              },
+              {
+                "group": "evening",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "working": {
+            "motions": [
+              {
+                "group": "morning",
+                "index": 0
+              },
+              {
+                "group": "activity",
+                "index": 0
+              },
+              {
+                "group": "mail",
+                "index": 0
+              },
+              {
+                "group": "friend",
+                "index": 0
+              },
+              {
+                "group": "afternoon",
+                "index": 0
+              },
+              {
+                "group": "evening",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "replying": {
+            "motions": [
+              {
+                "group": "flick_head",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "waiting": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "complete": {
+            "motions": [
+              {
+                "group": "flick_head",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "error": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          }
+        }
+      },
+      "source": "https://github.com/Eikanya/Live2d-model/tree/94ae3e5628226726af96c6b4bf0e1ce5c728e28e/%E5%B4%A9%E5%9D%8F%E5%AD%A6%E5%9B%AD2/bronya",
+      "sourcePack": "2026-09-09"
+    },
+    {
+      "id": "ggz-himeko",
+      "name": "姬子",
+      "subtitle": "崩坏学园2",
+      "kind": "cubism2",
+      "entry": "models/ggz-himeko/entry.model.json",
+      "profile": {
+        "version": 1,
+        "scale": 1,
+        "offsetX": 0,
+        "offsetY": 0,
+        "idleMinMs": 9000,
+        "idleMaxMs": 18000,
+        "cooldownMs": 650,
+        "dragThreshold": 28,
+        "strokeThreshold": 7,
+        "strokeMs": 220,
+        "headRegion": {
+          "x": 0.12,
+          "y": 0.03,
+          "width": 0.76,
+          "height": 0.32
+        },
+        "defaultExpression": null,
+        "parameters": {
+          "angleX": "PARAM_ANGLE_X",
+          "angleY": "PARAM_ANGLE_Y",
+          "eyeX": "PARAM_EYE_BALL_X",
+          "eyeY": "PARAM_EYE_BALL_Y"
+        },
+        "actions": {
+          "idle": {
+            "motions": [
+              {
+                "group": "mail",
+                "index": 0
+              },
+              {
+                "group": "morning",
+                "index": 0
+              },
+              {
+                "group": "idle",
+                "index": 2
+              },
+              {
+                "group": "activity",
+                "index": 0
+              },
+              {
+                "group": "friend",
+                "index": 0
+              },
+              {
+                "group": "afternoon",
+                "index": 0
+              },
+              {
+                "group": "evening",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "touch": {
+            "motions": [
+              {
+                "group": "flick_head",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "click": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "annoyed": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 4000
+          },
+          "drag": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "release": {
+            "motions": [
+              {
+                "group": "flick_head",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 3500
+          },
+          "thinking": {
+            "motions": [
+              {
+                "group": "mail",
+                "index": 0
+              },
+              {
+                "group": "morning",
+                "index": 0
+              },
+              {
+                "group": "idle",
+                "index": 2
+              },
+              {
+                "group": "activity",
+                "index": 0
+              },
+              {
+                "group": "friend",
+                "index": 0
+              },
+              {
+                "group": "afternoon",
+                "index": 0
+              },
+              {
+                "group": "evening",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "working": {
+            "motions": [
+              {
+                "group": "mail",
+                "index": 0
+              },
+              {
+                "group": "morning",
+                "index": 0
+              },
+              {
+                "group": "idle",
+                "index": 2
+              },
+              {
+                "group": "activity",
+                "index": 0
+              },
+              {
+                "group": "friend",
+                "index": 0
+              },
+              {
+                "group": "afternoon",
+                "index": 0
+              },
+              {
+                "group": "evening",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "replying": {
+            "motions": [
+              {
+                "group": "flick_head",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "waiting": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "complete": {
+            "motions": [
+              {
+                "group": "flick_head",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "error": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          }
+        }
+      },
+      "source": "https://github.com/Eikanya/Live2d-model/tree/94ae3e5628226726af96c6b4bf0e1ce5c728e28e/%E5%B4%A9%E5%9D%8F%E5%AD%A6%E5%9B%AD2/himeko",
+      "sourcePack": "2026-09-09"
+    },
+    {
+      "id": "warship-209-2",
+      "name": "战舰少女 · 209_2",
+      "subtitle": "战舰少女",
+      "kind": "cubism2",
+      "entry": "models/warship-209-2/entry.model.json",
+      "profile": {
+        "version": 1,
+        "scale": 1,
+        "offsetX": 0,
+        "offsetY": 0,
+        "idleMinMs": 9000,
+        "idleMaxMs": 18000,
+        "cooldownMs": 650,
+        "dragThreshold": 28,
+        "strokeThreshold": 7,
+        "strokeMs": 220,
+        "headRegion": {
+          "x": 0.12,
+          "y": 0.03,
+          "width": 0.76,
+          "height": 0.32
+        },
+        "defaultExpression": null,
+        "parameters": {
+          "angleX": "PARAM_ANGLE_X",
+          "angleY": "PARAM_ANGLE_Y",
+          "eyeX": "PARAM_EYE_BALL_X",
+          "eyeY": "PARAM_EYE_BALL_Y"
+        },
+        "actions": {
+          "idle": {
+            "motions": [
+              {
+                "group": "idle",
+                "index": 0
+              },
+              {
+                "group": "idle",
+                "index": 1
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "touch": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "click": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "annoyed": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 4000
+          },
+          "drag": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "release": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 3500
+          },
+          "thinking": {
+            "motions": [
+              {
+                "group": "idle",
+                "index": 0
+              },
+              {
+                "group": "idle",
+                "index": 1
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "working": {
+            "motions": [
+              {
+                "group": "idle",
+                "index": 0
+              },
+              {
+                "group": "idle",
+                "index": 1
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "replying": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "waiting": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "complete": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "error": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          }
+        }
+      },
+      "source": "https://github.com/Eikanya/Live2d-model/tree/94ae3e5628226726af96c6b4bf0e1ce5c728e28e/%E6%88%98%E8%88%B0%E5%B0%91%E5%A5%B3/209_2",
+      "sourcePack": "2026-09-09"
+    },
+    {
+      "id": "warship-248-1",
+      "name": "战舰少女 · 248_1",
+      "subtitle": "战舰少女",
+      "kind": "cubism2",
+      "entry": "models/warship-248-1/entry.model.json",
+      "profile": {
+        "version": 1,
+        "scale": 1,
+        "offsetX": 0,
+        "offsetY": 0,
+        "idleMinMs": 9000,
+        "idleMaxMs": 18000,
+        "cooldownMs": 650,
+        "dragThreshold": 28,
+        "strokeThreshold": 7,
+        "strokeMs": 220,
+        "headRegion": {
+          "x": 0.12,
+          "y": 0.03,
+          "width": 0.76,
+          "height": 0.32
+        },
+        "defaultExpression": null,
+        "parameters": {
+          "angleX": "PARAM_ANGLE_X",
+          "angleY": "PARAM_ANGLE_Y",
+          "eyeX": "PARAM_EYE_BALL_X",
+          "eyeY": "PARAM_EYE_BALL_Y"
+        },
+        "actions": {
+          "idle": {
+            "motions": [
+              {
+                "group": "idle",
+                "index": 0
+              },
+              {
+                "group": "idle",
+                "index": 1
+              },
+              {
+                "group": "idle",
+                "index": 2
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "touch": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "click": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "annoyed": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 4000
+          },
+          "drag": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "release": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 3500
+          },
+          "thinking": {
+            "motions": [
+              {
+                "group": "idle",
+                "index": 0
+              },
+              {
+                "group": "idle",
+                "index": 1
+              },
+              {
+                "group": "idle",
+                "index": 2
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "working": {
+            "motions": [
+              {
+                "group": "idle",
+                "index": 0
+              },
+              {
+                "group": "idle",
+                "index": 1
+              },
+              {
+                "group": "idle",
+                "index": 2
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "replying": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "waiting": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "complete": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "error": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          }
+        }
+      },
+      "source": "https://github.com/Eikanya/Live2d-model/tree/94ae3e5628226726af96c6b4bf0e1ce5c728e28e/%E6%88%98%E8%88%B0%E5%B0%91%E5%A5%B3/248_1",
+      "sourcePack": "2026-09-09"
+    },
+    {
+      "id": "warship-325-1",
+      "name": "战舰少女 · 325_1",
+      "subtitle": "战舰少女",
+      "kind": "cubism2",
+      "entry": "models/warship-325-1/entry.model.json",
+      "profile": {
+        "version": 1,
+        "scale": 1,
+        "offsetX": 0,
+        "offsetY": 0,
+        "idleMinMs": 9000,
+        "idleMaxMs": 18000,
+        "cooldownMs": 650,
+        "dragThreshold": 28,
+        "strokeThreshold": 7,
+        "strokeMs": 220,
+        "headRegion": {
+          "x": 0.12,
+          "y": 0.03,
+          "width": 0.76,
+          "height": 0.32
+        },
+        "defaultExpression": null,
+        "parameters": {
+          "angleX": "PARAM_ANGLE_X",
+          "angleY": "PARAM_ANGLE_Y",
+          "eyeX": "PARAM_EYE_BALL_X",
+          "eyeY": "PARAM_EYE_BALL_Y"
+        },
+        "actions": {
+          "idle": {
+            "motions": [
+              {
+                "group": "idle",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "touch": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "click": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "annoyed": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 4000
+          },
+          "drag": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "release": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 3500
+          },
+          "thinking": {
+            "motions": [
+              {
+                "group": "idle",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "working": {
+            "motions": [
+              {
+                "group": "idle",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "replying": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "waiting": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "complete": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "error": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          }
+        }
+      },
+      "source": "https://github.com/Eikanya/Live2d-model/tree/94ae3e5628226726af96c6b4bf0e1ce5c728e28e/%E6%88%98%E8%88%B0%E5%B0%91%E5%A5%B3/325_1",
+      "sourcePack": "2026-09-09"
+    },
+    {
+      "id": "gfl-kalina",
+      "name": "格琳娜",
+      "subtitle": "少女前线 girls Frontline",
+      "kind": "cubism4",
+      "entry": "models/gfl-kalina/entry.model3.json",
+      "profile": {
+        "version": 1,
+        "scale": 1,
+        "offsetX": 0,
+        "offsetY": 0,
+        "idleMinMs": 9000,
+        "idleMaxMs": 18000,
+        "cooldownMs": 650,
+        "dragThreshold": 28,
+        "strokeThreshold": 7,
+        "strokeMs": 220,
+        "headRegion": {
+          "x": 0.12,
+          "y": 0.03,
+          "width": 0.76,
+          "height": 0.32
+        },
+        "defaultExpression": null,
+        "parameters": {
+          "angleX": "ParamAngleX",
+          "angleY": "ParamAngleY",
+          "eyeX": "ParamEyeBallX",
+          "eyeY": "ParamEyeBallY"
+        },
+        "actions": {
+          "idle": {
+            "motions": [
+              {
+                "group": "",
+                "index": 2
+              },
+              {
+                "group": "",
+                "index": 3
+              },
+              {
+                "group": "",
+                "index": 24
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "touch": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "click": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "annoyed": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 4000
+          },
+          "drag": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "release": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 3500
+          },
+          "thinking": {
+            "motions": [
+              {
+                "group": "",
+                "index": 2
+              },
+              {
+                "group": "",
+                "index": 3
+              },
+              {
+                "group": "",
+                "index": 24
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "working": {
+            "motions": [
+              {
+                "group": "",
+                "index": 2
+              },
+              {
+                "group": "",
+                "index": 3
+              },
+              {
+                "group": "",
+                "index": 24
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "replying": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "waiting": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "complete": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "error": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          }
+        }
+      },
+      "source": "https://github.com/Eikanya/Live2d-model/tree/94ae3e5628226726af96c6b4bf0e1ce5c728e28e/%E5%B0%91%E5%A5%B3%E5%89%8D%E7%BA%BF%20girls%20Frontline/live2dnew/gelina/normal",
+      "sourcePack": "2026-09-09"
+    },
+    {
+      "id": "gfl-88type",
+      "name": "88 式",
+      "subtitle": "少女前线 girls Frontline",
+      "kind": "cubism4",
+      "entry": "models/gfl-88type/entry.model3.json",
+      "profile": {
+        "version": 1,
+        "scale": 1,
+        "offsetX": 0,
+        "offsetY": 0,
+        "idleMinMs": 9000,
+        "idleMaxMs": 18000,
+        "cooldownMs": 650,
+        "dragThreshold": 28,
+        "strokeThreshold": 7,
+        "strokeMs": 220,
+        "headRegion": {
+          "x": 0.12,
+          "y": 0.03,
+          "width": 0.76,
+          "height": 0.32
+        },
+        "defaultExpression": null,
+        "parameters": {
+          "angleX": "ParamAngleX",
+          "angleY": "ParamAngleY",
+          "eyeX": "ParamEyeBallX",
+          "eyeY": "ParamEyeBallY"
+        },
+        "actions": {
+          "idle": {
+            "motions": [
+              {
+                "group": "",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "touch": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "click": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "annoyed": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 4000
+          },
+          "drag": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "release": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 3500
+          },
+          "thinking": {
+            "motions": [
+              {
+                "group": "",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "working": {
+            "motions": [
+              {
+                "group": "",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "replying": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "waiting": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "complete": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "error": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          }
+        }
+      },
+      "source": "https://github.com/Eikanya/Live2d-model/tree/94ae3e5628226726af96c6b4bf0e1ce5c728e28e/%E5%B0%91%E5%A5%B3%E5%89%8D%E7%BA%BF%20girls%20Frontline/live2dnew/88type_1809/normal",
+      "sourcePack": "2026-09-09"
+    },
+    {
+      "id": "gfl-m950a",
+      "name": "M950A",
+      "subtitle": "少女前线 girls Frontline",
+      "kind": "cubism4",
+      "entry": "models/gfl-m950a/entry.model3.json",
+      "profile": {
+        "version": 1,
+        "scale": 1,
+        "offsetX": 0,
+        "offsetY": 0,
+        "idleMinMs": 9000,
+        "idleMaxMs": 18000,
+        "cooldownMs": 650,
+        "dragThreshold": 28,
+        "strokeThreshold": 7,
+        "strokeMs": 220,
+        "headRegion": {
+          "x": 0.12,
+          "y": 0.03,
+          "width": 0.76,
+          "height": 0.32
+        },
+        "defaultExpression": null,
+        "parameters": {
+          "angleX": "ParamAngleX",
+          "angleY": "ParamAngleY",
+          "eyeX": "ParamEyeBallX",
+          "eyeY": "ParamEyeBallY"
+        },
+        "actions": {
+          "idle": {
+            "motions": [
+              {
+                "group": "",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "touch": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "click": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "annoyed": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 4000
+          },
+          "drag": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "release": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 3500
+          },
+          "thinking": {
+            "motions": [
+              {
+                "group": "",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "working": {
+            "motions": [
+              {
+                "group": "",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "replying": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "waiting": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "complete": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "error": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          }
+        }
+      },
+      "source": "https://github.com/Eikanya/Live2d-model/tree/94ae3e5628226726af96c6b4bf0e1ce5c728e28e/%E5%B0%91%E5%A5%B3%E5%89%8D%E7%BA%BF%20girls%20Frontline/live2dnew/m950a_4302/normal",
+      "sourcePack": "2026-09-09"
+    },
+    {
+      "id": "azur-atago",
+      "name": "爱宕",
+      "subtitle": "碧蓝航线 · JP",
+      "kind": "cubism4",
+      "entry": "models/azur-atago/entry.model3.json",
+      "profile": {
+        "version": 1,
+        "scale": 1,
+        "offsetX": 0,
+        "offsetY": 0,
+        "idleMinMs": 9000,
+        "idleMaxMs": 18000,
+        "cooldownMs": 650,
+        "dragThreshold": 28,
+        "strokeThreshold": 7,
+        "strokeMs": 220,
+        "headRegion": {
+          "x": 0.12,
+          "y": 0.03,
+          "width": 0.76,
+          "height": 0.32
+        },
+        "defaultExpression": null,
+        "parameters": {
+          "angleX": "ParamAngleX",
+          "angleY": "ParamAngleY",
+          "eyeX": "ParamEyeBallX",
+          "eyeY": "ParamEyeBallY"
+        },
+        "actions": {
+          "idle": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "touch": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "click": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "annoyed": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 4000
+          },
+          "drag": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "release": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 3500
+          },
+          "thinking": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "working": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "replying": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "waiting": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "complete": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "error": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          }
+        }
+      },
+      "source": "https://github.com/Eikanya/Live2d-model/tree/94ae3e5628226726af96c6b4bf0e1ce5c728e28e/%E7%A2%A7%E8%93%9D%E8%88%AA%E7%BA%BF%20Azue%20Lane/Azue%20Lane(JP)/aidang_2",
+      "sourcePack": "2026-09-09"
+    },
+    {
+      "id": "azur-belfast",
+      "name": "贝尔法斯特",
+      "subtitle": "碧蓝航线 · JP",
+      "kind": "cubism4",
+      "entry": "models/azur-belfast/entry.model3.json",
+      "profile": {
+        "version": 1,
+        "scale": 1,
+        "offsetX": 0,
+        "offsetY": 0,
+        "idleMinMs": 9000,
+        "idleMaxMs": 18000,
+        "cooldownMs": 650,
+        "dragThreshold": 28,
+        "strokeThreshold": 7,
+        "strokeMs": 220,
+        "headRegion": {
+          "x": 0.12,
+          "y": 0.03,
+          "width": 0.76,
+          "height": 0.32
+        },
+        "defaultExpression": null,
+        "parameters": {
+          "angleX": "ParamAngleX",
+          "angleY": "ParamAngleY",
+          "eyeX": "ParamEyeBallX",
+          "eyeY": "ParamEyeBallY"
+        },
+        "actions": {
+          "idle": {
+            "motions": [
+              {
+                "group": "",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "touch": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "click": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "annoyed": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 4000
+          },
+          "drag": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "release": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 3500
+          },
+          "thinking": {
+            "motions": [
+              {
+                "group": "",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "working": {
+            "motions": [
+              {
+                "group": "",
+                "index": 0
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "replying": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "waiting": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "complete": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "error": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          }
+        }
+      },
+      "source": "https://github.com/Eikanya/Live2d-model/tree/94ae3e5628226726af96c6b4bf0e1ce5c728e28e/%E7%A2%A7%E8%93%9D%E8%88%AA%E7%BA%BF%20Azue%20Lane/Azue%20Lane(JP)/beierfasite_2",
+      "sourcePack": "2026-09-09"
+    },
+    {
+      "id": "azur-sirius",
+      "name": "天狼星",
+      "subtitle": "碧蓝航线 · JP",
+      "kind": "cubism4",
+      "entry": "models/azur-sirius/entry.model3.json",
+      "profile": {
+        "version": 1,
+        "scale": 1,
+        "offsetX": 0,
+        "offsetY": 0,
+        "idleMinMs": 9000,
+        "idleMaxMs": 18000,
+        "cooldownMs": 650,
+        "dragThreshold": 28,
+        "strokeThreshold": 7,
+        "strokeMs": 220,
+        "headRegion": {
+          "x": 0.12,
+          "y": 0.03,
+          "width": 0.76,
+          "height": 0.32
+        },
+        "defaultExpression": null,
+        "parameters": {
+          "angleX": "ParamAngleX",
+          "angleY": "ParamAngleY",
+          "eyeX": "ParamEyeBallX",
+          "eyeY": "ParamEyeBallY"
+        },
+        "actions": {
+          "idle": {
+            "motions": [
+              {
+                "group": "",
+                "index": 6
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "touch": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "click": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "annoyed": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 4000
+          },
+          "drag": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "release": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 3500
+          },
+          "thinking": {
+            "motions": [
+              {
+                "group": "",
+                "index": 6
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "working": {
+            "motions": [
+              {
+                "group": "",
+                "index": 6
+              }
+            ],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "replying": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "waiting": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "complete": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          },
+          "error": {
+            "motions": [],
+            "expression": null,
+            "maxMs": 8000
+          }
+        }
+      },
+      "source": "https://github.com/Eikanya/Live2d-model/tree/94ae3e5628226726af96c6b4bf0e1ce5c728e28e/%E7%A2%A7%E8%93%9D%E8%88%AA%E7%BA%BF%20Azue%20Lane/Azue%20Lane(JP)/tianlangxing_3",
+      "sourcePack": "2026-09-09"
+    }
+  ]
+}

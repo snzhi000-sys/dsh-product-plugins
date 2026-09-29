@@ -1,0 +1,74 @@
+{
+  "commit": "94ae3e5628226726af96c6b4bf0e1ce5c728e28e",
+  "entry": "战舰少女/248_1/model.model.json",
+  "blobs": [
+    {
+      "path": "248_1/model.model.json",
+      "sha": "63c0aca9e68ef3ba15d2547037f75cc59c460e0c"
+    },
+    {
+      "path": "248_1/model.moc",
+      "sha": "eff059f7b18c3d13cf37ab9c67d48092059a192a"
+    },
+    {
+      "path": "248_1/model.1024/texture_00.png",
+      "sha": "9e98baf454c33ae1464fdd0adcebc282d77699b9"
+    },
+    {
+      "path": "248_1/model.1024/texture_01.png",
+      "sha": "ba1c9536e51441df81106abe0404c111589f5adc"
+    },
+    {
+      "path": "248_1/physics.json",
+      "sha": "0b2598c317bd51e0d5a35ce79ed217aba616c7a3"
+    },
+    {
+      "path": "248_1/dadian_idle.mtn",
+      "sha": "192f945db495b51a3be1d1eeef780becf28a60c4"
+    },
+    {
+      "path": "248_1/dadian_idle1.mtn",
+      "sha": "1a947e17343af7b24d714c160a9f95a6bac94f3a"
+    },
+    {
+      "path": "248_1/dadian_idle2.mtn",
+      "sha": "38087f079745371ff7a8ab2e6f5046674eec18d3"
+    },
+    {
+      "path": "248_1/dadian_hide_plane.mtn",
+      "sha": "86bca335758615a1069c4787db436aaf3a701293"
+    },
+    {
+      "path": "248_1/dadian_hide_plane_2.mtn",
+      "sha": "d04a9cc550d5f1a6fec4d804279c32b174818049"
+    },
+    {
+      "path": "248_1/dadian_skirt.mtn",
+      "sha": "1ac388fd48758f39038d16e1d4b43996d1799dfa"
+    },
+    {
+      "path": "248_1/dadian_look_left.mtn",
+      "sha": "8bbc250206d83978d7aca8cb47c66ef4b74acd23"
+    },
+    {
+      "path": "248_1/dadian_look_right.mtn",
+      "sha": "bdd5b712a0c23898bf892724b4e53bb907df9551"
+    },
+    {
+      "path": "248_1/dadian_hide_bra.mtn",
+      "sha": "68c34aa02186a22b7b7a069ca9852ea6fff0c065"
+    },
+    {
+      "path": "248_1/ordinarily_spoiled.mtn",
+      "sha": "d627f8d92cebfa352addfb07264e56f37dd4c7d6"
+    },
+    {
+      "path": "248_1/dadian_smile_01.mtn",
+      "sha": "3d0f2b1e700e8973d655cc2b46212afbcbaba4cc"
+    },
+    {
+      "path": "248_1/dadian_smile_02.mtn",
+      "sha": "e45ee5cc9bb6bb6afecfc724bf9612c213f268c4"
+    }
+  ]
+}

@@ -2,9 +2,9 @@
 
 English | [中文](README.zh.md)
 
-A built-in companion picker, Cordis Host, and transparent Electron window. The local Dev and Stable plugin contains 22 Live2D model versions and the DragonBones companion Mengmei. Each character selects its own isolated animation runtime. Both channels include this plugin; public redistribution still requires asset licensing review.
+A built-in companion picker, Cordis Host, and transparent Electron window. The local Dev and Stable plugin contains 22 Live2D model versions and the DragonBones companion Mengmei. Each character selects its own isolated animation runtime. Both channels include this plugin, and its model assets ship with this repository; their owners' terms still apply (see `assets/NOTICE.txt`).
 
-**Asset provenance**: the flagship character Mengmei is built on material provided by **苍月动漫**; we built the Live2D / DragonBones drive, pointer following, mouth and speech chain on top of it, and the character and its model remain entirely theirs. The other built-in Live2D models come from a third-party collection (see `assets/NOTICE.txt`), and **the model files are not distributed with this plugin package**.
+**Asset provenance**: the flagship character Mengmei is built on material provided by **苍月动漫**; we built the Live2D / DragonBones drive, pointer following, mouth and speech chain on top of it, and the character and its model remain entirely theirs. The other built-in Live2D models come from a third-party collection (see `assets/NOTICE.txt`), and **the model files ship with this plugin and this repository**, included with the owners' permission and outside this repository's MIT license.
 
 ## Use
 
@@ -58,7 +58,7 @@ Run `node scripts/conversation-smoke.mjs` for the keyless assembled UI snapshot.
 
 `assets/catalog.json` owns stable IDs, names, relative entries, and curated interaction profiles. The Host reads models and Core directly from the plugin package. New models are added during development, validated, previewed, and included in a rebuilt Dev package. Users do not import directories, select runtimes, edit bindings, or supply file paths. PNG illustration mode and its settings are removed.
 
-`scripts/prepare-builtin-assets.mjs` curates the previously downloaded, pinned research collection into the ignored local asset directory. It copies model dependencies and approved animation profiles, not user settings, credentials, library indexes, or absolute-path provenance files. The local bundle includes source attribution; model artwork and Cubism Core retain independent terms. Local packaging does not grant public redistribution rights.
+`scripts/prepare-builtin-assets.mjs` curates the previously downloaded, pinned research collection into `assets/`. It copies model dependencies and approved animation profiles, not user settings, credentials, library indexes, or absolute-path provenance files. The bundle includes source attribution; model artwork and Cubism Core retain independent terms and are not covered by this repository's MIT license.
 
 The pinned expansion uses `scripts/additional-models.json` and `scripts/prepare-additional-models.mjs`, verifies dependency blob hashes, and requires at least six unique referenced motions. `scripts/verify-additional-models.mjs` exercises every declared motion through the actual renderer before admission. The twelve additions supply 152 motions across four collections.
 

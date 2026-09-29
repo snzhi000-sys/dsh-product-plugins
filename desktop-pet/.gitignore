@@ -1,6 +1,5 @@
 node_modules/
 # The built client half ships through the profile: package.json lists `dist` in `files` and points
 # exports['./client'] at dist/client.js, so it is tracked the same way file-edit tracks client/dist.
-assets/*
-# The models are third-party assets and stay out of this public repository; their notice travels with it.
-!assets/NOTICE.txt
+# `assets/` ships with it: the models keep their owners' terms in `assets/NOTICE.txt` and stay
+# outside this repository's MIT license.

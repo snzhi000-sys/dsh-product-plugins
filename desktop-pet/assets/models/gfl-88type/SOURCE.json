@@ -1,0 +1,86 @@
+{
+  "commit": "94ae3e5628226726af96c6b4bf0e1ce5c728e28e",
+  "entry": "少女前线 girls Frontline/live2dnew/88type_1809/normal/normal.model3.json",
+  "blobs": [
+    {
+      "path": "live2dnew/88type_1809/normal/normal.model3.json",
+      "sha": "2fda9e8a33e1b9406cb41b678f019f257d36b92f"
+    },
+    {
+      "path": "live2dnew/88type_1809/normal/normal.moc3",
+      "sha": "2f8027bfce628bce7d5f6198d9c8e812bd3e1eb7"
+    },
+    {
+      "path": "live2dnew/88type_1809/normal/textures/texture_00.png",
+      "sha": "60b83a5ab88dc841550d51fd91c856a72d7ab09e"
+    },
+    {
+      "path": "live2dnew/88type_1809/normal/normal.physics3.json",
+      "sha": "4a17f807abb38b235035486d0db87551cdfea243"
+    },
+    {
+      "path": "live2dnew/88type_1809/normal/motions/daiji_idle_01.motion3.json",
+      "sha": "5906fb5c678d2b710132c7c8902f0078430b364d"
+    },
+    {
+      "path": "live2dnew/88type_1809/normal/motions/login.motion3.json",
+      "sha": "b30d57730d4f0c1768aa1f5cedbbff472640f04c"
+    },
+    {
+      "path": "live2dnew/88type_1809/normal/motions/motou_01.motion3.json",
+      "sha": "6e8a2c54c090366d23bafccbb09d180966387a7f"
+    },
+    {
+      "path": "live2dnew/88type_1809/normal/motions/motou_02.motion3.json",
+      "sha": "c8f26126e7691c7fd300693976aa56c3aa290825"
+    },
+    {
+      "path": "live2dnew/88type_1809/normal/motions/motou_03.motion3.json",
+      "sha": "36ef325abe0a8a79a71ba2057d459900af315f85"
+    },
+    {
+      "path": "live2dnew/88type_1809/normal/motions/moxiong_01.motion3.json",
+      "sha": "9eca44f7185c3b20216bbabd83a81d0179d4d831"
+    },
+    {
+      "path": "live2dnew/88type_1809/normal/motions/moxiong_02.motion3.json",
+      "sha": "ba2c40325be2b36e5062cb965b663fd46ba6a4eb"
+    },
+    {
+      "path": "live2dnew/88type_1809/normal/motions/moxiong_03.motion3.json",
+      "sha": "ab8f273959aa3fe6392364802c5c46dd8c575951"
+    },
+    {
+      "path": "live2dnew/88type_1809/normal/motions/newyear.motion3.json",
+      "sha": "46c66d54beadf9d6738d72bde038e788da120000"
+    },
+    {
+      "path": "live2dnew/88type_1809/normal/motions/shake.motion3.json",
+      "sha": "c000bca1ef4159aee8d190bd8d56b9c58dc37c4c"
+    },
+    {
+      "path": "live2dnew/88type_1809/normal/motions/shoucase.motion3.json",
+      "sha": "55825b746668cc26b605089e7e1c51c026f1f217"
+    },
+    {
+      "path": "live2dnew/88type_1809/normal/motions/shuohua_01.motion3.json",
+      "sha": "4c8c2d800423834d0b341b52a6caf9e8feffe036"
+    },
+    {
+      "path": "live2dnew/88type_1809/normal/motions/shuohua_02.motion3.json",
+      "sha": "375e46442bd2778134c5beb0351ca457aa2c15c0"
+    },
+    {
+      "path": "live2dnew/88type_1809/normal/motions/shuohua_03.motion3.json",
+      "sha": "f544103ab74170a8831beb6b9b1d4ed6f01b41bb"
+    },
+    {
+      "path": "live2dnew/88type_1809/normal/motions/wait_1.motion3.json",
+      "sha": "30459fb41d59d0df3c03851a6546d3915d2d8af4"
+    },
+    {
+      "path": "live2dnew/88type_1809/normal/motions/wait_2.motion3.json",
+      "sha": "0f47aecf60d96dc3170ecae41303aaaf0102e68b"
+    }
+  ]
+}
