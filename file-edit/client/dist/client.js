@@ -37842,7 +37842,7 @@
             const label = splitReviewPath(item.path);
             const [acting, setActing] = React.useState(null);
             const chip = item.createdThenDeleted ? React.createElement("span", { className: "dsh-fe-chip dsh-fe-chip-del" }, "\u65B0\u5EFA\u540E\u5220\u9664") : item.status === "added" ? React.createElement("span", { className: "dsh-fe-chip dsh-fe-chip-add" }, "\u65B0\u589E") : item.status === "deleted" ? React.createElement("span", { className: "dsh-fe-chip dsh-fe-chip-del" }, "\u5220\u9664") : React.createElement("span", { className: "dsh-fe-chip" }, "\u4FEE\u6539");
-            const stats = item.createdThenDeleted ? React.createElement("span", { className: "dsh-fe-stats" }, "\u672C\u4F1A\u8BDD\u65B0\u5EFA\u540E\u5220\u9664") : item.note ? React.createElement("span", { className: "dsh-fe-stats" }, item.note === "binary" ? "\u4E8C\u8FDB\u5236" : item.note === "shell-unknown" ? "\u811A\u672C\u4FEE\u6539" : item.note === "write-before-unknown" ? "\u4FEE\u6539\u524D\u5185\u5BB9\u672A\u77E5" : item.note === "shell-delete-unrecoverable" ? "Shell \u5220\u9664\u672A\u9694\u79BB" : "\u8FC7\u5927") : React.createElement(
+            const stats = item.createdThenDeleted ? React.createElement("span", { className: "dsh-fe-stats" }, "\u672C\u4F1A\u8BDD\u65B0\u5EFA\u540E\u5220\u9664") : item.note ? React.createElement("span", { className: "dsh-fe-stats" }, item.note === "binary" ? "\u4E8C\u8FDB\u5236" : item.note === "shell-unknown" ? "\u811A\u672C\u4FEE\u6539" : item.note === "write-before-unknown" ? "\u4FEE\u6539\u524D\u5185\u5BB9\u672A\u77E5" : item.note === "present-declared" ? "\u58F0\u660E\u4EA4\u4ED8" : item.note === "shell-delete-unrecoverable" ? "Shell \u5220\u9664\u672A\u9694\u79BB" : "\u8FC7\u5927") : React.createElement(
               "span",
               { className: "dsh-fe-stats" },
               React.createElement("span", { className: "dsh-fe-stat-add" }, "+" + item.added),
@@ -42257,7 +42257,8 @@
             }, [path, sid]);
             const isMd = lang === "markdown";
             const cleanDocument = !!diff && !diff.deleted && !diff.zero && diff.changed !== true && !diff.note && Array.isArray(diff.current);
-            const sourceText = cleanDocument ? diff.current.join("\n") + (diff.trailingNL && diff.current.length > 0 ? "\n" : "") : "";
+            const declaredDocument = !!diff && diff.note === "present-declared" && Array.isArray(diff.current);
+            const sourceText = cleanDocument || declaredDocument ? diff.current.join("\n") + (diff.trailingNL && diff.current.length > 0 ? "\n" : "") : "";
             const draftDirty = cleanDocument && documentMode === "edit" && draftText !== sourceText;
             React.useEffect(() => {
               store.setDraftDirty(path, draftDirty);
@@ -42438,7 +42439,13 @@
             const actionButtons = showActions ? [
               React.createElement(IconBtn, { key: "ok", tone: "ok", title: reviewAction ? "\u5904\u7406\u4E2D\u2026" : diff.createdThenDeleted ? "\u786E\u8BA4\u6587\u4EF6\u4FDD\u6301\u5220\u9664\u5E76\u7ED3\u675F\u6574\u6761\u53D8\u5316" : diff.deleted ? "\u786E\u8BA4\u5220\u9664" : "\u63A5\u53D7\u5168\u90E8", disabled: !!reviewAction, busy: reviewAction === "file:acceptFile", onClick: () => onFile("acceptFile"), icon: IconDoubleCheck }),
               React.createElement(IconBtn, { key: "no", tone: "no", className: "dsh-fe-pair", title: diff.restorable === false ? "\u4FEE\u6539\u524D\u5185\u5BB9\u4E0D\u53EF\u6062\u590D\uFF0C\u53EA\u80FD\u63A5\u53D7\u6216\u624B\u52A8\u5904\u7406" : reviewAction ? "\u5904\u7406\u4E2D\u2026" : diff.createdThenDeleted ? "\u6062\u590D\u6587\u4EF6\u5E76\u7EE7\u7EED\u4FDD\u7559\u65B0\u589E\u5BA1\u6838" : diff.deleted ? "\u6062\u590D\u6587\u4EF6\uFF08\u8FD8\u539F\u57FA\u7EBF\u5185\u5BB9\uFF09" : "\u62D2\u7EDD\u5168\u90E8", disabled: !!reviewAction || diff.restorable === false, busy: reviewAction === "file:rejectFile", onClick: () => onFile("rejectFile"), icon: IconRejectAll }),
-              React.createElement(IconBtn, { key: "rf", title: "\u5237\u65B0", onClick: () => fetch2(), icon: IconRefresh })
+              React.createElement(IconBtn, { key: "rf", title: "\u5237\u65B0", onClick: () => fetch2(), icon: IconRefresh }),
+              // A declared markdown deliverable browses like a clean document, so it keeps the same rendered/source
+              // switch even though its review actions are the accept/reject pair.
+              ...declaredDocument && isMd ? [documentMode === "preview" ? React.createElement("button", { key: "source", type: "button", className: "dsh-fe-btn", onClick: () => setDocumentMode("browse") }, "\u6E90\u7801") : React.createElement("button", { key: "preview", type: "button", className: "dsh-fe-btn", onClick: () => {
+                editingRef.idx = null;
+                setDocumentMode("preview");
+              } }, "\u9884\u89C8")] : []
             ] : cleanDocument ? [
               isMd && documentMode === "browse" ? React.createElement("button", { key: "preview", type: "button", className: "dsh-fe-btn", onClick: () => {
                 editingRef.idx = null;
@@ -42462,7 +42469,7 @@
               React.createElement(
                 "span",
                 { className: "dsh-fe-stats" },
-                mdRender ? "\u6E32\u67D3\u89C6\u56FE \xB7 " + diff.current.length + " \u884C" : cleanDocument ? (documentMode === "edit" ? "\u53EF\u7F16\u8F91" : diff.readOnly ? "\u5DE5\u4F5C\u533A\u5916 \xB7 \u53EA\u8BFB\u6D4F\u89C8" : "\u53EA\u8BFB\u6D4F\u89C8") + " \xB7 " + diff.current.length + " \u884C" : diff.createdThenDeleted ? "\u672C\u4F1A\u8BDD\u65B0\u5EFA\u540E\u5220\u9664" : diff.deleted ? "\u6587\u4EF6\u5DF2\u5220\u9664" : diff.note ? diff.note === "binary" ? "\u4E8C\u8FDB\u5236\u6587\u4EF6" : diff.note === "shell-unknown" ? "\u811A\u672C\u4FEE\u6539" : diff.note === "write-before-unknown" ? "\u4FEE\u6539\u524D\u5185\u5BB9\u672A\u77E5" : "\u6587\u4EF6\u8FC7\u5927" : diff.hunks && diff.hunks.length > 0 ? [
+                mdRender ? "\u6E32\u67D3\u89C6\u56FE \xB7 " + diff.current.length + " \u884C" : cleanDocument ? (documentMode === "edit" ? "\u53EF\u7F16\u8F91" : diff.readOnly ? "\u5DE5\u4F5C\u533A\u5916 \xB7 \u53EA\u8BFB\u6D4F\u89C8" : "\u53EA\u8BFB\u6D4F\u89C8") + " \xB7 " + diff.current.length + " \u884C" : diff.createdThenDeleted ? "\u672C\u4F1A\u8BDD\u65B0\u5EFA\u540E\u5220\u9664" : diff.deleted ? "\u6587\u4EF6\u5DF2\u5220\u9664" : diff.note ? diff.note === "binary" ? "\u4E8C\u8FDB\u5236\u6587\u4EF6" : diff.note === "shell-unknown" ? "\u811A\u672C\u4FEE\u6539" : diff.note === "write-before-unknown" ? "\u4FEE\u6539\u524D\u5185\u5BB9\u672A\u77E5" : diff.note === "present-declared" ? Array.isArray(diff.current) ? "\u58F0\u660E\u4EA4\u4ED8 \xB7 " + diff.current.length + " \u884C" : "\u58F0\u660E\u4EA4\u4ED8" : "\u6587\u4EF6\u8FC7\u5927" : diff.hunks && diff.hunks.length > 0 ? [
                   React.createElement("span", { key: "a", className: "dsh-fe-stat-add" }, "+" + diff.hunks.reduce((s, h) => s + h.newLen, 0)),
                   " ",
                   React.createElement("span", { key: "d", className: "dsh-fe-stat-del" }, "\u2212" + diff.hunks.reduce((s, h) => s + h.oldLen, 0)),
@@ -42672,6 +42679,41 @@
                 )
               );
             }
+            if (declaredDocument) {
+              return React.createElement(
+                "div",
+                { className: "dsh-fe-pane" },
+                toolbar,
+                selectionBubbleElement(),
+                React.createElement(
+                  "div",
+                  { className: "dsh-fe-msg" },
+                  "\u6A21\u578B\u58F0\u660E\u4EA4\u4ED8\u6B64\u6587\u4EF6\uFF0C\u4F46\u672C\u4F1A\u8BDD\u672A\u89C2\u6D4B\u5230\u5B83\u7684\u5199\u5165\uFF1B\u4FEE\u6539\u524D\u5185\u5BB9\u672A\u77E5\uFF0C\u4E3A\u907F\u514D\u8BEF\u5224\uFF0C\u4E0D\u80FD\u81EA\u52A8\u62D2\u7EDD\u3002\u4EE5\u4E0B\u4E3A\u5F53\u524D\u78C1\u76D8\u4E0A\u7684\u5185\u5BB9\uFF0C\u4EC5\u4F9B\u53EA\u8BFB\u6D4F\u89C8\uFF1B\u63A5\u53D7\u540E\u4F1A\u7559\u4E0B\u8FD9\u6761\u5BA1\u6838\u8BB0\u5F55\u3002"
+                ),
+                error ? React.createElement("div", { className: "dsh-fe-err" }, String(error)) : null,
+                isMd && documentMode === "preview" ? React.createElement(
+                  "div",
+                  { className: "dsh-fe-mdwrap" },
+                  React.createElement("div", { className: "dsh-fe-md", dangerouslySetInnerHTML: { __html: renderMarkdown(sourceText) } })
+                ) : React.createElement(
+                  "div",
+                  { className: "dsh-fe-document-wrap" },
+                  React.createElement(WholeDocumentEditor, {
+                    path,
+                    lang,
+                    value: sourceText,
+                    readOnly: true,
+                    onChange: () => {
+                    },
+                    onSave: () => {
+                    },
+                    onReference: referenceDocumentLines,
+                    onSelection: (start, end, rect) => setSelectionBubble(start == null ? null : { start, end, rect, lineRef: true }),
+                    lineTarget: editorLineTarget
+                  })
+                )
+              );
+            }
             if (diff.note) {
               return React.createElement(
                 "div",
@@ -42680,7 +42722,7 @@
                 React.createElement(
                   "div",
                   { className: "dsh-fe-msg" },
-                  diff.note === "binary" ? "\u4E8C\u8FDB\u5236\u6587\u4EF6\u65E0\u6CD5\u9884\u89C8\uFF0C\u53EF\u5728\u4FEE\u6539\u5217\u8868\u4E2D\u76F4\u63A5\u63A5\u53D7\u6216\u62D2\u7EDD" : diff.note === "shell-unknown" ? "\u5DF2\u68C0\u6D4B\u5230\u811A\u672C\u4FEE\u6539\uFF0C\u4F46\u4FEE\u6539\u524D\u5185\u5BB9\u65E0\u6CD5\u6062\u590D\uFF1B\u8BF7\u63A5\u53D7\u6216\u624B\u52A8\u68C0\u67E5\u6587\u4EF6\u3002" : diff.note === "write-before-unknown" ? "\u5DF2\u68C0\u6D4B\u5230\u6587\u4EF6\u88AB\u8986\u76D6\uFF0C\u4F46\u5DE5\u5177\u672A\u8FD4\u56DE\u4FEE\u6539\u524D\u5185\u5BB9\uFF1B\u4E3A\u907F\u514D\u8BEF\u5224\uFF0C\u4E0D\u80FD\u81EA\u52A8\u62D2\u7EDD\uFF0C\u8BF7\u63A5\u53D7\u6216\u624B\u52A8\u68C0\u67E5\u6587\u4EF6\u3002" : diff.note === "shell-delete-unrecoverable" ? "\u68C0\u6D4B\u5230 Shell \u5220\u9664\uFF0C\u4F46\u6CA1\u6709\u53EF\u6062\u590D\u7684\u9694\u79BB\u5907\u4EFD\u3002" : "\u6587\u4EF6\u8FC7\u5927\u65E0\u6CD5\u9884\u89C8"
+                  diff.note === "binary" ? "\u4E8C\u8FDB\u5236\u6587\u4EF6\u65E0\u6CD5\u9884\u89C8\uFF0C\u53EF\u5728\u4FEE\u6539\u5217\u8868\u4E2D\u76F4\u63A5\u63A5\u53D7\u6216\u62D2\u7EDD" : diff.note === "shell-unknown" ? "\u5DF2\u68C0\u6D4B\u5230\u811A\u672C\u4FEE\u6539\uFF0C\u4F46\u4FEE\u6539\u524D\u5185\u5BB9\u65E0\u6CD5\u6062\u590D\uFF1B\u8BF7\u63A5\u53D7\u6216\u624B\u52A8\u68C0\u67E5\u6587\u4EF6\u3002" : diff.note === "write-before-unknown" ? "\u5DF2\u68C0\u6D4B\u5230\u6587\u4EF6\u88AB\u8986\u76D6\uFF0C\u4F46\u5DE5\u5177\u672A\u8FD4\u56DE\u4FEE\u6539\u524D\u5185\u5BB9\uFF1B\u4E3A\u907F\u514D\u8BEF\u5224\uFF0C\u4E0D\u80FD\u81EA\u52A8\u62D2\u7EDD\uFF0C\u8BF7\u63A5\u53D7\u6216\u624B\u52A8\u68C0\u67E5\u6587\u4EF6\u3002" : diff.note === "present-declared" ? "\u6A21\u578B\u58F0\u660E\u4EA4\u4ED8\u6B64\u6587\u4EF6\uFF0C\u4F46\u672C\u4F1A\u8BDD\u672A\u89C2\u6D4B\u5230\u5B83\u7684\u5199\u5165\uFF1B\u4FEE\u6539\u524D\u5185\u5BB9\u672A\u77E5\uFF0C\u4E3A\u907F\u514D\u8BEF\u5224\uFF0C\u4E0D\u80FD\u81EA\u52A8\u62D2\u7EDD\uFF0C\u8BF7\u63A5\u53D7\u6216\u624B\u52A8\u68C0\u67E5\u6587\u4EF6\u3002" : diff.note === "shell-delete-unrecoverable" ? "\u68C0\u6D4B\u5230 Shell \u5220\u9664\uFF0C\u4F46\u6CA1\u6709\u53EF\u6062\u590D\u7684\u9694\u79BB\u5907\u4EFD\u3002" : "\u6587\u4EF6\u8FC7\u5927\u65E0\u6CD5\u9884\u89C8"
                 ),
                 error ? React.createElement("div", { className: "dsh-fe-err" }, String(error)) : null
               );

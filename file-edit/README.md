@@ -11,6 +11,9 @@ One plugin that combines the workspace Explorer, the file browser and agent-chan
 | Date | Change | Author | Note | Link |
 | --- | --- | --- | --- | --- |
 | 2026-09-18 | First release of this README as a product document: capabilities, feature demos, origin and credits | snzhi000-sys | Version `1.13.44-local` | — |
+| 2026-09-22 | Declared deliveries enter review when the session never observed their write, and stay unrestorable | snzhi000-sys | Version `1.13.45-local` | — |
+| 2026-09-22 | Fix the declared-delivery reconciliation silently dropping declarations: a clean baseline entry left by the discovery scan was misread as an existing review row | snzhi000-sys | Version `1.13.46-local` | — |
+| 2026-09-24 | A declared delivery's content is browseable read-only: the review pane showed the notice alone, so the file could not be read before accepting it | snzhi000-sys | Version `1.13.47-local` | — |
 
 ---
 
@@ -42,6 +45,7 @@ To make file changes inside a Harness session **visible, editable and referencea
 - **Directories aggregate**: a full directory deletion becomes one row that expands to its files and can be accepted or restored as a batch;
 - **Ownership is explicit**: subagent changes are attributed along the parent session, while ordinary child sessions keep their own ledger;
 - **Uncaptured work is named**: changes the plugin cannot observe, such as writes from a background Shell or an unmanaged compatible shell, are listed by name on an "uncaptured" row that persists with the session instead of being silently dropped;
+- **Declared deliveries fill the gap**: a file the model declares with the official `present` tool that this session never observed a write for, such as output from a shell command that moved itself to the background, enters the list as a declared delivery; it carries only the current disk state and no before-content, so it can be accepted or inspected by hand but never auto-rejected. What is on disk is still browseable read-only, through the same document view a clean file gets, so the decision can be made by reading the file instead of signing blind;
 - **Snapshot-first restore**: after a restart the persisted ledger appears first and the disk is reconciled afterwards, so the first paint never waits for a workspace scan.
 
 ### 2. Explorer
@@ -144,7 +148,7 @@ docs/
 
 - The native workspace browser is replaced, so search, grouping and rename dialogs are absent; adding a workspace and creating sessions remain;
 - Dependency and cache directories stay out of the file tree, which also has entry and depth limits;
-- Writes from a background Shell or a persistent terminal are not captured; they are named in the review bar rather than invented;
+- Writes from a background Shell or a persistent terminal are not captured; they are named in the review bar rather than invented, and artifacts the model never declares stay out of the list;
 - Line-level references from the rendered view depend on the renderer's line annotations, so inline code spanning lines can drift within its block until the next block-level annotation.
 
 ## License

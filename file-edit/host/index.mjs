@@ -63,6 +63,12 @@ export default {
     // workspace-changes capture mapping.
     const STR_REPLACE_EDITOR = 'str_replace_editor'
     const STR_REPLACE_MUTATIONS = new Set(['create', 'str_replace', 'insert'])
+    // The official `present` tool is the declared channel for deliverables,
+    // and its schema tells the model to use it for files created through Bash
+    // or code execution. A detached shell command writes after this plugin's
+    // per-call observation window closes, so the declaration is the only
+    // evidence such a file exists at all.
+    const PRESENT_TOOL = 'present'
     const SHELL_TOOLS = new Set(['bash', 'shell', 'pwsh'])
     const UNTRACKED_SHELL_TOOLS = new Set([
       'powershell',
@@ -75,6 +81,10 @@ export default {
     const AUDIT_DISABLED_SHELL_DENIAL = '[审核不可用] 当前构建未启用完整的 Shell 修改前事务，命令未执行。请使用 shell_readonly 或结构化文件工具。'
     const INVALID_ROOT_SHELL_DENIAL = '[审核范围不足] 工作区可写策略没有提供可快照的绝对工作区根目录，命令未执行。请重新打开有效工作区，或使用 shell_readonly。'
     const SHELL_UNRECOVERABLE_DELETE_NOTE = 'shell-delete-unrecoverable'
+    const PRESENT_DECLARED_NOTE = 'present-declared'
+    // Rows whose before-content was never observed cannot be restored, so
+    // reject stays unavailable there and the user accepts or inspects by hand.
+    const UNRESTORABLE_BASE_NOTES = new Set(['shell-unknown', 'write-before-unknown', PRESENT_DECLARED_NOTE])
     const SHELL_EVENT_SETTLE_MS = 140
     const MAX_SHELL_AUDIT_ENTRIES = 50_000
     // A `str_replace_editor` call that never reports a result (aborted turn,
@@ -396,6 +406,22 @@ export default {
         version: `event:${stamp}:before-unknown`,
         size: 0,
         note: 'write-before-unknown',
+        binRef: null,
+        binSize: 0,
+        md: isMarkdownPath(rel),
+      }
+    }
+    // A declared deliverable names no baseline: the write that produced it was
+    // never observed, so only the current disk state is known.
+    function declaredPresentBefore(rel, stamp, size) {
+      return {
+        present: true,
+        content: null,
+        eol: false,
+        crlf: false,
+        version: `present:${stamp}:before-unknown`,
+        size: size || 0,
+        note: PRESENT_DECLARED_NOTE,
         binRef: null,
         binSize: 0,
         md: isMarkdownPath(rel),
@@ -1069,6 +1095,62 @@ export default {
         }
       } catch (e) {}
       stageEntries(st, rel, before, after)
+      st.dirty = false
+      saveState(st)
+      scheduleNotify(sid, 80)
+      return true
+    }
+
+    // Whether a ledger entry is already a row the reviewer can see. This mirrors
+    // saveState's persistence predicate exactly: a pending change, a recorded
+    // decision, or a deletion survives a restart and is listed. Everything else
+    // — most importantly the CLEAN entry the discovery scan folds in for every
+    // workspace file (base === cur) — is invisible, so a declaration may still
+    // claim the path. Testing `st.files.has(rel)` here instead silently dropped
+    // real declarations whenever the Explorer tree had been opened first: the
+    // scan had already baselined the declared file, so the row never appeared.
+    function reviewRowVisible(f) {
+      if (!f) return false
+      if (f.decisions && f.decisions.size > 0) return true
+      if (f.deletion) return true
+      const contentEqual = !!(f.base && f.cur && f.base.content !== null && f.base.content === f.cur.content)
+      return !!(f.cur && isChanged(f) && !contentEqual)
+    }
+
+    // A `present` call is the model's own statement that a path is a
+    // deliverable. It is not evidence that this session changed the file, so a
+    // declaration is consumed only while the path has no review row yet: a row
+    // the reviewer can already see keeps its real before/after and is left
+    // untouched.
+    async function stagePresentedResult(exec, result) {
+      const sid = reviewOwnerSessionId(exec?.agent?.session?.id)
+      if (!sid) return false
+      const value = result && result.value
+      const declared = value && Array.isArray(value.files)
+        ? value.files
+        : (exec && exec.arguments && Array.isArray(exec.arguments.files) ? exec.arguments.files : null)
+      if (!declared || declared.length === 0) return false
+      const st = initializeEventState(sid)
+      let staged = false
+      for (const file of declared) {
+        const raw = file && typeof file.path === 'string' ? file.path.trim() : ''
+        if (!raw) continue
+        const rel = reviewKeyFromRaw(st, raw)
+        // Declarations outside the workspace stay out of review: the shell
+        // observation window does not cover them either, and listing every
+        // declared path would turn the review list into a delivery index.
+        if (!rel || isExternalKey(rel) || ignoredReviewPath(rel)) continue
+        // A row the reviewer can already see is never displaced. A clean
+        // baseline entry is not such a row — see reviewRowVisible.
+        if (reviewRowVisible(st.files.get(rel))) continue
+        const cur = await loadFileEntry(st, rel)
+        if (!cur.present) continue
+        const stamp = (st.mutationStamp || 0) + 1
+        st.mutationStamp = stamp
+        stageEntries(st, rel, declaredPresentBefore(reviewDisplayPath(st, rel), stamp, cur.size), cur)
+        staged = true
+      }
+      if (!staged) return false
       st.dirty = false
       saveState(st)
       scheduleNotify(sid, 80)
@@ -1937,7 +2019,7 @@ export default {
           continue
         }
         if (note) {
-          files.push({ ...common, status: status, note: note, restorable: note !== 'shell-unknown' && note !== 'write-before-unknown' && note !== SHELL_UNRECOVERABLE_DELETE_NOTE, pending: 1, added: 0, removed: 0 })
+          files.push({ ...common, status: status, note: note, restorable: !UNRESTORABLE_BASE_NOTES.has(note) && note !== SHELL_UNRECOVERABLE_DELETE_NOTE, pending: 1, added: 0, removed: 0 })
           continue
         }
         const baseLines = entryLines(f.base)
@@ -1988,7 +2070,7 @@ export default {
       const retainedDeletion = !changed && f && f.deletedPreview && f.cur && !f.cur.present
       const status = retainedDeletion ? 'deleted' : reviewStatus(f)
       const unrecoverableShellDeletion = !!(f.cur && f.cur.note === SHELL_UNRECOVERABLE_DELETE_NOTE)
-      const restorable = !unrecoverableShellDeletion && !(f.base && (f.base.note === 'shell-unknown' || f.base.note === 'write-before-unknown'))
+      const restorable = !unrecoverableShellDeletion && !(f.base && UNRESTORABLE_BASE_NOTES.has(f.base.note))
       const note = (f.base && f.base.note) || f.cur.note || null
       if (prevRev !== undefined && prevRev !== null && prevRev === f.rev) {
         return { ok: true, same: true, rev: f.rev, ...meta }
@@ -2030,7 +2112,22 @@ export default {
             }
           }
         }
-        return { ok: true, rev: f.rev, status: status, changed: changed, note: note, restorable: note !== 'shell-unknown' && note !== 'write-before-unknown' && note !== SHELL_UNRECOVERABLE_DELETE_NOTE, hunks: [], current: null, baseline: null, ...meta }
+        // A declared deliverable has no baseline, but its current disk content
+        // is known: the declaration claims a file that exists now, and the
+        // ledger read it. Ship that content so the reviewer can actually read
+        // what is being accepted instead of staring at a bare notice (reported
+        // 2026-09-24). The row stays unrestorable — there is nothing to
+        // restore to — so only the reject action remains unavailable.
+        if (note === PRESENT_DECLARED_NOTE && f.cur.content !== null) {
+          const declaredLines = entryLines(f.cur)
+          return {
+            ok: true, rev: f.rev, status: status, changed: changed, note: note,
+            restorable: false, hunks: [], current: declaredLines, baseline: null,
+            trailingNL: f.cur.eol === true, crlf: f.cur.crlf === true,
+            ...meta,
+          }
+        }
+        return { ok: true, rev: f.rev, status: status, changed: changed, note: note, restorable: !UNRESTORABLE_BASE_NOTES.has(note) && note !== SHELL_UNRECOVERABLE_DELETE_NOTE, hunks: [], current: null, baseline: null, ...meta }
       }
       const baseLines = entryLines(f.base)
       const curLines = entryLines(f.cur)
@@ -3530,6 +3627,10 @@ export default {
       try {
         if (name === STR_REPLACE_EDITOR) {
           await finishStrReplaceEdit(exec, result)
+          return
+        }
+        if (name === PRESENT_TOOL) {
+          await stagePresentedResult(exec, result)
           return
         }
         if (!DIRECT_CONTENT_TOOLS.has(name)) return

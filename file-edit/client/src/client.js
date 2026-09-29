@@ -2512,7 +2512,7 @@ window.__ModuleLoader__.load({
           const stats = item.createdThenDeleted
             ? React.createElement('span', { className: 'dsh-fe-stats' }, '本会话新建后删除')
             : item.note
-            ? React.createElement('span', { className: 'dsh-fe-stats' }, item.note === 'binary' ? '二进制' : (item.note === 'shell-unknown' ? '脚本修改' : (item.note === 'write-before-unknown' ? '修改前内容未知' : (item.note === 'shell-delete-unrecoverable' ? 'Shell 删除未隔离' : '过大'))))
+            ? React.createElement('span', { className: 'dsh-fe-stats' }, item.note === 'binary' ? '二进制' : (item.note === 'shell-unknown' ? '脚本修改' : (item.note === 'write-before-unknown' ? '修改前内容未知' : (item.note === 'present-declared' ? '声明交付' : (item.note === 'shell-delete-unrecoverable' ? 'Shell 删除未隔离' : '过大')))))
             : React.createElement('span', { className: 'dsh-fe-stats' },
               React.createElement('span', { className: 'dsh-fe-stat-add' }, '+' + item.added),
               ' ',
@@ -4225,7 +4225,12 @@ window.__ModuleLoader__.load({
           // edits stay visible; once clean, the tab shows the rendered doc.
           const isMd = lang === 'markdown'
           const cleanDocument = !!diff && !diff.deleted && !diff.zero && diff.changed !== true && !diff.note && Array.isArray(diff.current)
-          const sourceText = cleanDocument
+          // A declared deliverable has no baseline, but the host ships the content that is on disk right now, so it
+          // browses exactly like a clean document while keeping its review actions: accept records the decision,
+          // and reject stays unavailable because there is nothing to restore to. Before this the pane was empty —
+          // the notice was the whole view (reported 2026-09-24).
+          const declaredDocument = !!diff && diff.note === 'present-declared' && Array.isArray(diff.current)
+          const sourceText = (cleanDocument || declaredDocument)
             ? diff.current.join('\n') + (diff.trailingNL && diff.current.length > 0 ? '\n' : '')
             : ''
           const draftDirty = cleanDocument && documentMode === 'edit' && draftText !== sourceText
@@ -4412,6 +4417,13 @@ window.__ModuleLoader__.load({
             React.createElement(IconBtn, { key: 'ok', tone: 'ok', title: reviewAction ? '处理中…' : (diff.createdThenDeleted ? '确认文件保持删除并结束整条变化' : (diff.deleted ? '确认删除' : '接受全部')), disabled: !!reviewAction, busy: reviewAction === 'file:acceptFile', onClick: () => onFile('acceptFile'), icon: IconDoubleCheck }),
             React.createElement(IconBtn, { key: 'no', tone: 'no', className: 'dsh-fe-pair', title: diff.restorable === false ? '修改前内容不可恢复，只能接受或手动处理' : (reviewAction ? '处理中…' : (diff.createdThenDeleted ? '恢复文件并继续保留新增审核' : (diff.deleted ? '恢复文件（还原基线内容）' : '拒绝全部'))), disabled: !!reviewAction || diff.restorable === false, busy: reviewAction === 'file:rejectFile', onClick: () => onFile('rejectFile'), icon: IconRejectAll }),
             React.createElement(IconBtn, { key: 'rf', title: '刷新', onClick: () => fetch(), icon: IconRefresh }),
+            // A declared markdown deliverable browses like a clean document, so it keeps the same rendered/source
+            // switch even though its review actions are the accept/reject pair.
+            ...(declaredDocument && isMd
+              ? [documentMode === 'preview'
+                  ? React.createElement('button', { key: 'source', type: 'button', className: 'dsh-fe-btn', onClick: () => setDocumentMode('browse') }, '源码')
+                  : React.createElement('button', { key: 'preview', type: 'button', className: 'dsh-fe-btn', onClick: () => { editingRef.idx = null; setDocumentMode('preview') } }, '预览')]
+              : []),
           ] : (cleanDocument ? [
             isMd && documentMode === 'browse' ? React.createElement('button', { key: 'preview', type: 'button', className: 'dsh-fe-btn', onClick: () => { editingRef.idx = null; setDocumentMode('preview') } }, '预览') : null,
             isMd && documentMode === 'preview' ? React.createElement('button', { key: 'source', type: 'button', className: 'dsh-fe-btn', onClick: () => setDocumentMode('browse') }, '源码') : null,
@@ -4426,7 +4438,7 @@ window.__ModuleLoader__.load({
             // Markdown/edit/review badges align to the toolbar's left inset.
             React.createElement('span', { className: 'dsh-fe-chip' }, statusText),
             React.createElement('span', { className: 'dsh-fe-stats' },
-              mdRender ? ('渲染视图 · ' + diff.current.length + ' 行') : (cleanDocument ? ((documentMode === 'edit' ? '可编辑' : (diff.readOnly ? '工作区外 · 只读浏览' : '只读浏览')) + ' · ' + diff.current.length + ' 行') : (diff.createdThenDeleted ? '本会话新建后删除' : (diff.deleted ? '文件已删除' : (diff.note ? (diff.note === 'binary' ? '二进制文件' : (diff.note === 'shell-unknown' ? '脚本修改' : (diff.note === 'write-before-unknown' ? '修改前内容未知' : '文件过大'))) : (diff.hunks && diff.hunks.length > 0
+              mdRender ? ('渲染视图 · ' + diff.current.length + ' 行') : (cleanDocument ? ((documentMode === 'edit' ? '可编辑' : (diff.readOnly ? '工作区外 · 只读浏览' : '只读浏览')) + ' · ' + diff.current.length + ' 行') : (diff.createdThenDeleted ? '本会话新建后删除' : (diff.deleted ? '文件已删除' : (diff.note ? (diff.note === 'binary' ? '二进制文件' : (diff.note === 'shell-unknown' ? '脚本修改' : (diff.note === 'write-before-unknown' ? '修改前内容未知' : (diff.note === 'present-declared' ? (Array.isArray(diff.current) ? '声明交付 · ' + diff.current.length + ' 行' : '声明交付') : '文件过大')))) : (diff.hunks && diff.hunks.length > 0
                 ? [
                   React.createElement('span', { key: 'a', className: 'dsh-fe-stat-add' }, '+' + diff.hunks.reduce((s, h) => s + h.newLen, 0)),
                   ' ',
@@ -4605,11 +4617,40 @@ window.__ModuleLoader__.load({
               ),
             )
           }
+          // A declared deliverable whose content is on disk: keep the notice — it explains why there is no diff and
+          // why only accept is offered — and show the file itself below it, read-only, through the same document
+          // view a clean file gets. The reviewer has to be able to read what they are accepting.
+          if (declaredDocument) {
+            return React.createElement('div', { className: 'dsh-fe-pane' },
+              toolbar,
+              selectionBubbleElement(),
+              React.createElement('div', { className: 'dsh-fe-msg' },
+                '模型声明交付此文件，但本会话未观测到它的写入；修改前内容未知，为避免误判，不能自动拒绝。以下为当前磁盘上的内容，仅供只读浏览；接受后会留下这条审核记录。'),
+              error ? React.createElement('div', { className: 'dsh-fe-err' }, String(error)) : null,
+              isMd && documentMode === 'preview'
+                ? React.createElement('div', { className: 'dsh-fe-mdwrap' },
+                  React.createElement('div', { className: 'dsh-fe-md', dangerouslySetInnerHTML: { __html: renderMarkdown(sourceText) } }),
+                )
+                : React.createElement('div', { className: 'dsh-fe-document-wrap' },
+                  React.createElement(WholeDocumentEditor, {
+                    path: path,
+                    lang: lang,
+                    value: sourceText,
+                    readOnly: true,
+                    onChange: () => {},
+                    onSave: () => {},
+                    onReference: referenceDocumentLines,
+                    onSelection: (start, end, rect) => setSelectionBubble(start == null ? null : { start, end, rect, lineRef: true }),
+                    lineTarget: editorLineTarget,
+                  }),
+                ),
+            )
+          }
           if (diff.note) {
             return React.createElement('div', { className: 'dsh-fe-pane' },
               toolbar,
               React.createElement('div', { className: 'dsh-fe-msg' },
-                diff.note === 'binary' ? '二进制文件无法预览，可在修改列表中直接接受或拒绝' : (diff.note === 'shell-unknown' ? '已检测到脚本修改，但修改前内容无法恢复；请接受或手动检查文件。' : (diff.note === 'write-before-unknown' ? '已检测到文件被覆盖，但工具未返回修改前内容；为避免误判，不能自动拒绝，请接受或手动检查文件。' : (diff.note === 'shell-delete-unrecoverable' ? '检测到 Shell 删除，但没有可恢复的隔离备份。' : '文件过大无法预览')))),
+                diff.note === 'binary' ? '二进制文件无法预览，可在修改列表中直接接受或拒绝' : (diff.note === 'shell-unknown' ? '已检测到脚本修改，但修改前内容无法恢复；请接受或手动检查文件。' : (diff.note === 'write-before-unknown' ? '已检测到文件被覆盖，但工具未返回修改前内容；为避免误判，不能自动拒绝，请接受或手动检查文件。' : (diff.note === 'present-declared' ? '模型声明交付此文件，但本会话未观测到它的写入；修改前内容未知，为避免误判，不能自动拒绝，请接受或手动检查文件。' : (diff.note === 'shell-delete-unrecoverable' ? '检测到 Shell 删除，但没有可恢复的隔离备份。' : '文件过大无法预览'))))),
               error ? React.createElement('div', { className: 'dsh-fe-err' }, String(error)) : null,
             )
           }

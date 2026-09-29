@@ -143,8 +143,9 @@ test('selection references use the official reference source, and a bubble sits 
   assert.match(source, /'\.dsh-fe-refbubble \{ display:inline-flex;[^']*border-radius:999px;[^']*box-shadow:var\(--dsw-elevation-soft\); \}'/)
   // A floating bubble keeps an opaque hover fill; the translucent hover token would make it see-through.
   assert.match(source, /'\.dsh-fe-refbubble:hover \{ background:var\(--dsw-alias-interactive-bg-hover-solid\); \}'/)
-  // Mounted wherever a selection can happen: the markdown render view, the document editor, and the diff view.
-  assert.equal((source.match(/selectionBubbleElement\(\),/g) || []).length, 3)
+  // Mounted wherever a selection can happen: the markdown render view, the document editor, the diff view, and a
+  // declared deliverable's read-only document view (which browses like a clean file, so it selects like one).
+  assert.equal((source.match(/selectionBubbleElement\(\),/g) || []).length, 4)
 })
 
 test('the selection bubble carries a contribution seam for other plugins', async () => {

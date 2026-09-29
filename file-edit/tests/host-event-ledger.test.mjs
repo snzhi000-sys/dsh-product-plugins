@@ -16,7 +16,7 @@ process.env.DSH_HOME = stateHome
 
 const { default: plugin } = await import(process.env.DSH_TEST_FILE_EDIT_HOST || '../host/index.mjs?' + Date.now())
 
-function harness(pluginImpl = plugin, sessionOverrides = {}, policyMode = 'workspace-write', pluginConfig = {}, services = {}) {
+function harness(pluginImpl = plugin, sessionOverrides = {}, policyMode = 'workspace-write', pluginConfig = {}, services = {}, fsOverrides = {}) {
   const events = new Map()
   const registered = new Map()
   const guards = []
@@ -45,6 +45,7 @@ function harness(pluginImpl = plugin, sessionOverrides = {}, policyMode = 'works
       return { before, after: content, operation: before === null ? 'create' : 'update', size: s.size, version: `${s.mtimeMs}:${s.size}` }
     },
   }
+  Object.assign(fs, fsOverrides)
   const ctx = {
     get: name => services[name],
     fs,
@@ -2033,4 +2034,154 @@ test('an uncaptured shell entry point is disclosed instead of denied or dropped'
   const snapshot = await reboot.invoke('getModifiedSnapshot', { sessionId: 'session-gaps' })
   assert.equal(snapshot.auditGaps.backgroundShell, 2)
   assert.deepEqual(snapshot.auditGaps.untrackedShell, ['shell_command'])
+})
+
+// A detached shell command writes after this plugin's per-call observation
+// window closes, so the file never reaches the ledger. The official `present`
+// tool is the model's own declaration that the path is a deliverable, and its
+// schema tells the model to use it for files created through Bash. Consuming
+// that declaration surfaces the file without inventing a change.
+test('a declared deliverable the ledger never saw enters review as unrestorable', async () => {
+  const h = harness()
+  const target = join(workspace, 'declared-detached.csv')
+  writeFileSync(target, 'a,b\n1,2\n')
+  await h.events.get('tools/result')(
+    { name: 'present', agent: { session: { id: 'session-test' } } },
+    { isError: false, value: { turn: 1, files: [{ path: 'declared-detached.csv', description: '清单' }] } },
+  )
+  const row = (await h.invoke('getModified', { sessionId: 'session-test' })).files
+    .find((file) => file.path === 'declared-detached.csv')
+  assert.ok(row, 'declared file is listed')
+  assert.equal(row.note, 'present-declared')
+  assert.equal(row.restorable, false)
+  const persisted = state().files['declared-detached.csv']
+  assert.equal(persisted.base.note, 'present-declared')
+  assert.equal(persisted.base.content, null)
+  assert.equal(persisted.cur.content, 'a,b\n1,2\n')
+  const diff = await h.invoke('getDiff', { sessionId: 'session-test', path: 'declared-detached.csv' })
+  assert.equal(diff.note, 'present-declared')
+  assert.equal(diff.restorable, false)
+  // The declaration names a file that exists right now, so its content is readable even though the write itself
+  // was never observed. Shipping it lets the reviewer read what is being accepted; the row still has no baseline,
+  // so there is nothing to diff against and nothing to reject (reported 2026-09-24).
+  assert.deepEqual(diff.current, ['a,b', '1,2'], 'the declared file content is browseable')
+  assert.equal(diff.baseline, null, 'a declared deliverable has no baseline to compare against')
+  assert.deepEqual(diff.hunks, [], 'no hunks are invented for an unobserved write')
+  // Browsing must not cost the reviewer the decision: the client keys its accept/reject toolbar off `changed`,
+  // so a declared row stays reviewable and only reject (no baseline to restore) is unavailable.
+  assert.equal(diff.changed, true, 'the row stays reviewable so accepting it remains possible')
+  // Reject must refuse: the session never saw the content this would replace.
+  const rejected = await h.invoke('rejectFile', { sessionId: 'session-test', path: 'declared-detached.csv' })
+  assert.equal(rejected.ok, false)
+  assert.equal(readFileSync(target, 'utf8'), 'a,b\n1,2\n')
+})
+
+test('a scanned clean baseline entry does not block a declaration', async () => {
+  // The shared harness stub answers `listDir` with an empty listing, which
+  // makes the discovery walk a no-op. This case needs the real walk, so it
+  // supplies a listing that reflects the disk.
+  const listDir = async (target) => {
+    let dirents
+    try { dirents = readdirSync(target.path, { withFileTypes: true }) } catch (e) { return [] }
+    const out = []
+    for (const d of dirents) {
+      const full = join(target.path, d.name)
+      if (d.isDirectory()) {
+        out.push({ type: 'directory', name: d.name, target: { displayPath: full, path: full } })
+        continue
+      }
+      if (!d.isFile()) continue
+      const s = statSync(full)
+      out.push({ type: 'file', name: d.name, target: { displayPath: full, path: full }, version: `${s.mtimeMs}:${s.size}`, size: s.size })
+    }
+    return out
+  }
+  const h = harness(plugin, {}, 'workspace-write', {}, {}, { listDir })
+  const target = join(workspace, 'declared-after-scan.md')
+  writeFileSync(target, '扫描之后才声明\n')
+  // Requesting the Explorer tree runs the discovery scan, which folds every
+  // workspace file into the ledger as a CLEAN entry (base === cur). Those
+  // entries are invisible to the reviewer — saveState deliberately never
+  // persists them — so they must not read as "the ledger already observed this
+  // file". Treating them that way silently dropped a real declaration.
+  await h.invoke('listTree', { sessionId: 'session-test' })
+  const beforeDeclaration = (await h.invoke('getModified', { sessionId: 'session-test' })).files
+    .find((file) => file.path === 'declared-after-scan.md')
+  assert.equal(beforeDeclaration, undefined, 'the scan baselines the file without making it reviewable')
+  await h.events.get('tools/result')(
+    { name: 'present', agent: { session: { id: 'session-test' } } },
+    { isError: false, value: { turn: 2, files: [{ path: 'declared-after-scan.md', description: '扫描后声明' }] } },
+  )
+  const row = (await h.invoke('getModified', { sessionId: 'session-test' })).files
+    .find((file) => file.path === 'declared-after-scan.md')
+  assert.ok(row, 'declaration survives a prior baseline scan')
+  assert.equal(row.note, 'present-declared')
+  assert.equal(row.restorable, false)
+  assert.equal(state().files['declared-after-scan.md'].base.note, 'present-declared')
+})
+
+test('a declaration never displaces a row whose change was observed', async () => {
+  const h = harness()
+  const target = join(workspace, 'declared-observed.md')
+  writeFileSync(target, 'after\n')
+  await h.events.get('tools/result')(
+    { name: 'write', agent: { session: { id: 'session-test' } } },
+    { isError: false, value: { path: target, operation: 'update', before: 'before\n', after: 'after\n' } },
+  )
+  await h.events.get('tools/result')(
+    { name: 'present', agent: { session: { id: 'session-test' } } },
+    { isError: false, value: { turn: 1, files: [{ path: 'declared-observed.md' }] } },
+  )
+  const row = (await h.invoke('getModified', { sessionId: 'session-test' })).files
+    .find((file) => file.path === 'declared-observed.md')
+  assert.equal(row.note, undefined)
+  // The observed diff survives intact: one real replacement, still rejectable.
+  assert.equal(row.added, 1)
+  assert.equal(row.removed, 1)
+  assert.equal(state().files['declared-observed.md'].base.content, 'before\n')
+  const diff = await h.invoke('getDiff', { sessionId: 'session-test', path: 'declared-observed.md' })
+  assert.equal(diff.note, undefined)
+  assert.notEqual(diff.restorable, false)
+})
+
+test('a declaration stages nothing for a failed call, a missing file, or an outside path', async () => {
+  const h = harness()
+  const outside = join(temp, 'declared-outside.csv')
+  writeFileSync(outside, 'x\n')
+  await h.events.get('tools/result')(
+    { name: 'present', agent: { session: { id: 'session-test' } } },
+    { isError: true, value: { turn: 1, files: [{ path: 'declared-failed.csv' }] } },
+  )
+  await h.events.get('tools/result')(
+    { name: 'present', agent: { session: { id: 'session-test' } } },
+    { isError: false, value: { turn: 1, files: [{ path: 'declared-missing.csv' }, { path: outside }] } },
+  )
+  const listed = (await h.invoke('getModified', { sessionId: 'session-test' })).files.map((file) => file.path)
+  assert.equal(listed.includes('declared-failed.csv'), false, JSON.stringify(listed))
+  assert.equal(listed.includes('declared-missing.csv'), false, JSON.stringify(listed))
+  assert.equal(listed.some((path) => path.includes('declared-outside')), false, JSON.stringify(listed))
+})
+
+test('a repeated declaration keeps the row it already staged', async () => {
+  const h = harness()
+  writeFileSync(join(workspace, 'declared-twice.csv'), 'x\n')
+  const exec = { name: 'present', agent: { session: { id: 'session-test' } } }
+  const result = { isError: false, value: { turn: 1, files: [{ path: 'declared-twice.csv' }] } }
+  await h.events.get('tools/result')(exec, result)
+  const first = state().files['declared-twice.csv'].rev
+  await h.events.get('tools/result')(exec, result)
+  assert.equal(state().files['declared-twice.csv'].rev, first)
+})
+
+test('a declaration is read from the call arguments when no value is returned', async () => {
+  const h = harness()
+  writeFileSync(join(workspace, 'declared-args.csv'), 'x\n')
+  await h.events.get('tools/result')(
+    { name: 'present', arguments: { files: [{ path: 'declared-args.csv' }] }, agent: { session: { id: 'session-test' } } },
+    { isError: false },
+  )
+  const row = (await h.invoke('getModified', { sessionId: 'session-test' })).files
+    .find((file) => file.path === 'declared-args.csv')
+  assert.ok(row, 'declaration from arguments')
+  assert.equal(row.note, 'present-declared')
 })
