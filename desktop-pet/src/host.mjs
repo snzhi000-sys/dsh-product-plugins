@@ -113,7 +113,13 @@ export function apply(ctx, config = {}) {
         for await (const chunk of req) { size += chunk.length; if (size > 32768) return json(413, { error: 'Settings too large' }); chunks.push(chunk) }
         const value = JSON.parse(Buffer.concat(chunks).toString('utf8'))
         if (value?.modelId) await library.get(value.modelId)
+        const wasBroadcasting = settings.broadcastEnabled
         settings = writeSettings(path, { ...value, modelId: value.modelId || library.defaultId })
+        // The sound switch means "the pet does not speak", so turning it off ends the sentence already playing: that
+        // read-out was started while this setting was on, and while the pet window is hidden this switch is the only
+        // control on screen. Reading resumes from a message's strip button or a selection, never by turning the
+        // switch back on.
+        if (wasBroadcasting && !settings.broadcastEnabled) conversation.stopSpeech()
         return json(200, settings)
       }
       if (req.method !== 'GET') return json(405, { error: 'Method not allowed' })

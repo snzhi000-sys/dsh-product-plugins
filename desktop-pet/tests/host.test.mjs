@@ -140,3 +140,75 @@ test('real HTTP routes save settings, serve only selected assets, and unload', a
     rmSync(dir, { recursive: true, force: true })
   }
 })
+
+/**
+ * Watch a server-sent event stream for the named events, in order.
+ * @param response - the streaming response to read.
+ * @param names - the event names to record.
+ * @returns the recorded names, appended as the stream is read.
+ */
+function watchEvents(response, names) {
+  const seen = []
+  let buffer = ''
+  void (async () => {
+    try {
+      for await (const chunk of response.body) {
+        buffer += Buffer.from(chunk).toString('utf8')
+        for (;;) {
+          const at = buffer.indexOf('\n\n')
+          if (at < 0) break
+          const event = /^event: (.+)$/mu.exec(buffer.slice(0, at))?.[1]
+          buffer = buffer.slice(at + 2)
+          if (event && names.includes(event)) seen.push(event)
+        }
+      }
+    } catch { /* The test owns the connection's lifetime. */ }
+  })()
+  return seen
+}
+
+test('turning the broadcast switch off ends the read-out that setting started', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'pet-sound-'))
+  const previous = process.env.DSH_HOME
+  process.env.DSH_HOME = dir
+  let route
+  let dispose
+  const server = createServer((req, res) => route ? void route.handler(req, res) : res.writeHead(404).end())
+  const controller = new AbortController()
+  try {
+    apply({
+      webServer: { register(value) { route = value; return () => { route = undefined } } },
+      effect(factory) { dispose = factory() },
+      get() { return undefined },
+      on() { return () => {} },
+    })
+    server.listen(0, '127.0.0.1'); await once(server, 'listening')
+    const base = `http://127.0.0.1:${server.address().port}/desktop-pet`
+    // A player window is what the host hands clips to, and `speech-stop` is how it tells that window to stop.
+    const player = await fetch(`${base}/api/conversation/events?role=player`, { signal: controller.signal })
+    const stopped = watchEvents(player, ['speech-stop'])
+    const set = body => fetch(`${base}/api/settings`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+    const settle = () => new Promise(resolve => setTimeout(resolve, 80))
+
+    // Turning the switch on only arms the next broadcast: nothing is speaking yet, so nothing is stopped.
+    assert.equal((await set({ broadcastEnabled: true })).status, 200)
+    await settle()
+    assert.deepEqual(stopped, [], 'arming the switch does not stop the voice')
+
+    // Turning it off means the pet stops speaking, so the sentence already in flight ends with the setting. It used
+    // to keep playing: the only control that could stop it was the per-message strip, which a hidden pet window does
+    // not show, so the switch looked like it did nothing (reported 2026-09-23).
+    assert.equal((await set({ broadcastEnabled: false })).status, 200)
+    for (let attempt = 0; attempt < 100 && !stopped.length; attempt++) await new Promise(resolve => setTimeout(resolve, 10))
+    assert.deepEqual(stopped, ['speech-stop'], 'the switch asks the player to stop')
+
+    // A switch that is already off is not a new decision: writing it again must not re-issue the stop.
+    assert.equal((await set({ broadcastEnabled: false })).status, 200)
+    await settle()
+    assert.deepEqual(stopped, ['speech-stop'], 'an unchanged switch stops nothing')
+  } finally {
+    controller.abort(); dispose?.(); server.closeAllConnections(); await new Promise(resolve => server.close(resolve))
+    if (previous === undefined) delete process.env.DSH_HOME; else process.env.DSH_HOME = previous
+    rmSync(dir, { recursive: true, force: true })
+  }
+})

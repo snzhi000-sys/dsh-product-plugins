@@ -430,7 +430,9 @@ export function apply(ctx) {
       title: speaking ? '停止朗读' : '用桌宠的声音播报这条回复',
       'aria-label': speaking ? '停止朗读' : '播报这条回复',
       'aria-pressed': String(speaking),
-      disabled: waiting,
+      // Waiting for this control's own request keeps it from starting a second read-out, but it must never lock the
+      // person out of a voice that is already playing: stopping wins over starting, whatever is in flight.
+      disabled: waiting && !speaking,
       onClick: toggle,
     }, React.createElement(ReadoutIcon, { playing: speaking }), failed ? React.createElement('span', { className: 'dsh-pet-readout-error', hidden: true }, '播报失败') : null)
   }

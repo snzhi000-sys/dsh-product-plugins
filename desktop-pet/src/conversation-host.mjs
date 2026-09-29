@@ -19,6 +19,15 @@ import { intimacyState, intimacyPrompt } from './intimacy.mjs'
 const SELECTION_OWNER = 'selection'
 
 /**
+ * The read-out owner that stands for the automatic broadcast of the main conversation's prose.
+ *
+ * The broadcast is a read-out like any other — same voice, same queue, same prose rules — so it names an owner
+ * too. Without one the client's store never heard it: the pet spoke while the per-message control stayed a
+ * resting speaker, so nothing on screen could stop it (reported 2026-09-23).
+ */
+const BROADCAST_OWNER = 'broadcast'
+
+/**
  * How long past its own model bound a turn may keep the next message out.
  *
  * `converse` bounds every call with `config.timeoutMs`, so a turn older than that plus this slack is not making
@@ -286,7 +295,12 @@ export function createConversationHost(root, defaults = {}, services = { convers
      */
     speak(text) {
       if (disposed || !store.keys.tts) return false
-      return enqueue(text, { ...store.config }, store.keys.tts, speechEpoch, [text], { allowed: true, cap: store.config.broadcastQueueSegments, saturate: true, source: 'broadcast' })
+      const accepted = enqueue(text, { ...store.config }, store.keys.tts, speechEpoch, [text], { allowed: true, cap: store.config.broadcastQueueSegments, saturate: true, source: 'broadcast' })
+      // Announced per accepted sentence, not once per answer: the answer arrives sentence by sentence, and the
+      // control that reads this state must light up as soon as the first one is queued. Repeating the same owner
+      // is idempotent in the client store, and a window that joins mid-answer catches the next sentence.
+      if (accepted) { readoutId = BROADCAST_OWNER; emit('readout', { messageId: BROADCAST_OWNER, state: 'playing' }) }
+      return accepted
     },
     /**
      * One assistant message, read out on demand: the same voice, queue, caption and prose rules as the
@@ -331,6 +345,16 @@ export function createConversationHost(root, defaults = {}, services = { convers
      * @returns the bounded list of recent records.
      */
     diagnostics() { return diagnostics.list() },
+    /**
+     * End whatever the pet is saying and publish the idle read-out.
+     *
+     * The sound switch and the voice are two views of one decision — "the pet does not speak" — so turning the switch
+     * off has to end the sentence already in flight, not only the next one. Without this the only control that could
+     * stop it was the per-message strip, which a hidden pet window does not show, so the switch looked like it did
+     * nothing while the audio kept playing (reported 2026-09-23). Reading resumes through the read-out controls — a
+     * message's strip button, or a selection — and never by turning the switch back on.
+     */
+    stopSpeech,
     store,
     async handle(req, res, url) {
       if (!url.pathname.startsWith('/desktop-pet/api/conversation')) return false

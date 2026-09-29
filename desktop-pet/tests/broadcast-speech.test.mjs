@@ -88,6 +88,52 @@ async function until(frames, predicate, description) {
 const clips = frames => frames.filter(frame => frame.event === 'speech')
 const readoutStates = frames => frames.filter(frame => frame.event === 'readout').map(frame => frame.value.state)
 
+test('stopping the voice cancels the broadcast sentence already playing', async () => {
+  await withHost(400, async ({ host, frames }) => {
+    // The header sound switch turns `broadcastEnabled` off, and the host answers that by ending the sentence in
+    // flight — the one the previous setting started. Without it the switch did nothing audible while a broadcast
+    // was playing, because a hidden pet window shows no per-message strip to stop it (reported 2026-09-23).
+    assert.equal(host.speak('主对话正在播报的这一句。'), true, 'the broadcast sentence enters the queue')
+    await until(frames, () => clips(frames).length > 0, 'the clip to reach the player')
+    host.stopSpeech()
+    await until(frames, () => frames.some(frame => frame.event === 'speech-stop'), 'the queue to be cancelled')
+    assert.equal(clips(frames).length, 1, 'the cancelled sentence is not handed to the player again')
+  })
+})
+
+test('a broadcast announces itself as a read-out the strip control can see and stop', async () => {
+  await withHost(400, async ({ host, frames }) => {
+    // The strip control's two states come from the read-out channel, and a broadcast used to bypass it: the pet
+    // spoke while the button stayed a resting speaker, so nothing on screen could stop it (reported 2026-09-23).
+    // A broadcast is a read-out too — of the main conversation's prose — so it names an owner like any other, and
+    // stopping the voice clears that owner.
+    assert.equal(host.speak('主对话正在播报的这一句。'), true)
+    await until(frames, () => readoutStates(frames).includes('playing'), 'the broadcast to announce itself as a read-out')
+    const owner = frames.filter(frame => frame.event === 'readout').at(-1).value.messageId
+    assert.equal(typeof owner, 'string', 'the broadcast names an owner, so the playing state has something to clear')
+    assert.notEqual(owner, '', 'the owner is a real key in the client read-out store')
+    host.stopSpeech()
+    await until(frames, () => readoutStates(frames).at(-1) === 'idle', 'the read-out to go idle with the voice')
+  })
+})
+
+test('the pet own chat speech is not announced as a read-out', async () => {
+  await withHost(400, async ({ host, frames, post }) => {
+    // The waveform means "the main conversation is being read aloud", so the pet talking in its own chat must not
+    // light it: that state belongs to the pet's own bubble, and lighting the strip would offer a stop control for a
+    // conversation the person is not reading (confirmed 2026-09-23).
+    const config = { ...conversationDefaults, model: 'test', ttsEnabled: true, broadcastQueueSegments: 400 }
+    assert.equal((await post('/config', { config, keys: { llm: 'test', tts: 'test' } })).status, 200)
+    await post('/send', { text: '你好。' })
+    await until(frames, () => frames.some(frame => frame.event === 'reply' && frame.value.speaking === true), 'the chat reply to be spoken')
+    assert.equal(clips(frames).length > 0, true, 'the pet really is speaking its own reply')
+    assert.deepEqual(readoutStates(frames), [], 'its own chat voice must not claim the read-out control')
+    // Positive control: the assertion above is sensitive — a real read-out of the main conversation does announce.
+    assert.equal(host.speak('主对话正在播报的这一句。'), true)
+    await until(frames, () => readoutStates(frames).includes('playing'), 'the broadcast to announce itself')
+  })
+})
+
 test('only the pet chat own speech may claim the pet reply state', async () => {
   await withHost(400, async ({ host, frames, post }) => {
     // One finished chat turn leaves a reply object behind. That leftover is what a read-out used to resurrect:

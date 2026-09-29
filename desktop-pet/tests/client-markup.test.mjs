@@ -117,6 +117,31 @@ test('pressing the lit strip control stops every read-out instead of starting it
   }
 })
 
+test('the strip control can stop a voice that started while its own press was in flight', () => {
+  const panel = mountPanel()
+  try {
+    const entry = panel.entries.find(item => item.definition.name === 'conversation.chat.assistant-actions')
+    const stream = panel.streams[0]
+    const emitReadout = value => { for (const listener of stream.listeners.get('readout') ?? []) listener({ data: JSON.stringify(value) }) }
+    const render = () => entry.Component({ messageId: 'message-7', sessionId: 'session-1' })
+
+    // A press whose request has not answered yet must not start a second read-out, so the control waits.
+    render().props.onClick()
+    assert.equal(render().props.disabled, true, 'a press in flight keeps the control from starting a second read-out')
+
+    // A broadcast that begins meanwhile is a voice already playing — the same state the mouth follows. The control
+    // has to show it and stay pressable, or the pet speaks with nothing on screen able to stop it
+    // (reported 2026-09-23).
+    emitReadout({ messageId: 'broadcast', state: 'playing' })
+    const playing = render()
+    assert.equal(playing.props['data-playing'], 'true', 'a broadcast lights the control like any other read-out')
+    assert.equal(playing.props['aria-pressed'], 'true')
+    assert.equal(playing.props.disabled, false, 'a voice that is already playing must always be stoppable')
+  } finally {
+    panel.close()
+  }
+})
+
 test('the read-out control draws a speaker at rest and an animated waveform while it plays', () => {
   const panel = mountPanel()
   try {
