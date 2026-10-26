@@ -10,7 +10,7 @@ This repository ships two product plugins for DeepSeek Harness that can be enabl
 
 | Date | Change | Author | Note | Feishu link |
 | --- | --- | --- | --- | --- |
-| 2026-10-26 | Changed: the page follows the product-document structure and keeps a single revision row; feature screenshots moved into 功能 / 示意图 / 说明 tables that explain each picture in place, and the file browser covers media preview, the sandboxed page view and the image viewer | snzhi000-sys | `dsh-file-edit 1.18.5-local` / `dsh-desktop-pet 0.1.4` | — |
+| 2026-10-26 | Changed: the page follows the product-document structure and keeps a single revision row; the file browser now covers media preview, the sandboxed page view and the image viewer, and the model-asset wording matches what the repository ships | snzhi000-sys | `dsh-file-edit 1.18.5-local` / `dsh-desktop-pet 0.1.4` | — |
 
 ---
 
@@ -36,17 +36,28 @@ Both plugins are assembled by the Harness product profile and ship with the runt
 
 **Every file change in the session lands in one actionable list**: writes, edits, deletions and moves from the agent all appear under "modified files".
 
-| Feature | Screenshot | Notes |
-| --- | --- | --- |
-| Change review | <img src="docs/images/review-list.webp" width="460" alt="Modified files list"> | **Per-row decisions**: accept or reject each change, or settle the whole batch, with one level of undo after a rejection<br>**Line-level comparison**: each row reports added and removed line counts and expands to a line-level diff without leaving the session<br>**Deletion is quarantined**: a deletion moves the content into a persistent quarantine first, and a failed verification refuses the deletion; a rejection restores from quarantine, large files included<br>**Deletion leaves a tombstone**: a file created and then deleted in the same session shows as "created then deleted", instead of vanishing as a net-zero change<br>**Directories aggregate**: a full directory deletion becomes one row that expands to its files and can be accepted or restored as a batch<br>**Ownership is explicit**: subagent changes are attributed along the parent session, while ordinary child sessions keep their own ledger<br>**Uncaptured work is named**: changes the plugin cannot observe, such as writes from a background Shell or an unmanaged compatible shell, are listed by name on an "uncaptured" row that persists with the session<br>**Snapshot-first restore**: after a restart the persisted ledger appears first and the disk is reconciled afterwards |
+![Modified files list](docs/images/review-list.webp)
+
+- **Per-row decisions**: accept or reject each change, or settle the whole batch, with one level of undo after a rejection;
+- **Line-level comparison**: each row reports added and removed line counts and expands to a line-level diff without leaving the session;
+- **Deletion is quarantined**: a deletion moves the content into a persistent quarantine first, and a failed verification refuses the deletion; a rejection restores from quarantine, large files included;
+- **Deletion leaves a tombstone**: a file created and then deleted in the same session shows as "created then deleted", instead of vanishing as a net-zero change;
+- **Directories aggregate**: a full directory deletion becomes one row that expands to its files and can be accepted or restored as a batch;
+- **Ownership is explicit**: subagent changes are attributed along the parent session, while ordinary child sessions keep their own ledger;
+- **Uncaptured work is named**: changes the plugin cannot observe, such as writes from a background Shell or an unmanaged compatible shell, are listed by name on an "uncaptured" row that persists with the session;
+- **Snapshot-first restore**: after a restart the persisted ledger appears first and the disk is reconciled afterwards.
 
 ### 2. Explorer
 
 **A workspace file tree takes over the file entry point**: directories expand per workspace and open for reading or editing in place of the native sidebar.
 
-| Feature | Screenshot | Notes |
-| --- | --- | --- |
-| Explorer | <img src="docs/images/explorer-hide.webp" width="320" alt="Explorer and on-demand hiding"> | **Hide on demand**: files and directories you do not care about hide with one click, leaving the working set in view<br>**Preferences persist**: hiding, expansion and ordering are stored per workspace, so reopening Harness does not mean reorganising<br>**Official visuals**: file and folder glyphs come from the official Harness icon components, matching the kernel's own interface<br>**Labelled tabs**: sidebar tabs carry their own glyph and name, so parallel workspaces never blur together<br>**Boundaries**: dependency and cache directories such as `.git` and `node_modules` are skipped, and the tree stops at 8000 entries or 16 levels |
+![Explorer and on-demand hiding](docs/images/explorer-hide.webp)
+
+- **Hide on demand**: files and directories you do not care about hide with one click, leaving the working set in view;
+- **Preferences persist**: hiding, expansion and ordering are stored per workspace, so reopening Harness does not mean reorganising;
+- **Official visuals**: file and folder glyphs come from the official Harness icon components, matching the kernel's own interface;
+- **Labelled tabs**: sidebar tabs carry their own glyph and name, so parallel workspaces never blur together;
+- **Boundaries**: dependency and cache directories such as `.git` and `node_modules` are skipped, and the tree stops at 8000 entries or 16 levels.
 
 ### 3. File browser
 
@@ -66,18 +77,22 @@ Both plugins are assembled by the Harness product profile and ship with the runt
 
 **Files and selections travel into the conversation**: reference a file with `@` in the composer, or select text in a document and reference it directly.
 
-| Feature | Screenshot | Notes |
-| --- | --- | --- |
-| Reference chip | <img src="docs/images/reference-chip.webp" width="460" alt="Reference chip"> | **References carry a location**: the chip shows the path and the line range, so the model's target is exact<br>**Two paths, one vocabulary**: the diff view and code browsing use the official `@path` reference with the line range only in the chip label, while the rendered view writes the range into the text and never sends the selected text itself<br>**Consistent with the official behaviour**: both paths declare the official appearance and behave like every other reference in the composer |
-| Selection reference | <img src="docs/images/reference-bubble.webp" width="460" alt="Selection reference bubble"> | **One click from a selection**: selecting text in a file or review view floats a bubble above the selection, and one click inserts the reference<br>**The bubble is extensible**: the bubble exposes a registration seam, so another plugin can add its own action beside 引用 — the desktop companion contributes 朗读 — and the two actions share one coordinate instead of racing for it |
+![Reference chip](docs/images/reference-chip.webp)
+
+![Selection reference bubble](docs/images/reference-bubble.webp)
+
+- **References carry a location**: the chip shows the path and the line range, so the model's target is exact;
+- **Selection references**: selecting text in a file or review view floats a bubble above the selection, and one click inserts the reference;
+- **Two paths, one vocabulary**: the diff view and code browsing use the official `@path` reference with the line range only in the chip label, while the rendered view writes the range into the text and never sends the selected text itself;
+- **Consistent with the official behaviour**: both paths declare the official appearance and behave like every other reference in the composer;
+- **The bubble is extensible**: the selection bubble exposes a registration seam, so another plugin can add its own action beside 引用 — the desktop companion contributes 朗读 — and the two actions share one coordinate instead of racing for it.
 
 ### 5. The whole surface
 
-**Three surfaces share one session state**: the Explorer, the file browser and change review work together inside one plugin.
+![Overall interface](docs/images/app-overview.webp)
 
-| Feature | Screenshot | Notes |
-| --- | --- | --- |
-| Overall interface | <img src="docs/images/app-overview.webp" width="460" alt="Overall interface"> | **Three surfaces, one plugin**: the Explorer, the file browser and change review share the session state, so switching never loses context<br>**The existing layout survives**: with no browsable document the browser tab closes itself, leaving conversation, transcript and the rest of the session untouched |
+- **Three surfaces, one plugin**: the Explorer, the file browser and change review share the session state, so switching never loses context;
+- **The existing layout survives**: with no browsable document the browser tab closes itself, leaving conversation, transcript and the rest of the session untouched.
 
 ### 6. Behaviour and boundaries
 
@@ -94,28 +109,32 @@ Both plugins are assembled by the Harness product profile and ship with the runt
 
 ### Built-in companion library
 
-**19 companions and 23 outfits built in**: the selector lives in the sidebar's 桌宠 panel and switches on a single click.
+![Built-in companion library and character switching](docs/images/pet-library.webp)
 
-| Feature | Screenshot | Notes |
-| --- | --- | --- |
-| Companion library | <img src="docs/images/pet-library.webp" width="320" alt="Built-in companion library and character switching"> | **19 companions, 23 outfits**: the selector lives in the sidebar's 桌宠 panel, searches by name, and switches and saves on a single click<br>**The flagship character, Mengmei**: selected by default and listed first, she is the face of this product; her **material is provided by 苍月动漫** and we built the Live2D / DragonBones drive, pointer following, mouth and speech chain on top of it, while the material remains its owner's — see Origin and credits<br>**One companion, several outfits**: different costumes of the same character collapse into one entry, such as Mori's four and Toyama Kasumi's two, and switch inside the character's own detail<br>**Each character drives itself**: Live2D (Cubism 3/4) and DragonBones companions each use their own animation and interaction profile without affecting the others |
+- **19 companions, 23 outfits**: the selector lives in the sidebar's 桌宠 panel, searches by name, and switches and saves on a single click;
+- **The flagship character, Mengmei**: selected by default and listed first, she is the face of this product; her **material is provided by 苍月动漫** and we built the Live2D / DragonBones drive, pointer following, mouth and speech chain on top of it, while the material remains its owner's — see Origin and credits;
+- **One companion, several outfits**: different costumes of the same character collapse into one entry, such as Mori's four and Toyama Kasumi's two, and switch inside the character's own detail;
+- **Each character drives itself**: Live2D (Cubism 3/4) and DragonBones companions each use their own animation and interaction profile without affecting the others.
 
 ### Pointer lock: gaze and body follow together
 
-**Once locked, the gaze and the body follow the pointer together**: an eye offset and an additive `zhuan` bone offset keep it responsive without twitching.
+![Following pose after locking the pointer (one)](docs/images/pet-gaze-1.webp)
 
-| Feature | Screenshot | Notes |
-| --- | --- | --- |
-| Gaze and body | <img src="docs/images/pet-gaze-1.webp" width="240" alt="Following pose after locking the pointer (one)"> | **The eyes lock onto the pointer**: an eye offset of 18 keeps the gaze on the cursor<br>**The body follows too**: an additive offset on the official runtime's `zhuan` bone moves the body inside an ellipse of radius 350 horizontally and 300 vertically in skeleton units, with sensitivity 2 and 0.18 s smoothing, so it follows without twitching |
-| Following boundaries | <img src="docs/images/pet-gaze-2.webp" width="240" alt="Following pose after locking the pointer (two)"> | **It keeps working outside the window**: native pointer events still reach the pet while the cursor is elsewhere on screen<br>**It recentres when it should**: dragging the character, previewing an action, speaking, or focusing the compact input below the character returns her to neutral; turning animation off resets and holds still |
+![Following pose after locking the pointer (two)](docs/images/pet-gaze-2.webp)
+
+- **The eyes lock onto the pointer**: an eye offset of 18 keeps the gaze on the cursor;
+- **The body follows too**: an additive offset on the official runtime's `zhuan` bone moves the body inside an ellipse of radius 350 horizontally and 300 vertically in skeleton units, with sensitivity 2 and 0.18 s smoothing, so it follows without twitching;
+- **It keeps working outside the window**: native pointer events still reach the pet while the cursor is elsewhere on screen;
+- **It recentres when it should**: dragging the character, previewing an action, speaking, or focusing the compact input below the character returns her to neutral; turning animation off resets and holds still.
 
 ### The mouth moves while she speaks
 
-**Mouth shapes follow the audio's voiced segments**: the text is first turned into its reading, then its vowels decide the shape, and the mouth closes only where the speech pauses.
+![Mengmei with her mouth open while she speaks](docs/images/pet-mengmei.webp)
 
-| Feature | Screenshot | Notes |
-| --- | --- | --- |
-| Speech mouth | <img src="docs/images/pet-mengmei.webp" width="280" alt="Mengmei with her mouth open while she speaks"> | **Mouth shapes driven by the timeline**: Live2D companions drive `ParamMouthOpenY` / `PARAM_MOUTH_OPEN_Y`, while DragonBones companions use hand-made a/o/i/m shapes<br>**Reading rules come first**: Arabic digits read as spoken numerals, Latin letters by letter name, common symbols by their reading — `%` as percent, `@` as at — while typographic punctuation is only a pause and closes the mouth<br>**Untrustworthy word timings are replaced**: the speech service returns a flat 30 ms span for tokens containing digits or symbols, so the timeline is reflowed against the audio's own voiced segments and the mouth closes only where the audio really pauses<br>**Approximate mouth shapes**: shapes follow the audio's voiced segments, with no claim of phoneme-level alignment |
+- **Mouth shapes driven by the timeline**: Live2D companions drive `ParamMouthOpenY` / `PARAM_MOUTH_OPEN_Y`, while DragonBones companions use hand-made a/o/i/m shapes;
+- **Reading rules come first**: Arabic digits read as spoken numerals, Latin letters by letter name, common symbols by their reading — `%` as percent, `@` as at — while typographic punctuation is only a pause and closes the mouth;
+- **Untrustworthy word timings are replaced**: the speech service returns a flat 30 ms span for tokens containing digits or symbols, so the timeline is reflowed against the audio's own voiced segments and the mouth closes only where the audio really pauses;
+- **Approximate mouth shapes**: shapes follow the audio's voiced segments, with no claim of phoneme-level alignment.
 
 ### Reading text aloud
 
@@ -126,9 +145,9 @@ Both plugins are assembled by the Harness product profile and ship with the runt
 - **Reading a selection aloud in a document**: selecting text in the file browser floats a bubble whose 朗读 sits beside @引用 — the reference comes from the file workspace, the read-out from this plugin, and the two actions share one coordinate instead of competing for it;
 - **Broadcast the main conversation**: reads the part of the main agent's prose addressed to you, off by default; its switch sits in the **conversation header's right side**, where the speaker icon tells 声音开启 from 声音关闭.
 
-| Feature | Screenshot | Notes |
-| --- | --- | --- |
-| Document selection read-out | <img src="docs/images/reference-actions.webp" width="400" alt="Selecting text floats 引用 and 朗读 side by side"> | **One passage selected is one passage read**: it follows the same "only words a person would say" rules as every other read-out entry<br>**Never written into the pet's bubble**: the read-out travels as speech, and the bubble only shows the companion's own reply |
+![Selecting text in the file browser floats 引用 and 朗读 side by side](docs/images/reference-actions.webp)
+
+That bubble is the entry point for reading a document selection: one passage selected is one passage read, under the same "only words a person would say" rules, and it is never written into the pet's bubble — **the bubble only shows the companion's own reply**.
 
 ### The voice and its key are yours to configure
 
