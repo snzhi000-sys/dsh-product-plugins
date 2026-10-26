@@ -36,6 +36,13 @@ export function relativeTargets(file, source) {
       if (/^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i.test(target)) continue
       targets.push({ target: target.split('#')[0], line: index + 1 })
     }
+    // Screenshots inside comparison tables use HTML for width control, so the
+    // same gate has to read `<img src>` as well as Markdown image syntax.
+    for (const match of line.matchAll(/<img\s[^>]*?src="([^"]+)"/gi)) {
+      const target = match[1]
+      if (/^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i.test(target)) continue
+      targets.push({ target: target.split('#')[0], line: index + 1 })
+    }
   })
   return targets.filter(entry => entry.target.length > 0)
 }
