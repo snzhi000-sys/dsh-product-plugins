@@ -8,9 +8,9 @@ One plugin that combines the workspace Explorer, the file browser and agent-chan
 
 ## Revision history
 
-| Date | Change | Author | Note | Feishu link |
-| --- | --- | --- | --- | --- |
-| 2026-10-26 | Changed: the page follows the product-document structure and keeps a single revision row; the file browser now covers media preview, the sandboxed page view and the image viewer, and image loading documents its timeout and retry boundaries | snzhi000-sys | Version `1.18.5-local` | — |
+| Date | Change | Author | Note |
+| --- | --- | --- | --- |
+| 2026-10-26 | Changed: the page follows the product-document structure and keeps a single revision row; the file browser now covers media preview, the sandboxed page view and the image viewer, and image loading documents its timeout and retry boundaries | snzhi000-sys | Version `1.18.5-local` |
 
 ---
 

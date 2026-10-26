@@ -6,9 +6,9 @@ This repository is the **authoritative source** for the DeepSeek Harness product
 
 ## Revision history
 
-| Date | Change | Author | Note | Feishu link |
-| --- | --- | --- | --- | --- |
-| 2026-10-26 | Changed: the guide follows the product-document structure and gains a revision history that keeps a single row | snzhi000-sys | `dsh-file-edit 1.18.5-local` / `dsh-desktop-pet 0.1.4` | — |
+| Date | Change | Author | Note |
+| --- | --- | --- | --- |
+| 2026-10-26 | Changed: the guide follows the product-document structure and gains a revision history that keeps a single row | snzhi000-sys | `dsh-file-edit 1.18.5-local` / `dsh-desktop-pet 0.1.4` |
 
 ---
 

@@ -1,95 +1,207 @@
-# Desktop Pet
+# Desktop companion
 
 English | [中文](README.zh.md)
 
-A built-in companion picker, Cordis Host, and transparent Electron window. The local Dev and Stable plugin contains 22 Live2D model versions and the DragonBones companion Mengmei. Each character selects its own isolated animation runtime. Both channels include this plugin, and its model assets ship with this repository; their owners' terms still apply (see `assets/NOTICE.txt`).
+A companion plugin that lives in a transparent desktop window: a built-in character library and selector, characters that follow the pointer, open their mouth while they speak and read text aloud, with their own conversation and emotions.
 
-**Asset provenance**: the flagship character Mengmei is built on material provided by **苍月动漫**; we built the Live2D / DragonBones drive, pointer following, mouth and speech chain on top of it, and the character and its model remain entirely theirs. The other built-in Live2D models come from a third-party collection (see `assets/NOTICE.txt`), and **the model files ship with this plugin and this repository**, included with the owners' permission and outside this repository's MIT license.
+## Revision history
 
-## Use
+| Date | Change | Author | Note |
+| --- | --- | --- | --- |
+| 2026-10-26 | Changed: the page is regrouped into usage, read-out, conversation, voice and mouth, assets, drivers and verification, with each section broken into paragraphs | snzhi000-sys | Version `0.1.4` |
 
-Open **桌宠** in the left sidebar (an outline paw drawn in the same 1.2px stroke as the official icons beside it). Browse the independently scrolling character list or search by name. Click any row to save and switch the companion immediately. The right pane shows its artwork with the character's own settings under it. Mengmei is first. Destiny Child entries and their bundled assets are excluded; a saved removed selection resolves to Mengmei.
+---
 
-Adjust **角色显示大小**, **开启动画**, and **保持在窗口上方**; every edit saves itself, so there is no Save button (the size slider coalesces while it is dragged). The visibility control is one switch: turning it on restores the companion, turning it off releases its native renderer. The entry sits in the left sidebar beside **Plugins** and opens a main panel in place of the conversation column, so there is no dialog to close: switching the sidebar back to Workspace (or to Plugins) releases the preview. The tabs follow the conversation header's strip: a 13/16 label in tertiary ink with a business-blue underline under the selected one. Every button, input, select, and switch inside the panel uses the official component geometry: capsule buttons (36px tall, ghost/primary/outline), 32px inputs and selects on a 0.5px l4 border with an 8px radius, and the official switch whose state rides `aria-checked`. One shared stylesheet owns them, so no page carries its own colors or radii. Short settings (keys, addresses, voices, thresholds, keywords) pair up two per row; only prompts, explanations, and cards span the full line.
+## Summary
 
-**Broadcast the main conversation** (off by default; its switch sits in the **conversation header's right side** as a speaker icon with 声音开启/声音关闭 states, and the partner page no longer repeats it): the pet reads the part of Harness's own model output that is addressed to you, through its own voice. **The switch is also the stop control**: turning it off ends the sentence already being read — that read-out was started by this setting being on, and while the pet window is hidden this switch is the only control on screen. Reading again goes through the read-out controls (a reply's strip button, or a selection), never by turning the switch back on. The prose is not shown in the pet's bubble: that bubble is the pet's own conversation, and sharing it brought back a caption the person had already dismissed and kept one on screen after its speech had ended (reported 2026-09-20). Only assistant prose is spoken: reasoning and tool calls (including their JSON arguments) stay silent, and internal compaction and title requests are excluded; fenced code, tables, markdown decoration, and links are stripped so only words a person would say remain. Broadcast uses the pet's own voice and TTS key, independent of the private chat's automatic-reading switch, so the pet must be visible and a TTS key configured. Subagent sessions are never read aloud, so delegated chatter cannot bury the main agent's report. Speaking drives the existing mouth timing and matches action keywords against the words being read.
+**One plugin, three jobs**: the character library and portrait rendering, pointer following and mouth shapes, and read-out plus voice conversation. All three share one character configuration and one audio queue.
 
-**Every reply also carries a read-out button** in the official assistant action strip, beside copy and share. It has exactly two states: at rest it is a speaker icon, and pressing it speaks this reply in the pet's voice; while anything is being read it is a blue four-bar waveform, and pressing it then stops all reading — this reply, another reply, a selection read aloud from the pill, or the automatic broadcast of the main conversation. That state is the pet's voice, not this button's own request: the broadcast announces itself as soon as its first sentence is queued, and a voice that is already playing stays pressable even while this button's own request is still in flight, so stopping always wins over starting. **The pet's own chat voice is not this state**: the waveform means the main conversation is being read aloud, so the pet talking in its own chat leaves the strip at rest and that bubble keeps its own speaking indicator. One voice and one queue means a control that could stop only "its own" read-out would leave a selection playing under a lit button, so the light and the press always describe the whole pet. The button settles on its own once the player confirms the last clip. It can read replies from before this run, because the host falls back to the session's own log. **Reading aloud does not require the pet to be on screen**: the pet window plays while it is visible (driving the mouth and actions with the same timeline) and the Harness window plays while the pet is hidden — one queue and one set of prose rules, just without a mouth. Hiding the pet does not interrupt a read-out: clips that have not been played yet are handed to the window that is still there.
+**Core capabilities**:
 
-**Read a selection aloud.** Selecting text in the conversation panel raises a 朗读 pill above the selection, and pressing it reads exactly that text through the pet's own voice, queue and mouth timing. It deliberately does not caption the pet's bubble: the bubble belongs to the pet's own reply and to the main agent's prose while the pet broadcasts it, so text asked to be heard never overwrites what the character is saying. Nothing else in the window offers it: the composer, the terminal, the PDF preview and embedded pages are left alone, and the file browser — which already floats its own 引用 bubble over a selection — receives the same action inside that bubble, so the two sit side by side instead of two plugins racing for the same coordinates. The passage goes through the broadcast's own prose rules, so code fences, table rows and markdown decoration are never read, and an unfinished fence is never spoken. It never enters the session log or a model request, and pressing the pill while the pet is speaking interrupts whatever it was reading. A TTS key is required and the audio plays in whichever window can take it (the pet need not be shown); when the key or a player is missing the pill says so instead of failing silently. Selections longer than 5000 characters are not offered at all: reading a prefix of what was selected would be worse than not offering it. `POST /desktop-pet/api/selection/speak` with `{ text }` is the route behind it, and the existing `POST /desktop-pet/api/conversation/stop` stops it.
+- **Character library**: 19 companions and 23 outfits built in, covering 22 Live2D model versions and the DragonBones-driven Mengmei, each character driving its own animations;
+- **Following and interaction**: the gaze and the body follow the pointer together, with head pats, dragging and action previews;
+- **Read-out**: every reply can be read, a selection can be read, and the main conversation can be broadcast, with the mouth following the audio;
+- **Its own conversation**: the pet keeps its own model configuration, emotion and intimacy, apart from the Harness main conversation.
 
-**Lip sync.** DragonBones characters keep their authored a/o/i/m poses (matched by pinyin, approximate). Cubism characters had **no mouth driver at all** — audio played with a still mouth; the cue timeline now drives the model's own `ParamMouthOpenY`/`PARAM_MOUTH_OPEN_Y`, honouring the configured mouth recipes (e→i at 0.55, for instance), closing in silence and releasing when the clip ends. Like the audio path, this is an approximation and claims no phoneme precision. Text is first turned into what a speaker would say: digits into numerals read one at a time (0 to 零, 20 to 二零, which is how a phone number or an id is read), Latin letters into their letter names (GDP to 基迪皮), Greek letters into their names (Δ to 德尔塔, π to 派), and the symbols people read aloud into their readings (% to 百分号, @ to 艾特, +−×÷= to 加减乘除等于, ° to 度, $ to 美元, → to 到, ½ to 二分之一). Separators inside a number are read the way the number is: `5.4` becomes 五点四, `10:30` becomes 十点三十, `2025-2026` becomes 二零二五到二零二六, and a thousands comma is not said. Typographic punctuation is not given a reading — nobody says 「书名号」 — so 《》, quotes, brackets, and commas stay the pauses they are. **Subtitle timing is repaired when the provider mistimes it.** The voice service returns every token that carries digits or symbols — `+11.5%`, `-11.3%`, `+49.0%。` — with a flat 30 ms span whatever it is asked to say, because there are no phonemes in it to align to: measured 3.7–3.8 ms per syllable against 130–460 ms for the Chinese characters beside them, on a cloned voice and a stock one alike. Trusting that span put the whole reading of a number into 30 ms, and the hole it left was then closed by an explicit shut-mouth cue — a reported sentence had the mouth shut for 7.34 s of its 11.16 s of audio, and the real character looked open in 14% of frames. A token that cannot be spoken that fast is now rejected, and so is a payload that leaves more than half a second of audible speech with no word on it. The repaired plan keeps every token's measured length as a weight, hands the rejected digits the speaking time they were denied, and lays the units over the clip's own audible spans, so the only places the mouth shuts are the pauses the audio really has. A payload the audio agrees with is left exactly as the provider timed it. **The audio is read, not just the words.** `speech-mask.mjs` reduces the PCM the host already holds — before any of it is queued — to the spans that carry voice, judged relative to the clip's own loud level. It sets the repair's budget, keeps a syllable from landing inside a pause, and paces a clip whose subtitles could not be matched at all. The player's own fixed `.008` gate is not a voice detector: a cloned voice keeps a noise floor above it, which is why every acknowledgement reported `silentFrames: 0` while the mouth stood still. **Mouth diagnostics.** The plugin keeps the last 60 read-outs in `<userData>/harness/state/dsh-desktop-pet/mouth-diagnostics.jsonl` (also served by `GET /desktop-pet/api/broadcast/diagnostics`): each record carries the clip text, its audio duration, which timing path matched, the cue count and shortest gap, the provider subtitle word count and coverage, how many tokens the payload mistimed and the worst millisecond-per-syllable rate it claimed, how many seconds of audible speech it placed no word on, whether the timeline was re-timed, the seconds **each authored pose actually holds**, the longest the mouth stayed shut, how much of that closure landed on speech, and what the player reported back (played, silence-gate activations, action takeovers). Poses are kept in seconds because a cue count cannot express this: eight open cues squeezed into a 30 ms span are eight cues and no visible movement, which is how the defect survived several rounds of "the mouth opens more often now". `node scripts/tts-subtitle-probe.mjs "text"` measures the same layers with the application closed: it synthesizes through the saved voice configuration and prints each subtitle token with its milliseconds per syllable, the audio's envelope, the speech mask, the poses the timeline holds, and the longest closures with the speech they land on. Non-ASCII digit and letter forms (full-width ２０２５, circled ①, Roman Ⅻ, superscript 5², fraction ½) are read now too, and a character with no known reading fails open instead of closing the mouth — only punctuation stays a pause. The authored `i` pose of the DragonBones character is barely wider than its closed pose (8.7px of mouth movement against 17.1px for `a`), and digit and letter readings are almost all `i` vowels — 75 of 164 cues in one measured sentence — so on DragonBones that vowel narrows `a` instead (weight 0.7); Cubism keeps all four poses. Numbers, phone groups, long digit strings, acronyms, symbols, and mixed scripts therefore all open the mouth — a digit or a consonant used to carry no vowel and closed it for the whole span, while punctuation still does.
+**Asset source**: the flagship character Mengmei is built on material provided by **苍月动漫**; we built the Live2D / DragonBones drive, pointer following, mouth and speech chain on top of it, and the character and its models remain entirely their owner's. The other Live2D models come from a third-party collection, recorded in `assets/NOTICE.txt`; **the model files ship with this plugin and this repository**, outside this repository's MIT license.
 
-**A long answer no longer fills the audio buffer.** Speech is synthesized as a stream: the host keeps only a couple of clips ahead of what the player has consumed (`speechLookahead`, three by default), so memory stays bounded, clips stay short, and the mouth timeline stays tight against the sound.
+---
 
-Stroke the head, click the body, or drag the character. Authored motions, expressions, gaze, and physics depend on each model. Some versions share a character or costume; the catalogue groups 23 outfits into 19 characters. Verified Mori and Kasumi variants share a character row and an immediate, persisted outfit selector; unverified identities stay separate. No API key or model request is required. Left clicks only interact; right-click opens the menu. The input sits 12 CSS pixels below the fitted artwork, clamped inside the window. Expand **动作调试** in settings and hold a motion or expression button to play it in the portrait and visible pet. Release, cancel, blur, tab change or closing settings restores normal animation; animation must be enabled and saved. Controls support Space/Enter. Same-origin character-scoped holds expire after one second without renewal.
+## Usage
 
-Authored modules expose `category: body | mouth`; only Mengmei's a/i/o/m are mouths. Settings groups preview buttons by category. The visible, animated pet plays a random eligible body module after 60 idle seconds, avoiding immediate repeats. Input, menus, dragging and paused/hidden pages interrupt it; completion returns to idle before the next interval. Portrait previews never schedule actions. `automaticActionIntervalMs` is a Cordis deployment setting, defaulting to 60000. Idle, pointer-control tracks and default expressions are excluded from automatic selection.
+### Opening and switching characters
 
-Cubism playback clears the previous motion queue and restores authored parameter baselines and Cubism 3/4 part opacity before starting a new motion or returning to idle. This also covers interrupted previews and models without an idle motion, preventing alternate arm artwork from remaining visible. Expression queues are cleared at the same boundary.
+Open the **桌宠** panel in the left sidebar, browse the scrollable character list or search by name, and click a row to switch and save immediately. Mengmei is listed first and selected by default.
 
-Cubism 3/4 enables `CubismConfig.setOpacityFromMotion` and stably groups motion curves as Model → Parameter → PartOpacity before runtime parsing. Some exports interleave these curves; the pinned evaluator otherwise skips later curves and treats opacity as synthetic parameters. Original assets and keyframe values remain unchanged. Playback verification checks alternate/default limb opacity during `main_2` and `touch_body`, not only after release.
+Different outfits of the same character collapse into one entry, such as Mori's four and Toyama Kasumi's two, and switch inside the character's detail; a saved character that was removed falls back to Mengmei.
 
-## Conversation and voice
+### Display settings
 
-Speech segmentation treats Chinese ellipses and ASCII runs of at least three dots as pause boundaries while preserving decimals. Streaming waits for the end of a punctuation run, keeping the whole ellipsis with its preceding sentence; following parenthetical actions belong to the next segment. The ellipsis snapshot verifies that every segment, including the final question, reaches playback. A live sample with the configured voice preserved the suffix; this does not establish the cause of an intermittent omission.
+**Every change saves immediately, so there is no save button**:
 
-Emotion output is five ordered first-person plain-text fields: 当前心情, 态度方向, 内心波澜, 语气色彩, 情绪基调. Prompts forbid topic steering, conditional reply commands and invented persona facts. The Host appends this output requirement to custom emotion prompts without overwriting them; the exact old default upgrades automatically. Formatting repairs only whitespace between fields or merged field lines. Missing, duplicated, reordered or non-first-person fields fail the update and retain the last emotion. Format validation does not evaluate the semantic quality of feelings.
+- **Character size**: while dragging the slider, saves are coalesced;
+- **Enable animation**: turning it off resets the character and holds still;
+- **Always on top**;
+- **Show companion**: turning it on restores the pet window, turning it off releases the native render window.
 
-**Prompt 管理** separately edits the dialogue and emotion prompts. `{{情绪模拟}}` inserts the latest completed emotion text; custom prompts without the variable remain unchanged. Emotion uses the private pet model: before the first reply it analyzes the user's message, then after each completed reply it analyzes the latest eight individual messages from both speakers by default (`emotionHistoryMessages`, 1–100). `{{聊天记录}}` expands at its location in the emotion prompt into chronological `糖糖：…` / `用户：…` text; `emotionCharacterName` edits the character label. No second JSON history is appended. Start-of-chat emotion includes the first user message. Legacy turn-count settings retain their numeric value as a message count, and custom legacy templates visibly gain the history placeholder. Removing the placeholder omits history. Later replies never wait for background updates. Failures retain the last emotion, and cancelled or obsolete jobs cannot overwrite newer results. Emotion text and requests are separate from chat messages and TTS. New Conversation resets emotion; reopening resumes it. The tab displays its text and update status.
+The panel entry sits beside 插件 and replaces the conversation area while open, so no dialog has to be closed; switching the sidebar back to the workspace or to 插件 releases the preview.
 
-**动作与关键词** stores per-outfit ordered variants in `actionPresets`: each has a stable ID, name, authored action reference, enabled flag, normalized weight and keywords. Legacy `actionKeywords` migrate to full-weight variants without changing private history. Longest literal parenthetical keyword wins, then preset order. Copy, delete and reorder controls manage independent variants; saving commits drafts. DragonBones weights range from 0% to 100%; other engines retain 100% until their visibility-sensitive playback has a verified partial-weight adapter. Slider input updates the current preview state without restarting its timeline; release, blur, tab change, closure and lease expiry restore ordinary playback. Editing another outfit does not switch the visible pet. With TTS, the matched body action holds its selected weight through the audio segment and releases on completion, cancellation or failure; without TTS it uses bounded playback. Direct interaction interrupts it. Speech and compact-input focus independently recenter pointer following.
+### Interaction
 
-**亲密度** edits any number of named levels with explicit inclusive starting/ending scores and descriptive text (`intimacyLevels`). Both endpoints are editable. Ranges must start at zero, remain continuous without overlaps, and leave the final end blank for no upper limit. Stored start-only settings migrate without changing effective ranges. Defaults are 0–10, 11–20, 21–40, 41–65 and 66+. Each completed nonempty user/assistant exchange adds one point to the private session exactly once; interruption, failure, connection tests and emotion jobs add none. Existing transcripts start at zero without historical backfill. Reopening preserves the score, while New Conversation resets it and retains level settings. `{{亲密情况}}` in the emotion prompt expands to the current score, level name and description. First-turn emotion sees zero; post-reply emotion sees the incremented value. Exact old defaults gain the variable; custom prompts retain their content and expose an insert button. Expanded prompts remain in auxiliary request evidence rather than chat messages.
+**Left click interacts, right click opens the menu**: pat the head, click the body or drag the character, and the motion, expression, gaze and physics depend on the model itself.
 
-The reply bubble preserves literal text and brackets. Nested and unfinished Chinese/ASCII parenthetical spans use `#948b81`, while dialogue keeps `#534636`; no model text is interpreted as HTML. Speech projection and stored transcripts remain independent of this visual distinction.
+With 动作调试 expanded in the settings, holding an action or expression button previews it on both the portrait and the visible pet; releasing, cancelling, losing focus, switching tabs or closing the settings restores normal animation. A visible pet with animation enabled performs a random available body action after 60 seconds idle, avoiding immediate repeats; clicking, the menu, dragging, pausing or hiding interrupts it. The portrait never performs automatic actions.
 
-Open **聊天** from the pet menu to reveal a text field below the character. **关闭聊天** hides the field without resetting history or cancelling the reply. Both this input and settings → **聊天记录** use the same latest conversation and bounded model context. The settings tab embeds the full transcript, recording, stop and new-conversation controls without creating another native window. Enter sends, Shift+Enter inserts a newline, and IME composition never sends. **Every press answers.** The send control is never `disabled` — a disabled button swallows the click, which is indistinguishable from a broken one — so it carries the unavailable styling instead, shows 发送中… the moment it is pressed, asks the Host what it is really doing before refusing (the busy flags arrive on the event stream and can outlive the Host's turn), states the reason in the bubble or status line rather than returning silently, and bounds the request at 30 seconds so a stalled connection reports a timeout. The Host backs this up: a turn that outlives its own model bound (`timeoutMs`) plus one second of grace is abandoned so the next message can be taken, instead of locking the input forever (reported 2026-09-21: pressing Send did nothing at all). Recording results remain editable until Send; starting capture stops speech. Microphone permission is restricted to the embedded chat page's audio requests. Capture resamples to mono 16 kHz PCM and is discarded after recognition. The compact input eases pointer following to neutral while focused in the active window. Blur, window deactivation or closing the input releases this pause; following resumes only when speech has also ended.
+---
 
-The **对话** and **声音** tabs configure the pet's own Ark endpoint, model, and separate model/TTS/ASR keys. These do not inherit Harness provider settings. Default and cloned voices use their matching V3 resources; existing cloned speaker IDs are supported, while voice training is outside the plugin. The automatic TTS switch saves immediately and disabling it cancels speech without stopping text generation. Other form edits require Save. Save and Preview first saves the visible fields. Speaker IDs are trimmed and `S_` selects the clone resource automatically. Loading disables form edits until configuration arrives; the automatic-read status stays explicit. A reply uses one configuration snapshot; edits apply to the next reply.
+## Reading text aloud
 
-Only the visible pet plays audio. Nested Chinese and ASCII parenthetical asides are removed from streamed TTS text only; the reply and history retain the original. Short interjections stay with the following sentence. Complete short sentences synthesize sequentially into a bounded playback queue. The head bubble displays the AI reply until generation and all playback acknowledgements finish; pausing speech preserves the bubble. Without playback, text length determines a 2–10 second display interval. Local reactions cannot overwrite an active reply. Word timestamps plus pinyin map to `a/o/i/m`, with punctuation excluded from word duration and missing words assigned available timing gaps; a payload whose spans the voice could not have spoken, or which leaves audible speech unlabelled, is re-timed against the clip's own speech mask; incompatible or absent subtitles use estimated timing over the audible spans and silence gating during playback. Web Audio time controls the mouth, including pause/resume. Live2D characters without a speech driver still provide text and sound. Leaving the settings history tab releases its microphone; hiding, switching characters or unloading cancels conversation and audio work.
+### The read-out button under every reply
 
-`conversation.json`, `voice-credentials.json`, and `conversation-session.json` live beside appearance settings under `DSH_HOME/state/dsh-desktop-pet`. Keys are private 0600 files, not encrypted storage, and GET responses expose only configured flags. Blank key edits preserve the existing value; Clear plus Save deletes it. Actual submitted model messages are retained in request records. New Conversation archives the previous record locally. These files never enter the package.
+**It sits in the official assistant action strip, beside copy and share**. At rest it is a speaker icon, and pressing it reads that reply in the pet's voice.
 
-Run `node scripts/conversation-smoke.mjs` for the keyless assembled UI snapshot. Explicit `PET_LIVE_CREDENTIAL_FILE` enables the local private-file service smoke; `scripts/conversation-electron-smoke.mjs` exercises native capture with a known virtual microphone against real ASR. Physical microphone and subjective voice quality remain user acceptance checks. Official framing sources and snapshot hashes are recorded in the research artifacts; product dependencies are pinned in the lockfile.
+While reading, the button turns into a moving waveform, and pressing it again **stops all reading** — this reply, other replies, the selection being read and the main conversation broadcast together. The button describes the pet's voice rather than its own request, so it stays pressable whenever a voice is playing, and stop always outranks start.
 
-## Built-in artwork
+It can read replies from before this run; **reading does not require the pet to be on screen**: the visible pet plays and drives its mouth, the Harness window plays while it is hidden, and hiding never interrupts a clip.
 
-`assets/catalog.json` owns stable IDs, names, relative entries, and curated interaction profiles. The Host reads models and Core directly from the plugin package. New models are added during development, validated, previewed, and included in a rebuilt Dev package. Users do not import directories, select runtimes, edit bindings, or supply file paths. PNG illustration mode and its settings are removed.
+### Reading a selection aloud
 
-`scripts/prepare-builtin-assets.mjs` curates the previously downloaded, pinned research collection into `assets/`. It copies model dependencies and approved animation profiles, not user settings, credentials, library indexes, or absolute-path provenance files. The bundle includes source attribution; model artwork and Cubism Core retain independent terms and are not covered by this repository's MIT license.
+**Select text in the conversation panel** and a 朗读 pill floats above the selection; clicking it speaks the passage with the pet's voice and queue.
 
-The pinned expansion uses `scripts/additional-models.json` and `scripts/prepare-additional-models.mjs`, verifies dependency blob hashes, and requires at least six unique referenced motions. `scripts/verify-additional-models.mjs` exercises every declared motion through the actual renderer before admission. The twelve additions supply 152 motions across four collections.
+- **Only words a person would say**: code blocks, tables and Markdown decorations are left out, and an unclosed code block is never read;
+- **Never written anywhere else**: the passage does not enter the pet bubble, the session log or a model request;
+- **Too long is not offered**: a selection above 5000 characters is not offered at all;
+- **Beside the reference action**: in the file browser, the read-out action is delivered into the @引用 bubble, so the two buttons sit side by side;
+- **Missing pieces are named**: without a TTS key or a window that can play, the pill states the reason.
 
-## DragonBones integration
+### Broadcasting the main conversation
 
-`mouthRecipes.mengmei` maps pinyin symbols to one authored a/o/i/m pose and a normalized weight. Editable starting recipes are e→i 55%, w→o 45% and y→i 70%; u/ü/v can also be configured. These are visual approximations, not additional supplier-authored meshes or precise phoneme alignment. Word timing and pinyin preserve the logical symbol through playback; the player resolves the saved recipe for its character. Consecutive cues using the same mesh but different weights still blend. Manual mouth preview temporarily suppresses the automatic mouth layer while its audio clock continues. Completion and cancellation release all speech weights to zero. Recipes do not use action keywords; body presets continue to match parenthetical text. Configuration changes take effect on the next reply without altering queued audio. Use `node scripts/weighted-actions-smoke.mjs` to verify official-runtime deformation at multiple weights, base recovery and same-mesh weight changes.
+**Off by default, the switch sits in the conversation header's right side**: the speaker icon tells 声音开启 from 声音关闭, and the companion page does not repeat it.
 
-Mengmei follows the pointer through the official runtime's additive `zhuan` bone offset, retaining the `zhuanshen` torso and head constraint chain. The app horizontal/vertical timelines remain in the assets but do not play during pointer following. The profile bounds body displacement to an ellipse with horizontal radius 350 and vertical radius 300 skeleton units, with body sensitivity 2, pupil offset 18 and 0.18-second smoothing. Native pointer events work outside the pet window. Dragging, action previews, speech and focused compact input recenter direction; disabling animation resets and freezes it. Gestures, expressions and speech remain layered.
+- **Only the prose addressed to you**: the main conversation's assistant text is read, while reasoning, tool calls, compaction and title generation are excluded; code blocks, tables, Markdown decorations and links are left out;
+- **Never written into the pet bubble**: the bubble belongs to the pet's own conversation, and sharing it would bring back captions you turned off;
+- **The switch is also the stop switch**: turning it off ends the sentence being read, and while the pet window is hidden this switch is the only control on screen;
+- **Subagents are silent**: their text is not broadcast, so the main thread stays audible;
+- **It needs TTS**: it uses the pet's own voice and key, independent of the private chat's automatic read-out.
 
-Run `node scripts/prepare-dragonbones.mjs <original-export-directory>` from this plugin to prepare Mengmei from its three original files. The script namespaces physics constraints without renaming bones or IK timelines, clears the exported open-mouth startup action, downloads pinned official runtimes, and records source hashes. The `--resources-only` flag retains pinned runtimes while refreshing artwork; missing app direction tracks are regenerated. Click and release use the supplier's `wuxiong`; other interaction and speech/gaze profile values remain unchanged. Generate the preview through `node scripts/dragonbones-smoke.mjs` after building. Rebuilding the Live2D resource collection preserves DragonBones and admitted expansion entries.
+---
 
-The renderer uses DragonBonesJS commit `7b2d9f700d1719db2c5d89a6fa36c85d7f092501` from branch 6.0.2 and PixiJS 8.9.2. The runtime master branch rejects this 6.0 export. Live2D retains PixiJS 6.5.10 in separate documents. The pet owns one explicit animation clock; the pinned adapter's automatic shared-ticker callbacks are removed. Disposal releases the armature, factory data, image texture and Canvas.
+## Conversation
 
-Mengmei retains 13 supplier animations plus two app pointer-control tracks and 117 constraints. Idle, reaction, expression and mouth poses use separate animation groups with `resetToPose=false`; mouth FFD overrides the idle mouth while facial bone transforms remain active. The renderer's `speech.start({ cues, duration }, clock)` accepts sorted `{time, shape}` cues in seconds, with shapes `a`, `o`, `i`, `m`. The caller supplies an audio playback clock such as `() => audio.currentTime`, pauses the audio to hold its mouth cue, and calls `speech.cancel()` on interruption. End-of-timeline closes the mouth. Disabled animation rejects new speech and cancels active cues; disposal stops all cues.
+### Private chat and recording
 
-The conversation player supplies real synthesized audio and word-timed pinyin cues through this driver. Four authored poses approximate speech; they do not provide complete phoneme alignment. `dragonbones-smoke.mjs` independently checks deterministic cues, gestures, pause and resource disposal. Four persistent official animation states mix the authored mouth meshes with normalized weights and a nominal 0.2-second eased transition, passing through `m` at its midpoint between different vowels. Short cues cap the blend at half their remaining duration, bounded below by 40 ms, so brief interjections visibly open. Speech-only aliases omit the `i` pose's nested direction tracks so articulation does not move the torso. Contiguous syllables omit synthetic end-of-syllable closures. Ninety milliseconds of silence prevents momentary waveform gaps from repeatedly closing the mouth. `prepare-dragonbones.mjs --profile-only` refreshes the maintained profile without copying exports or downloading runtimes. Speech poses use normalized weights while speaking. All four speech weights are zero at rest and fade to zero over 0.2 seconds when a sentence ends, restoring the idle mouth. The m pose is only a speaking closure. A pinned-runtime fix keeps completed single-frame FFD poses participating in blending; a zero-deform base resets inner-mouth slots absent from idle.
+Open 聊天 from the pet menu and a text input appears below the character; 关闭聊天 only hides the input and keeps the record. It shares the latest conversation and a bounded context with settings → 聊天记录.
 
-## Spine adapter development
+- **Sending**: Enter sends, Shift+Enter breaks the line, and IME composition never sends;
+- **Every press gets an answer**: the button is never disabled; it shows 发送中… immediately, checks with the host when it believes the pet is busy and writes the reason into the bubble, and a send has a 30-second cap;
+- **Recording**: a recording can be edited before sending, and starting capture stops any read-out; only the embedded chat page may request the microphone;
+- **One configuration per reply**: a reply keeps the configuration it started with, and changes apply to the next one.
 
-The source includes an isolated official Spine WebGL 4.2 adapter and descriptor dispatch. Prepare its checksum-pinned runtime and license with `node scripts/prepare-spine-runtime.mjs [official-package.tgz]`. A catalogue entry uses `kind: 'spine'`, a JSON entry, an atlas and an interaction profile. Descriptor validation rejects configured animations with no effective keyframes, including empty named mouth poses. The supplied Spine Mengmei export is not admitted to the built-in list because its texture assembly remains invalid; the existing admitted entries are preserved.
+### Emotion
 
-The renderer supports alpha hit testing, resize, reaction tracks, animation pause, optional audio-clock mouth cues and explicit GPU disposal. Pending fetches abort on page teardown. Context loss releases the renderer and asks the user to select the character again. `node scripts/spine-smoke.mjs <export-directory>` exercises the built adapter separately from catalogue acceptance; passing lifecycle checks does not certify the artwork. Official Spine runtime and character licenses apply independently.
+**Emotion is five ordered plain-text fields written in the first person**: current mood, attitude direction, inner stirring, tone colour and emotional baseline.
 
-## State and lifetime
+- **Prompt discipline**: topic steering, conditional reply instructions and invented persona facts are ruled out;
+- **Shares the pet model**: the first round analyses the user's message before replying, and afterwards each completed reply analyses the last eight messages of both sides, with `emotionHistoryMessages` configurable from 1 to 100;
+- **Failures keep the previous emotion**: a missing, duplicated, out-of-order or non-first-person field fails the update instead of overwriting;
+- **Injections**: `{{情绪模拟}}`, `{{聊天记录}}` and `{{亲密情况}}` expand where they appear in the prompt.
 
-Settings version 2 contains only `modelId`, `height`, `animated`, and `alwaysOnTop`, plus its version field. Version 1 disk migration preserves basic preferences and maps an old imported selection to its built-in name. Legacy private assets remain untouched; removed fields are rejected by the current HTTP schema. Settings remain under `DSH_HOME/state/dsh-desktop-pet`; native position and visibility stay in channel-specific userData.
+### Prompt management
 
-Host routes require loopback, enforce same-origin access, and reject resource traversal and symlink escapes. Import/profile-write and filesystem-picker endpoints are removed. The preview is scoped to the modal lifetime, and late results cannot reopen it. Cordis unload releases the Client and native lease. No session-binding control or automatic session subscription remains; the local touch/click CustomEvent still works.
+Conversation and emotion prompts are edited separately. A custom prompt without variables stays as written, and a prompt identical to the old default upgrades automatically. Emotion text and its request stay independent of chat messages and TTS; a new conversation clears the emotion, and reopening restores it.
 
-## Verify
+### Intimacy
 
-Run `npm run build`, `npm test`, `npm run test:browser`, and `npm run test:electron`. The browser smoke uses real Host routes, compiled Client, a clean data directory, an assembled UI snapshot, both layouts, last-row selection, persistence, and close-race checks. The native smoke verifies transparent input, drag, restart restoration, paused animation, resize, hide/show, and unload.
+`intimacyLevels` edits any number of levels with a name, start score, end score and description, arranged continuously from 0 with no overlap or gap.
 
-Build with the standard `npm run product:dist:dev` at the suite root. `scripts/product-v2-smoke.mjs` checks the final package with empty user data and no imported assets; it verifies bundle hashes, built-in resources, character switching, actual animation, and cleanup. `scripts/launch-live2d-demo.mjs` opens the isolated persistent local demo.
+Each completed non-empty user/AI round adds one point, counted once; interruptions, failures, connection tests and emotion requests do not count. Reopening keeps the score, and a new conversation resets it while keeping the level settings.
+
+---
+
+## Voice and mouth
+
+### Voice configuration
+
+The 对话 and 声音 pages configure the pet's own Ark endpoint, model and separate model / TTS / ASR keys, **without inheriting Harness model settings**.
+
+- **Voice**: read-out needs a TTS key and a voice ID, and existing cloned speaker IDs are supported, with no voice training;
+- **Save and preview**: the form is saved before synthesis starts;
+- **Key semantics**: an empty field keeps the current value, clearing it and saving deletes it, and GET only reports whether one is configured;
+- **Streaming synthesis**: only the next two or three sentences are synthesised as the player consumes, so a long reply never overruns the buffer.
+
+### Mouth drivers
+
+**Live2D and DragonBones each have their own driver**:
+
+- **Live2D**: the timeline drives `ParamMouthOpenY` / `PARAM_MOUTH_OPEN_Y` with the mouth-recipe weights from the settings;
+- **DragonBones**: four hand-made a/o/i/m shapes matched by pinyin, with Mengmei's `i` narrowed into the `a` shape so it stays visible;
+- **Silence closes**: the mouth closes on silence and releases when a clip ends;
+- **Approximate shapes**: neither driver claims phoneme-level alignment.
+
+### Only words a person would say
+
+**The text is turned into its reading first, then the vowels decide the shape**: Arabic digits read as Chinese numerals, Latin letters by letter name and common symbols by their reading, while quotation marks, brackets, commas and full stops are only pauses. Digits read one by one, and separators inside them follow the reading.
+
+**Untrustworthy subtitle timings are reflowed**: the speech service returns a flat 30 ms span for any segment containing digits or symbols, and trusting it squeezes a whole reading into 30 ms and leaves long closed-mouth stretches. The plugin reflows the timeline against the audio's own voiced segments, so the mouth closes only where the audio really pauses, while a segment whose audio and payload agree keeps the provider's original timing.
+
+---
+
+## Data and privacy
+
+- **Location**: appearance settings, conversation, credential index and recording records live under `DSH_HOME/state/dsh-desktop-pet`;
+- **Keys**: stored as a private file with 0600 permissions, not encrypted;
+- **Not shipped**: these files and the request records stay out of the release package;
+- **Local access**: host routes are limited to same-origin local requests and refuse path escapes and symlink escapes.
+
+---
+
+## Assets and the character library
+
+`assets/catalog.json` manages the stable identifiers, names, relative entries and preset interaction configuration, and the host reads models and the Core straight from the plugin package; users never import directories, pick a driver, bind actions or fill in paths.
+
+**Adding a character happens at development time**: `scripts/prepare-builtin-assets.mjs` copies model dependencies and approved animation profiles and leaves user settings, credentials, library indexes and absolute-path provenance files out; extra resources are pinned by `scripts/additional-models.json` with dependency hashes, and `scripts/verify-additional-models.mjs` plays every declared action through the real driver before they land.
+
+---
+
+## Drivers and builds
+
+### DragonBones
+
+Mengmei is prepared by `node scripts/prepare-dragonbones.mjs <source-export-dir>` from three source files: physics constraints gain a name prefix, bone and IK timeline names are kept, the exported mouth-open start action is cleared, and the official driver is downloaded at a pinned version with its provenance hash recorded.
+
+**Pinned renderer**: the DragonBonesJS 6.0.2 branch at commit `7b2d9f700d1719db2c5d89a6fa36c85d7f092501` with PixiJS 8.9.2; the runtime's master branch refuses this 6.0 asset.
+
+**Following and recentring**: the body follows the pointer through an additive offset on the `zhuan` bone, keeping the `zhuanshen` body and head constraint chain; movement stays inside an ellipse of radius 350 horizontally and 300 vertically in skeleton units, with sensitivity 2, eye offset 18 and 0.18 s smoothing; dragging, previewing an action, speaking or focusing the compact input recentres it.
+
+### Live2D
+
+Cubism 3/4 enables `setOpacityFromMotion` and orders motion curves as Model → Parameter → PartOpacity. Switching motions or returning to idle clears the old queue and restores parameters and part opacity, so spare arm parts never linger.
+
+### Spine
+
+The sources include an independent official Spine WebGL 4.2 driver and descriptor dispatch, and `node scripts/prepare-spine-runtime.mjs [official-package.tgz]` prepares a runtime with pinned checksums. The vendor-provided Spine Mengmei still has texture-assembly problems and is not part of the built-in list.
+
+---
+
+## Verification
+
+From the plugin directory:
+
+```bash
+npm run build
+npm test
+npm run test:browser     # real host, built client, empty data directory
+npm run test:electron    # transparent hit-testing, dragging, restart restore, hide/show, unload
+```
+
+The packaging chain builds with `npm run dist:dev` / `npm run dist:stable` from the unified project root, and `scripts/product-v2-smoke.mjs` checks the final package with empty user data: executable hash, built-in assets, character switching, real animation and cleanup.
+
+---
+
+## Known limitations
+
+- Mouth shapes are approximate and claim no phoneme-level alignment; the emotion validator checks format, not semantic quality;
+- Voices are limited to existing cloned speaker IDs, with no voice training;
+- The vendor-provided Spine Mengmei asset is still being reworked and is not in the built-in library;
+- Action and expression previews require animation to be enabled and saved; the portrait never performs automatic actions;
+- The microphone permission is granted only to the embedded chat page, and physical-microphone capture and voice quality still need human acceptance.

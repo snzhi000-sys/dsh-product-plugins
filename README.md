@@ -8,9 +8,9 @@ This repository ships two product plugins for DeepSeek Harness that can be enabl
 
 ## Revision history
 
-| Date | Change | Author | Note | Feishu link |
-| --- | --- | --- | --- | --- |
-| 2026-10-26 | Changed: the page follows the product-document structure and keeps a single revision row; the file browser now covers media preview, the sandboxed page view and the image viewer, and the model-asset wording matches what the repository ships | snzhi000-sys | `dsh-file-edit 1.18.5-local` / `dsh-desktop-pet 0.1.4` | — |
+| Date | Change | Author | Note |
+| --- | --- | --- | --- |
+| 2026-10-26 | Changed: the page follows the product-document structure and keeps a single revision row; the file browser now covers media preview, the sandboxed page view and the image viewer, and the model-asset wording matches what the repository ships | snzhi000-sys | `dsh-file-edit 1.18.5-local` / `dsh-desktop-pet 0.1.4` |
 
 ---
 
