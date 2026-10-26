@@ -8,12 +8,9 @@ One plugin that combines the workspace Explorer, the file browser and agent-chan
 
 ## Revision history
 
-| Date | Change | Author | Note | Link |
+| Date | Change | Author | Note | Feishu link |
 | --- | --- | --- | --- | --- |
-| 2026-09-18 | First release of this README as a product document: capabilities, feature demos, origin and credits | snzhi000-sys | Version `1.13.44-local` | — |
-| 2026-09-22 | Declared deliveries enter review when the session never observed their write, and stay unrestorable | snzhi000-sys | Version `1.13.45-local` | — |
-| 2026-09-22 | Fix the declared-delivery reconciliation silently dropping declarations: a clean baseline entry left by the discovery scan was misread as an existing review row | snzhi000-sys | Version `1.13.46-local` | — |
-| 2026-09-24 | A declared delivery's content is browseable read-only: the review pane showed the notice alone, so the file could not be read before accepting it | snzhi000-sys | Version `1.13.47-local` | — |
+| 2026-10-26 | Changed: the page follows the product-document structure and keeps a single revision row; the file browser now covers media preview, the sandboxed page view and the image viewer, and image loading documents its timeout and retry boundaries | snzhi000-sys | Version `1.18.5-local` | — |
 
 ---
 
@@ -44,9 +41,10 @@ To make file changes inside a Harness session **visible, editable and referencea
 - **Deletion leaves a tombstone**: a file created and then deleted in the same session shows as "created then deleted", instead of vanishing as a net-zero change;
 - **Directories aggregate**: a full directory deletion becomes one row that expands to its files and can be accepted or restored as a batch;
 - **Ownership is explicit**: subagent changes are attributed along the parent session, while ordinary child sessions keep their own ledger;
-- **Uncaptured work is named**: changes the plugin cannot observe, such as writes from a background Shell or an unmanaged compatible shell, are listed by name on an "uncaptured" row that persists with the session instead of being silently dropped;
-- **Declared deliveries fill the gap**: a file the model declares with the official `present` tool that this session never observed a write for, such as output from a shell command that moved itself to the background, enters the list as a declared delivery; it carries only the current disk state and no before-content, so it can be accepted or inspected by hand but never auto-rejected. What is on disk is still browseable read-only, through the same document view a clean file gets, so the decision can be made by reading the file instead of signing blind;
-- **Snapshot-first restore**: after a restart the persisted ledger appears first and the disk is reconciled afterwards, so the first paint never waits for a workspace scan.
+- **Uncaptured work is named**: changes the plugin cannot observe, such as writes from a background Shell or an unmanaged compatible shell, are listed by name on an "uncaptured" row that persists with the session;
+- **Declared deliveries fill the gap**: a file the model declares with the official `present` tool that this session never observed a write for enters the list as a declared delivery; it carries only the current disk state and no before-content, so the row offers accept and manual inspection, and what is on disk stays browseable read-only so the decision can be made by reading the file;
+- **Snapshot-first restore**: after a restart the persisted ledger appears first and the disk is reconciled afterwards, so the first paint never waits for a workspace scan;
+- **The anchor heals itself**: the review bar sits above the input zone by default; when the official UI does not render that zone at all, the top of the file view takes over with the same list, only one anchor paints at a time, and the file-view tab is not closed as blank while reviews are pending.
 
 ### 2. Explorer
 
@@ -69,6 +67,12 @@ To make file changes inside a Harness session **visible, editable and referencea
 - **Batch closing**: the more menu closes all files or only the settled ones, and a failed review refresh closes nothing;
 - **Syntax highlighting** for 24 languages plus Markdown;
 - **Whole-document editing**: edits made by the user fold into the baseline instead of disturbing the agent's pending changes;
+- **Media in place**: images, audio, video, PDF and Word / Excel / PowerPoint documents open in a tab, Office files render as a converted PDF, and audio and video support seeking;
+- **Page view**: an HTML file opens through 在浏览器打开 in the Explorer menu and renders as a sandboxed page, with relative assets served from its directory;
+- **Image viewer**: clicking an image in the rendered Markdown opens a viewer; clicking outside it or pressing `Esc` closes it, and several images of the same document can be paged through;
+- **Document images**: the rendered Markdown view shows the png / jpg / jpeg / webp / gif images a document references, limited to the current workspace; symlinks and images above 16 MB are refused, and a failure becomes an inline note instead of a broken image; an image inside a table cell renders as a thumbnail capped at 240px, and the cell takes that same definite width so the text columns keep their room;
+- **Image loading recovers**: a single image read is bounded at 20 seconds and releases its concurrency slot on timeout; the pane keeps backfilling after the first render, so an image dropped by a re-render or inserted later is fetched again, and one that still fails becomes an inline "图片加载超时" note;
+- **Rich text in table cells**: an inline `<br>` in a cell is a real line break, bold or italic touching Chinese punctuation renders the way Feishu shows it, and other inline HTML stays unparsed;
 - **Size boundaries**: files above 512 KB or 8000 lines become read-only large files, and binaries above 4 MB keep only reject and restore;
 - **Change targeting**: opening a file from the review list jumps to its first change and highlights it, instead of starting at the top of the file.
 
@@ -82,7 +86,7 @@ To make file changes inside a Harness session **visible, editable and referencea
 
 - **References carry a location**: the chip shows the path and the line range, so the model's target is exact;
 - **Selection references**: selecting text in a file or review view floats a bubble above the selection, and one click inserts the reference;
-- **The bubble is a contribution seam**: other plugins add their own action beside `@引用` through the client service `dshFileEditSelectionActions` (`register({ id, order, pill })`, where `pill` is a React component receiving `{ text, path, start, end, lineRef }`). The bubble group positions itself once and lays the actions out in a row, so a contributed action never has to measure the selection; the desktop pet's 朗读 is the first consumer. The service is published with `ctx.provide` and waited on with `ctx.inject`, so the two plugins' activation order does not matter;
+- **The bubble is a contribution seam**: other plugins register their own action through the client service `dshFileEditSelectionActions` and receive the selected text, the file path, the start and end offsets and the line range; the bubble group positions itself once and lays the actions out in a row, so a contributed action never measures the selection, and the desktop pet's 朗读 is the first consumer. The service is published with `ctx.provide` and waited on with `ctx.inject`, so the two plugins' activation order does not matter;
 - **Two paths, one vocabulary**: the diff view and code browsing use the official `@path` reference with the line range only in the chip label, while the rendered view writes the range into the text so the model knows which lines are meant; the selected text itself is never sent;
 - **Consistent with the official behaviour**: both paths declare the official appearance, so both draw the official file icon and behave like every other reference in the composer.
 
@@ -100,7 +104,7 @@ To make file changes inside a Harness session **visible, editable and referencea
 - **Review baselines**: accepting a whole file makes the current content the new baseline; accepting a hunk settles only that hunk; rejecting a hunk restores it to the baseline, and the remaining diff is recomputed after every partial action, so settled content does not reappear;
 - **Permission ownership**: sandboxing, approval and permissions belong to the kernel; the plugin only records changes and never vetoes a tool at its entry point, while in-view saves stay inside the current workspace with version checks;
 - **Shell recording**: foreground Shell commands in a writable workspace are captured by a pre-execution snapshot plus recursive watching; a failed snapshot never blocks the command, and the session keeps an explicit partial-coverage conclusion;
-- **Unknown pre-modification content**: when `write` overwrites a file and the tool returns no prior content, the row says so and offers accept or manual handling only, never an automatic rejection that could destroy data.
+- **Unknown pre-modification content**: when `write` overwrites a file and the tool returns no prior content, the row says so and offers accept or manual handling.
 
 ---
 
@@ -110,7 +114,7 @@ To make file changes inside a Harness session **visible, editable and referencea
 
 - Original project: [justarook1e/dsh-file-edit](https://github.com/justarook1e/dsh-file-edit), released under MIT with copyright held by `justarook1e`; that repository is no longer maintained and has moved to [justarook1e/dsh-ide-lite](https://github.com/justarook1e/dsh-ide-lite).
 - **Inherited**: workspace file browsing and editing, accept/reject of agent changes, rejection undo, deletion quarantine, and the runtime state-directory and route conventions.
-- **Added or reworked here**: review listing attributed by session and workspace, subagent change attribution, directory deletion batches, named disclosure of uncaptured changes, deletion tombstones, official glyphs and labelled tabs, on-demand hiding with persisted preferences, line-level references from the rendered view, change targeting with line-accurate highlight, and the review bar's width and ink aligned with the official composer card.
+- **Added or reworked here**: review listing attributed by session and workspace, subagent change attribution, directory deletion batches, named disclosure of uncaptured changes, deletion tombstones, official glyphs and labelled tabs, on-demand hiding with persisted preferences, line-level references from the rendered view, change targeting with line-accurate highlight, media and page preview, the Markdown image viewer, and the review bar's width and ink aligned with the official composer card.
 - **License obligation**: as MIT requires, [LICENSE](../LICENSE) keeps the original author's copyright notice; embedded third-party components are listed in [THIRD-PARTY-NOTICES.md](../THIRD-PARTY-NOTICES.md).
 
 ---
@@ -142,14 +146,17 @@ docs/
 
 - **Review state**: each session's settled baselines, disk snapshots, deletion batches and undo records live under the Harness runtime state directory `dsh-file-edit-state` and are restored on restart; deleting that directory outside the plugin only loses review history and never touches workspace files;
 - **Deletion quarantine**: deleted content and batch manifests live inside a quarantine under the same directory, ready for accept or restore;
-- **Explorer preferences**: hiding, expansion and ordering live under `dsh-explorer-state`.
+- **Explorer preferences**: hiding, expansion and ordering are stored per workspace and survive a restart.
 
 ## Known limitations
 
 - The native workspace browser is replaced, so search, grouping and rename dialogs are absent; adding a workspace and creating sessions remain;
 - Dependency and cache directories stay out of the file tree, which also has entry and depth limits;
 - Writes from a background Shell or a persistent terminal are not captured; they are named in the review bar rather than invented, and artifacts the model never declares stay out of the list;
-- Line-level references from the rendered view depend on the renderer's line annotations, so inline code spanning lines can drift within its block until the next block-level annotation.
+- Line-level references from the rendered view depend on the renderer's line annotations, so inline code spanning lines can drift within its block until the next block-level annotation;
+- A line break inside a table cell only works through an inline `<br>`: the backslash line break ends the row and splits one row into two, and list or quote syntax inside a cell stays plain text;
+- Document images resolve relative paths inside the workspace and five raster formats (png / jpg / jpeg / webp / gif) only: absolute paths, files outside the workspace, SVG and images above 16 MB are reported inline as unavailable. The bytes travel over the plugin's own RPC and are cached per rendered document, so nothing here depends on kernel-internal attachment URLs;
+- The image viewer serves document images inside the rendered view, and paging covers several images of the same document only.
 
 ## License
 
